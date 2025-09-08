@@ -1,5 +1,5 @@
-import { cleanTrailingSlash, getServiceDetails } from './utils'
-import { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from './types'
+import { cleanTrailingSlash, getServiceDetails } from '@/utils'
+import { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types/types'
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
   useDefaultStyle?: boolean

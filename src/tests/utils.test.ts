@@ -1,4 +1,4 @@
-import { cleanTrailingSlash } from '../utils'
+import { cleanTrailingSlash } from '@/utils'
 
 describe('utils', () => {
   describe('cleanTrailingSlash', () => {

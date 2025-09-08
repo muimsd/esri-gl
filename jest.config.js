@@ -3,11 +3,15 @@ export default {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
   testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
+    '**/tests/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest'
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/types/(.*)$': '<rootDir>/types/$1'
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

@@ -1,4 +1,4 @@
-import { Map, ServiceMetadata } from './types'
+import { Map, ServiceMetadata } from '@/types/types'
 
 export function cleanTrailingSlash(url: string): string {
   return url.replace(/\/$/, '')

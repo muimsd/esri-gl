@@ -1,5 +1,5 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from './utils'
-import { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from './types'
+import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils'
+import { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types/types'
 
 interface ImageServiceExtendedOptions extends ImageServiceOptions {
   from?: Date | number

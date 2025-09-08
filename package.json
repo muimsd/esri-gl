@@ -6,10 +6,10 @@
   "main": "dist/esri-map-gl.js",
   "module": "dist/esri-map-gl.esm.js",
   "browser": "dist/esri-map-gl.js",
-  "types": "index.d.ts",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
-    "index.d.ts"
+    "types"
   ],
   "scripts": {
     "dev": "vite",
@@ -39,6 +39,7 @@
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/jest": "^29.5.5",
