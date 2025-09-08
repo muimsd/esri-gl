@@ -5,7 +5,7 @@ import typescript from 'rollup-plugin-typescript2'
 const output = (file, format, plugins = []) => ({
   input: './src/main.ts',
   output: {
-    name: 'mapboxglEsriSources',
+    name: 'esriMapGl',
     file,
     format,
     sourcemap: true
@@ -21,7 +21,7 @@ const output = (file, format, plugins = []) => ({
 })
 
 export default [
-  output('./dist/mapbox-gl-esri-sources.js', 'umd'),
-  output('./dist/mapbox-gl-esri-sources.min.js', 'umd', [terser()]),
-  output('./dist/mapbox-gl-esri-sources.esm.js', 'esm')
+  output('./dist/esri-map-gl.js', 'umd'),
+  output('./dist/esri-map-gl.min.js', 'umd', [terser()]),
+  output('./dist/esri-map-gl.esm.js', 'esm')
 ]
