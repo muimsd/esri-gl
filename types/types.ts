@@ -60,6 +60,43 @@ export interface VectorBasemapStyleOptions {
   worldview?: string;
 }
 
+export interface FeatureServiceOptions {
+  url: string;
+  layers?: number[] | number;
+  where?: string;
+  outFields?: string | string[];
+  f?: 'json' | 'geojson' | 'pbf';
+  returnGeometry?: boolean;
+  spatialRel?: string;
+  geometry?: any;
+  geometryType?: string;
+  inSR?: string;
+  outSR?: string;
+  maxRecordCount?: number;
+  orderByFields?: string;
+  groupByFieldsForStatistics?: string;
+  outStatistics?: any[];
+  having?: string;
+  resultOffset?: number;
+  resultRecordCount?: number;
+  getAttributionFromService?: boolean;
+  token?: string;
+}
+
+export interface GeoJSONSourceOptions {
+  data?: string | object;
+  maxzoom?: number;
+  attribution?: string;
+  buffer?: number;
+  tolerance?: number;
+  cluster?: boolean;
+  clusterRadius?: number;
+  clusterMaxZoom?: number;
+  clusterProperties?: object;
+  lineMetrics?: boolean;
+  generateId?: boolean;
+}
+
 // Map interface (basic definition for mapbox-gl/maplibre-gl compatibility)
 export interface Map {
   addSource(id: string, source: any): void;

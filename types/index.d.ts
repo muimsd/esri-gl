@@ -9,6 +9,8 @@ import {
   VectorTileServiceOptions,
   VectorBasemapStyleOptions,
   VectorSourceOptions,
+  FeatureServiceOptions,
+  GeoJSONSourceOptions,
   ServiceMetadata,
   Map,
 } from './types'
@@ -91,6 +93,29 @@ export declare class VectorBasemapStyle {
 
   update(): void
   remove(): void
+}
+
+export declare class FeatureService {
+  constructor(
+    sourceId: string,
+    map: Map,
+    esriServiceOptions: FeatureServiceOptions,
+    geojsonSrcOptions?: GeoJSONSourceOptions
+  )
+
+  geojsonSrcOptions?: GeoJSONSourceOptions
+  esriServiceOptions: FeatureServiceOptions
+
+  readonly serviceMetadata: ServiceMetadata | null
+  updateData(): void
+  setWhere(whereClause: string): void
+  setOutFields(fields: string | string[]): void
+  setLayers(layers: number[] | number): void
+  setGeometry(geometry: any, geometryType?: string): void
+  clearGeometry(): void
+  setMaxRecordCount(count: number): void
+  remove(): void
+  queryFeatures(options?: Partial<FeatureServiceOptions>): Promise<any>
 }
 
 // Utility functions
