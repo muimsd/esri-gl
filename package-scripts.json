@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "publish:redirects": "./scripts/publish-redirects.sh",
+    "publish:mapbox-redirect": "cd packages/esri-mapbox-gl && npm publish --access=public",
+    "publish:maplibre-redirect": "cd packages/esri-maplibre-gl && npm publish --access=public"
+  }
+}
