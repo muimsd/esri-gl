@@ -1,159 +1,167 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-
-// Note: In a real app, you would import from the built package
-// import { DynamicMapService } from 'esri-map-gl'
-// For demo purposes, we'll import directly from the source
-import { DynamicMapService } from '../../DynamicMapService'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import { DynamicMapService } from '../../../dist/esri-map-gl.esm.js'
 
 const DynamicMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
-  const service = useRef<DynamicMapService | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  const [layerDefs, setLayerDefs] = useState<string>('')
+  const service = useRef<any>(null)
+  const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2])
 
   useEffect(() => {
-    if (map.current) return // initialize map only once
+    if (!mapContainer.current || map.current) return
 
-    try {
-      map.current = new maplibregl.Map({
-        container: mapContainer.current!,
-        style:
-          'https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer/style',
-        center: [-95, 40],
-        zoom: 4,
+    // Initialize MapLibre GL JS map
+    map.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: {
+        version: 8,
+        sources: {
+          'osm-tiles': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors'
+          }
+        },
+        layers: [
+          {
+            id: 'osm-tiles',
+            type: 'raster',
+            source: 'osm-tiles'
+          }
+        ]
+      },
+      center: [-95.7129, 37.0902], // Center of USA
+      zoom: 4
+    })
+
+    map.current.on('load', () => {
+      if (!map.current) return
+
+      // Create Dynamic Map Service
+      service.current = new DynamicMapService(
+        'dynamic-source',
+        map.current,
+        {
+          url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+          layers: selectedLayers,
+          format: 'png32',
+          transparent: true
+        }
+      )
+
+      // Add layer to display the dynamic service
+      map.current.addLayer({
+        id: 'dynamic-layer',
+        type: 'raster',
+        source: 'dynamic-source'
       })
 
-      map.current.on('load', () => {
+      // Add click handler for identify
+      map.current.on('click', async (e) => {
+        if (!service.current) return
+
         try {
-          // Create Dynamic Map Service
-          service.current = new DynamicMapService('usa-states-dynamic', map.current!, {
-            url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-            layers: [0, 1, 2],
-            format: 'png32',
-            transparent: true,
-            dpi: 96,
-          })
+          const results = await service.current.identify({
+            lng: e.lngLat.lng,
+            lat: e.lngLat.lat
+          }, true)
 
-          // Add layer to display the service
-          map.current!.addLayer({
-            id: 'usa-states-dynamic-layer',
-            type: 'raster',
-            source: 'usa-states-dynamic',
-            paint: {
-              'raster-opacity': 0.8,
-            },
-          })
+          if (results.results && results.results.length > 0) {
+            const feature = results.results[0]
+            const attributes = feature.attributes || {}
+            
+            let content = '<div style="max-width: 200px;">'
+            Object.keys(attributes).forEach(key => {
+              if (attributes[key] !== null && attributes[key] !== '') {
+                content += `<div><strong>${key}:</strong> ${attributes[key]}</div>`
+              }
+            })
+            content += '</div>'
 
-          setLoading(false)
-        } catch (err) {
-          setError('Failed to load Dynamic Map Service: ' + (err as Error).message)
-          setLoading(false)
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(content)
+              .addTo(map.current!)
+          }
+        } catch (error) {
+          console.error('Identify error:', error)
         }
       })
-    } catch (err) {
-      setError('Failed to initialize map: ' + (err as Error).message)
-      setLoading(false)
-    }
+
+      // Change cursor on hover
+      map.current.on('mouseenter', 'dynamic-layer', () => {
+        if (map.current) map.current.getCanvas().style.cursor = 'pointer'
+      })
+
+      map.current.on('mouseleave', 'dynamic-layer', () => {
+        if (map.current) map.current.getCanvas().style.cursor = ''
+      })
+    })
 
     return () => {
       if (map.current) {
         map.current.remove()
+        map.current = null
       }
     }
-  }, [])
+  }, [selectedLayers])
 
-  const handleLayerDefsChange = (): void => {
-    if (service.current && layerDefs) {
-      try {
-        const layerDefsObj = JSON.parse(layerDefs)
-        service.current.setLayerDefs(layerDefsObj)
-      } catch (err) {
-        alert('Invalid JSON format for layer definitions')
+  const handleLayerToggle = (layerId: number) => {
+    setSelectedLayers(prev => {
+      const newLayers = prev.includes(layerId) 
+        ? prev.filter(id => id !== layerId)
+        : [...prev, layerId].sort((a, b) => a - b)
+      
+      // Update the service layers
+      if (service.current && map.current) {
+        service.current.setLayers(newLayers)
       }
-    }
+      
+      return newLayers
+    })
   }
 
-  const clearLayerDefs = (): void => {
-    if (service.current) {
-      service.current.setLayerDefs({})
-      setLayerDefs('')
-    }
-  }
-
-  const toggleLayer = (layerId: number): void => {
-    if (service.current) {
-      const currentLayers = service.current.esriServiceOptions.layers || []
-      const layerArray = Array.isArray(currentLayers) ? currentLayers : [currentLayers]
-
-      if (layerArray.includes(layerId)) {
-        const newLayers = layerArray.filter(id => id !== layerId)
-        service.current.setLayers(newLayers.length > 0 ? newLayers : [])
-      } else {
-        service.current.setLayers([...layerArray, layerId])
-      }
-    }
-  }
-
-  if (loading) {
-    return <div className="loading">Loading Dynamic Map Service...</div>
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>
-  }
+  const layerOptions = [
+    { id: 0, name: 'Cities' },
+    { id: 1, name: 'Highways' },
+    { id: 2, name: 'States' },
+    { id: 3, name: 'Counties' }
+  ]
 
   return (
-    <div className="map-container">
-      <div ref={mapContainer} className="map" />
-
-      <div className="info-panel">
-        <h3>Dynamic Map Service</h3>
-        <p>
-          Real-time dynamic map rendering from ArcGIS Server with multiple layers and styling
-          options.
-        </p>
-        <div className="url">
-          https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ 
+        padding: '10px', 
+        backgroundColor: '#f5f5f5', 
+        borderBottom: '1px solid #ddd',
+        fontSize: '14px'
+      }}>
+        <div style={{ marginBottom: '10px' }}>
+          <strong>Dynamic Map Service Demo</strong> - USA MapServer with layer controls and identify
+        </div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {layerOptions.map(layer => (
+            <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <input
+                type="checkbox"
+                checked={selectedLayers.includes(layer.id)}
+                onChange={() => handleLayerToggle(layer.id)}
+              />
+              {layer.name}
+            </label>
+          ))}
+        </div>
+        <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
+          Click on the map to identify features
         </div>
       </div>
-
-      <div className="controls">
-        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Layer Controls</h4>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <button onClick={() => toggleLayer(0)}>Toggle Cities</button>
-          <button onClick={() => toggleLayer(1)}>Toggle Highways</button>
-          <button onClick={() => toggleLayer(2)}>Toggle States</button>
-        </div>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-            Layer Definitions (JSON):
-          </label>
-          <textarea
-            value={layerDefs}
-            onChange={e => setLayerDefs(e.target.value)}
-            placeholder={'{"2": "STATE_NAME = \'California\'"}'}
-            style={{
-              width: '200px',
-              height: '60px',
-              fontSize: '0.75rem',
-              fontFamily: 'monospace',
-              padding: '0.25rem',
-            }}
-          />
-          <br />
-          <button onClick={handleLayerDefsChange} style={{ marginTop: '0.25rem' }}>
-            Apply Filter
-          </button>
-          <button onClick={clearLayerDefs} style={{ marginTop: '0.25rem' }}>
-            Clear Filter
-          </button>
-        </div>
-      </div>
+      <div 
+        ref={mapContainer} 
+        style={{ flex: 1, width: '100%' }}
+      />
     </div>
   )
 }

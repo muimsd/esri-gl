@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { VectorTileService } from '@/VectorTileService'
+import { VectorTileService } from '../../../dist/esri-map-gl.esm.js'
 
 const VectorTileServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null)
@@ -9,10 +9,10 @@ const VectorTileServiceDemo: React.FC = () => {
   const [layerAdded, setLayerAdded] = useState(false)
 
   useEffect(() => {
-    if (map.current) return // Initialize map only once
+    if (map.current || !mapContainer.current) return // Initialize map only once
 
     map.current = new maplibregl.Map({
-      container: mapContainer.current!,
+      container: mapContainer.current,
       style: {
         version: 8,
         sources: {},

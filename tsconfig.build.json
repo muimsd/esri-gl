@@ -8,5 +8,5 @@
     "outDir": "dist/types"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "docs", "**/*.test.*"]
+  "exclude": ["node_modules", "dist", "docs", "**/*.test.*", "src/demo"]
 }

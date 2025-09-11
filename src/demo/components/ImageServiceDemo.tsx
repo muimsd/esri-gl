@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { ImageService } from '../../ImageService'
+import { ImageService } from '../../../dist/esri-map-gl.esm.js'
 
 const ImageServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -10,13 +10,13 @@ const ImageServiceDemo: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (map.current) return
+    if (map.current || !mapContainer.current) return
 
     try {
       map.current = new maplibregl.Map({
-        container: mapContainer.current!,
+        container: mapContainer.current,
         style:
-          'https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer/style',
+          '{ version: 8, sources: { "osm": { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "© OpenStreetMap contributors" } }, layers: [{ id: "osm", type: "raster", source: "osm" }] }',
         center: [-95, 40],
         zoom: 4,
       })

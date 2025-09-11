@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { VectorBasemapStyle } from '@/VectorBasemapStyle'
+import { VectorBasemapStyle } from '../../../dist/esri-map-gl.esm.js'
 
 const VectorBasemapStyleDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null)
@@ -20,11 +20,11 @@ const VectorBasemapStyleDemo: React.FC = () => {
   ]
 
   useEffect(() => {
-    if (map.current) return // Initialize map only once
+    if (map.current || !mapContainer.current) return // Initialize map only once
 
     // Initialize with a basic style first
     map.current = new maplibregl.Map({
-      container: mapContainer.current!,
+      container: mapContainer.current,
       style: {
         version: 8,
         sources: {

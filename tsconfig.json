@@ -30,5 +30,5 @@
     "outDir": "dist/types"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "docs"]
+  "exclude": ["node_modules", "dist", "docs", "src/demo"]
 }

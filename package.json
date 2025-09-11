@@ -13,9 +13,6 @@
   ],
   "scripts": {
     "dev": "vite",
-    "demo": "vite --config vite.demo.config.js",
-    "demo:build": "vite build --config vite.demo.config.js",
-    "demo:preview": "vite preview --config vite.demo.config.js",
     "build": "npm run clean && npm run type-check && rollup -c",
     "build:prod": "npm run clean && npm run type-check && npm run lint && rollup -c",
     "build:watch": "rollup -c --watch",
