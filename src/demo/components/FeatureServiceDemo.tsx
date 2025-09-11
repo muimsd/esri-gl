@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { FeatureService } from '../../../dist/esri-map-gl.esm.js'
+import { FeatureService } from '../../main'
 
 const FeatureServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)

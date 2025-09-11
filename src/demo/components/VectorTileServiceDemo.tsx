@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { VectorTileService } from '../../../dist/esri-map-gl.esm.js'
+import { VectorTileService } from '../../main'
 
 const VectorTileServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null)

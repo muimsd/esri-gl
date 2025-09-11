@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { DynamicMapService } from '../../../dist/esri-map-gl.esm.js'
+import { DynamicMapService } from '../../main'
 
 const DynamicMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)

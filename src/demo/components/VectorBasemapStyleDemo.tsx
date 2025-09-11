@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { VectorBasemapStyle } from '../../../dist/esri-map-gl.esm.js'
+import { VectorBasemapStyle } from '../../main'
 
 const VectorBasemapStyleDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null)

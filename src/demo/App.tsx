@@ -5,8 +5,9 @@ import FeatureServiceDemo from './components/FeatureServiceDemo'
 import ImageServiceDemo from './components/ImageServiceDemo'
 import VectorTileServiceDemo from './components/VectorTileServiceDemo'
 import VectorBasemapStyleDemo from './components/VectorBasemapStyleDemo'
+import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo'
 
-type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap'
+type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify'
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dynamic')
@@ -18,6 +19,7 @@ const App: React.FC = () => {
     { id: 'image' as TabType, label: 'Image Service', component: ImageServiceDemo },
     { id: 'vector' as TabType, label: 'Vector Tile Service', component: VectorTileServiceDemo },
     { id: 'basemap' as TabType, label: 'Vector Basemap Style', component: VectorBasemapStyleDemo },
+    { id: 'identify' as TabType, label: 'Identify Features', component: IdentifyFeaturesDemo },
   ]
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo

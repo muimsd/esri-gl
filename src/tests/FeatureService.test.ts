@@ -1,4 +1,4 @@
-import { FeatureService } from '@/FeatureService.pending'
+import { FeatureService } from '@/Services/FeatureService.pending'
 import { Map, FeatureServiceOptions } from '@/types/types'
 
 // Mock map object

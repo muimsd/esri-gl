@@ -60,10 +60,31 @@ export interface VectorBasemapStyleOptions {
   worldview?: string;
 }
 
+// MapLibre GL JS source types
+export interface SourceSpecification {
+  type: string;
+  [key: string]: unknown;
+}
+
+export interface LayerSpecification {
+  id: string;
+  type: string;
+  source?: string | SourceSpecification;
+  [key: string]: unknown;
+}
+
 // Map interface (basic definition for mapbox-gl/maplibre-gl compatibility)
 export interface Map {
-  addSource(id: string, source: any): void;
+  addSource(id: string, source: SourceSpecification): void;
   removeSource(id: string): void;
-  getSource(id: string): any;
-  _controls?: any[];
+  getSource(id: string): SourceSpecification | undefined;
+  addLayer(layer: LayerSpecification, beforeId?: string): void;
+  removeLayer(id: string): void;
+  getLayer(id: string): LayerSpecification | undefined;
+  setPaintProperty(layerId: string, property: string, value: unknown): void;
+  moveLayer(id: string, beforeId?: string): void;
+  on(type: string, listener: (...args: unknown[]) => void): void;
+  off(type: string, listener: (...args: unknown[]) => void): void;
+  fire(type: string, data?: unknown): void;
+  _controls?: unknown[];
 }

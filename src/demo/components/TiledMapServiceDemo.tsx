@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { TiledMapService } from '../../../dist/esri-map-gl.esm.js'
+import { TiledMapService } from '../../main'
 
 const TiledMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)

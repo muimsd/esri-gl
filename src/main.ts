@@ -1,8 +1,19 @@
-export { DynamicMapService } from '@/DynamicMapService'
-export { TiledMapService } from '@/TiledMapService'
-export { ImageService } from '@/ImageService'
-export { VectorBasemapStyle } from '@/VectorBasemapStyle'
-export { VectorTileService } from '@/VectorTileService'
-export { FeatureService } from '@/FeatureService.pending'
+// Services
+export { Service } from '@/Services/Service'
+export { DynamicMapService } from '@/Services/DynamicMapService'
+export { TiledMapService } from '@/Services/TiledMapService'
+export { ImageService } from '@/Services/ImageService'
+export { VectorBasemapStyle } from '@/Services/VectorBasemapStyle'
+export { VectorTileService } from '@/Services/VectorTileService'
+export { FeatureService } from '@/Services/FeatureService.pending'
+
+// Tasks
+export { Task } from '@/Tasks/Task'
+export { Query, query } from '@/Tasks/Query'
+export { Find, find } from '@/Tasks/Find'
+export { IdentifyFeatures } from '@/Tasks/IdentifyFeatures'
+export { IdentifyImage, identifyImage } from '@/Tasks/IdentifyImage'
+
+// Utilities
 export { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils'
-export * from '@/types/types'
+export * from '@/types'
