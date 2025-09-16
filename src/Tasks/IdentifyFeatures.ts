@@ -1,5 +1,5 @@
-import { Task } from './Task'
-import { Service } from '../Services/Service'
+import { Task } from '@/Task'
+import { Service } from '@/Services/Service'
 
 export interface IdentifyFeaturesOptions {
   url: string
