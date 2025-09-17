@@ -47,4 +47,4 @@ Check out the [docs](https://frontiersi.github.io/esri-gl/)
 
 ## Acknowledgements
 - Esri-Leaflet was one of the first open-source projects I used and contributed to. It's still a fantastic piece of work that I refered to for inspiration (and stealing some words for documentation).
-- Mapbox-gl is an incredible front-end mapping library.
+- Mapbox-gl is an incredible front-end mapping library.# Test automation publishing
