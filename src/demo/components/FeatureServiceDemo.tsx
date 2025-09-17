@@ -67,7 +67,7 @@ const FeatureServiceDemo: React.FC = () => {
           // @ts-ignore - Dynamic layer type and source from service metadata
           map.current.addLayer({
             id: layerId,
-            type: style.type,
+            type: style.type as unknown as maplibregl.LayerType,
             source: sourceId,
             layout: style.layout || {},
             paint: style.paint || {},
