@@ -10,7 +10,7 @@ import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo';
 type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify';
 
 const App: React.FC = () => {
-  const TAB_KEY = 'esri-map-gl:activeTab';
+  const TAB_KEY = 'esri-gl:activeTab';
 
   // Initialize from localStorage if present and valid
   const [activeTab, setActiveTab] = useState<TabType>(() => {

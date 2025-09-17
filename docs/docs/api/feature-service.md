@@ -40,7 +40,7 @@ For accessing [ArcGIS Feature Services](https://developers.arcgis.com/rest/servi
 ## Basic Example
 
 ```typescript
-import { FeatureService } from 'esri-map-gl'
+import { FeatureService } from 'esri-gl'
 
 // US States
 const statesService = new FeatureService('states-source', map, {

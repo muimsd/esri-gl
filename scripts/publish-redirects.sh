@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to publish redirect packages for NPM name reservation
-# This reserves the package names and redirects traffic to esri-map-gl
+# This reserves the package names and redirects traffic to esri-gl
 
 echo "🚀 Publishing NPM redirect packages..."
 
@@ -24,9 +24,9 @@ cd ../..
 echo "✅ All redirect packages published successfully!"
 echo ""
 echo "Reserved package names:"
-echo "  - esri-map-gl (main package)"
-echo "  - esri-mapbox-gl (redirect to esri-map-gl)"
-echo "  - esri-maplibre-gl (redirect to esri-map-gl)"
+echo "  - esri-gl (main package)"
+echo "  - esri-mapbox-gl (redirect to esri-gl)"
+echo "  - esri-maplibre-gl (redirect to esri-gl)"
 echo ""
 echo "Users who install the redirect packages will see deprecation warnings"
-echo "and be directed to use 'esri-map-gl' instead."
+echo "and be directed to use 'esri-gl' instead."

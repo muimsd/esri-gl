@@ -1,13 +1,13 @@
 # Advanced Examples
 
-Complex use cases and integration patterns for esri-map-gl services.
+Complex use cases and integration patterns for esri-gl services.
 
 ## Authentication & Security
 
 ### Token-based Authentication
 
 ```typescript
-import { DynamicMapService, FeatureService } from 'esri-map-gl'
+import { DynamicMapService, FeatureService } from 'esri-gl'
 
 // Service requiring authentication
 const secureService = new DynamicMapService('secure-source', map, {
@@ -63,7 +63,7 @@ class EsriAuthManager {
 ### Synchronized Map Views
 
 ```typescript
-import { DynamicMapService, FeatureService, ImageService } from 'esri-map-gl'
+import { DynamicMapService, FeatureService, ImageService } from 'esri-gl'
 
 class MapDashboard {
     private services: Map<string, any> = new Map()
@@ -163,7 +163,7 @@ await dashboard.addService('world-cities', 'feature', {
 ### Temporal Animation
 
 ```typescript
-import { DynamicMapService } from 'esri-map-gl'
+import { DynamicMapService } from 'esri-gl'
 
 class TemporalMapService {
     private service: DynamicMapService
@@ -234,7 +234,7 @@ timeService.animate(10000) // 10 second loop
 ### Data-Driven Styling
 
 ```typescript
-import { FeatureService } from 'esri-map-gl'
+import { FeatureService } from 'esri-gl'
 
 class StyledFeatureService {
     private service: FeatureService
@@ -304,7 +304,7 @@ await styledService.applyClassBreaksStyle('POP2000',
 ### Buffer and Intersect Operations
 
 ```typescript
-import { FeatureService, IdentifyFeatures } from 'esri-map-gl'
+import { FeatureService, IdentifyFeatures } from 'esri-gl'
 import * as turf from '@turf/turf'
 
 class SpatialAnalysis {
@@ -507,4 +507,4 @@ const results = await servicePool.cachedQuery(
 )
 ```
 
-These advanced examples demonstrate real-world usage patterns and best practices for building robust mapping applications with esri-map-gl.
+These advanced examples demonstrate real-world usage patterns and best practices for building robust mapping applications with esri-gl.

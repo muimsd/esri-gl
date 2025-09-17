@@ -1,0 +1,213 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      tag:
+        description: 'NPM dist tag'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - alpha
+          - beta
+
+jobs:
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://npm.pkg.github.com/'
+          scope: '@muimsd'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run validation
+        run: npm run validate
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update package.json for GitHub Packages
+        run: |
+          # Create a backup of original package.json
+          cp package.json package.json.bak
+          
+          # Update package name to be scoped for GitHub Packages
+          # GitHub Packages requires scoped packages
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            
+            // Add scope if not already present
+            if (!pkg.name.startsWith('@')) {
+              pkg.name = '@muimsd/' + pkg.name;
+            }
+            
+            // Add publishConfig for GitHub Packages
+            pkg.publishConfig = {
+              registry: 'https://npm.pkg.github.com/'
+            };
+            
+            // Ensure repository field is correct
+            if (!pkg.repository || typeof pkg.repository === 'string') {
+              pkg.repository = {
+                type: 'git',
+                url: 'https://github.com/muimsd/esri-gl.git'
+              };
+            }
+            
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Bump version (if workflow_dispatch and not a tag)
+        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION_TYPE="${{ github.event.inputs.version_type }}"
+          if [[ "$VERSION_TYPE" == "prerelease" ]]; then
+            TAG="${{ github.event.inputs.tag }}"
+            if [[ "$TAG" == "alpha" ]]; then
+              npm version prerelease --preid=alpha --no-git-tag-version
+            elif [[ "$TAG" == "beta" ]]; then
+              npm version prerelease --preid=beta --no-git-tag-version
+            else
+              npm version prerelease --no-git-tag-version
+            fi
+          else
+            npm version $VERSION_TYPE --no-git-tag-version
+          fi
+
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Get package name
+        id: package-name
+        run: echo "name=$(node -p "require('./package.json').name")" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: npm run build:prod
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ steps.package-version.outputs.version }}"
+            if [[ "$VERSION" == *"-alpha"* ]]; then
+              echo "tag=alpha" >> $GITHUB_OUTPUT
+            elif [[ "$VERSION" == *"-beta"* ]]; then
+              echo "tag=beta" >> $GITHUB_OUTPUT
+            else
+              echo "tag=latest" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to GitHub Packages
+        run: npm publish --tag ${{ steps.npm-tag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Git tag (if workflow_dispatch and not already a tag)
+        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          git tag "v${{ steps.package-version.outputs.version }}"
+          git push origin "v${{ steps.package-version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.package-version.outputs.version }}"
+          release_name: "v${{ steps.package-version.outputs.version }} (GitHub Packages)"
+          body: |
+            📦 **GitHub Packages Release v${{ steps.package-version.outputs.version }}**
+            
+            This release is published to GitHub Packages npm registry.
+            
+            **Installation:**
+            ```bash
+            # Configure npm to use GitHub Packages for @muimsd scope
+            npm config set @muimsd:registry https://npm.pkg.github.com/
+            
+            # Install the package
+            npm install ${{ steps.package-name.outputs.name }}@${{ steps.npm-tag.outputs.tag }}
+            ```
+            
+            **Or using .npmrc file:**
+            ```
+            @muimsd:registry=https://npm.pkg.github.com/
+            ```
+            
+            **NPM Tag:** `${{ steps.npm-tag.outputs.tag }}`
+            **Package Name:** `${{ steps.package-name.outputs.name }}`
+            **Commit SHA:** ${{ github.sha }}
+          draft: false
+          prerelease: ${{ steps.npm-tag.outputs.tag != 'latest' }}
+
+      - name: Restore original package.json
+        if: always()
+        run: |
+          if [ -f package.json.bak ]; then
+            mv package.json.bak package.json
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📦 **GitHub Packages Preview**
+            
+            This PR has been published to GitHub Packages as \`${{ steps.package-name.outputs.name }}@${{ steps.package-version.outputs.version }}\`.
+            
+            **Try it out:**
+            \`\`\`bash
+            npm config set @muimsd:registry https://npm.pkg.github.com/
+            npm install ${{ steps.package-name.outputs.name }}@${{ steps.npm-tag.outputs.tag }}
+            \`\`\``
+            })

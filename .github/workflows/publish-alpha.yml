@@ -1,0 +1,108 @@
+name: Publish Alpha to NPM
+
+on:
+  push:
+    branches:
+      - alpha
+      - develop
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version type'
+        required: true
+        default: 'prerelease'
+        type: choice
+        options:
+          - prerelease
+          - prepatch
+          - preminor
+          - premajor
+
+jobs:
+  publish-alpha:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run validation
+        run: npm run validate
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Determine version bump type
+        id: version-type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "type=${{ github.event.inputs.version_type }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=prerelease" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version (alpha)
+        run: |
+          VERSION_TYPE="${{ steps.version-type.outputs.type }}"
+          if [[ "$VERSION_TYPE" == "prerelease" ]]; then
+            npm version prerelease --preid=alpha --no-git-tag-version
+          else
+            npm version $VERSION_TYPE --preid=alpha --no-git-tag-version
+          fi
+
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: npm run build:prod
+
+      - name: Publish to NPM (alpha)
+        run: npm publish --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Git tag
+        run: |
+          git tag "v${{ steps.package-version.outputs.version }}"
+          git push origin "v${{ steps.package-version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.package-version.outputs.version }}"
+          release_name: "v${{ steps.package-version.outputs.version }} (Alpha)"
+          body: |
+            🚀 **Alpha Release v${{ steps.package-version.outputs.version }}**
+            
+            This is a pre-release version for testing purposes.
+            
+            **Installation:**
+            ```bash
+            npm install esri-gl@alpha
+            ```
+            
+            **Changes:**
+            - Auto-generated from commit: ${{ github.event.head_commit.message }}
+            
+            **Commit SHA:** ${{ github.sha }}
+          draft: false
+          prerelease: true

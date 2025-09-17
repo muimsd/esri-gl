@@ -29,7 +29,7 @@ For accessing [ArcGIS Tiled Map Services](https://developers.arcgis.com/rest/ser
 ## Basic Example
 
 ```typescript
-import { TiledMapService } from 'esri-map-gl'
+import { TiledMapService } from 'esri-gl'
 
 // World Imagery basemap
 const imageryService = new TiledMapService('imagery-source', map, {

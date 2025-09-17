@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'esri-map-gl',
+  title: 'esri-gl',
   tagline: 'Esri ArcGIS integration for MapLibre GL JS and Mapbox GL JS',
   favicon: 'img/favicon.ico',
 
@@ -23,7 +23,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'muimsd', // Usually your GitHub org/user name.
-  projectName: 'esri-map-gl', // Usually your repo name.
+  projectName: 'esri-gl', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -45,7 +45,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/muimsd/esri-map-gl/tree/master/docs/',
+            'https://github.com/muimsd/esri-gl/tree/master/docs/',
         },
         blog: {
           showReadingTime: true,
@@ -56,7 +56,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/muimsd/esri-map-gl/tree/master/docs/',
+            'https://github.com/muimsd/esri-gl/tree/master/docs/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -73,9 +73,9 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
-      title: 'esri-map-gl',
+      title: 'esri-gl',
       logo: {
-        alt: 'esri-map-gl Logo',
+        alt: 'esri-gl Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -87,7 +87,7 @@ const config: Config = {
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/muimsd/esri-map-gl',
+          href: 'https://github.com/muimsd/esri-gl',
           label: 'GitHub',
           position: 'right',
         },

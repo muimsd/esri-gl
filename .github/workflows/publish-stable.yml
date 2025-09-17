@@ -1,0 +1,90 @@
+name: Publish Stable to NPM
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish-stable:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run validation
+        run: npm run validate
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Bump version (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: npm run build:prod
+
+      - name: Publish to NPM (latest)
+        run: npm publish --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Git tag (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag "v${{ steps.package-version.outputs.version }}"
+          git push origin "v${{ steps.package-version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.package-version.outputs.version }}"
+          release_name: "v${{ steps.package-version.outputs.version }}"
+          body: |
+            🎉 **Stable Release v${{ steps.package-version.outputs.version }}**
+            
+            **Installation:**
+            ```bash
+            npm install esri-gl
+            ```
+            
+            **What's Changed:**
+            See the [changelog](CHANGELOG.md) for detailed release notes.
+            
+            **Commit SHA:** ${{ github.sha }}
+          draft: false
+          prerelease: false

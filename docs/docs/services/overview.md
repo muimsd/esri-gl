@@ -1,6 +1,6 @@
 # Services Overview
 
-esri-map-gl provides several service classes that integrate Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. Each service follows a consistent pattern for creating and managing map sources.
+esri-gl provides several service classes that integrate Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. Each service follows a consistent pattern for creating and managing map sources.
 
 ## Core Architecture
 

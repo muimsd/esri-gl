@@ -71,7 +71,7 @@ task.at({ lng: -95.7, lat: 37.1 }, map, (error, results) => {
 ## Basic Example
 
 ```typescript
-import { IdentifyFeatures } from 'esri-map-gl'
+import { IdentifyFeatures } from 'esri-gl'
 
 // Create identify task
 const identifyTask = new IdentifyFeatures({
@@ -237,7 +237,7 @@ map.on('click', (e) => {
 
 ```typescript
 // Use with DynamicMapService
-import { DynamicMapService, IdentifyFeatures } from 'esri-map-gl'
+import { DynamicMapService, IdentifyFeatures } from 'esri-gl'
 
 const service = new DynamicMapService('usa-source', map, {
     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',

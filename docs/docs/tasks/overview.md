@@ -47,7 +47,7 @@ const results = await task.at({ lng: -95, lat: 37 }, map)
 ### Task Chaining
 
 ```typescript
-import { IdentifyFeatures } from 'esri-map-gl'
+import { IdentifyFeatures } from 'esri-gl'
 
 // Configure task with chained methods
 const identifyTask = new IdentifyFeatures({
@@ -102,7 +102,7 @@ identifyTask.at(point, map, (error, results) => {
 ## Error Handling
 
 ```typescript
-import { EsriError } from 'esri-map-gl'
+import { EsriError } from 'esri-gl'
 
 try {
     const results = await task.run()

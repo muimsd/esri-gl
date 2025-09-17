@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**esri-map-gl** is a TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. It replicates Esri Leaflet's architecture patterns while being compatible with modern WebGL mapping libraries.
+**esri-gl** is a TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. It replicates Esri Leaflet's architecture patterns while being compatible with modern WebGL mapping libraries.
 
 ## Architecture & Key Concepts
 
@@ -62,7 +62,7 @@ new ServiceClass(sourceId: string, map: Map, esriOptions: Options, sourceOptions
 
 ### Dual Import Pattern
 The codebase supports both distribution and source imports:
-- **Production**: `import { DynamicMapService } from 'esri-map-gl'`
+- **Production**: `import { DynamicMapService } from 'esri-gl'`
 - **Development**: `import { DynamicMapService } from '../../main'` (demo components)
 
 ### Identify vs IdentifyFeatures
@@ -103,7 +103,7 @@ private _updateSource() {
 npm run dev  # Starts Vite dev server on port 5173
 ```
 
-Demo components import from `../../main` (source) rather than `../../../dist/esri-map-gl.esm.js` (built) for immediate feedback during development.
+Demo components import from `../../main` (source) rather than `../../../dist/esri-gl.esm.js` (built) for immediate feedback during development.
 
 ## Testing Strategy
 

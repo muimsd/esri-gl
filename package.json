@@ -1,11 +1,11 @@
 {
-  "name": "esri-map-gl",
-  "version": "0.0.7",
+  "name": "esri-gl",
+  "version": "0.1.0-alpha.0",
   "type": "module",
   "description": "A module for making it easier to use Esri services in mapbox-gl or maplibre-gl.",
-  "main": "dist/esri-map-gl.js",
-  "module": "dist/esri-map-gl.esm.js",
-  "browser": "dist/esri-map-gl.js",
+  "main": "dist/esri-gl.js",
+  "module": "dist/esri-gl.esm.js",
+  "browser": "dist/esri-gl.js",
   "types": "types/index.d.ts",
   "files": [
     "dist",
@@ -18,9 +18,9 @@
     "build:watch": "rollup -c --watch",
     "build:example": "vite build --outDir dist-demo",
     "preview:example": "vite preview --outDir dist-demo",
-  "build-docs": "cd docs && npm run build",
-  "dev:docs": "cd docs && npm start",
-  "serve:docs": "cd docs && npm run serve",
+    "build-docs": "cd docs && npm run build",
+    "dev:docs": "cd docs && npm start",
+    "serve:docs": "cd docs && npm run serve",
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
@@ -39,6 +39,15 @@
     "release:patch": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
     "release:major": "npm version major && npm publish",
+    "release:alpha": "npm version prerelease --preid=alpha && npm publish --tag alpha",
+    "release:beta": "npm version prerelease --preid=beta && npm publish --tag beta",
+    "publish:alpha-current": "npm publish --tag alpha",
+    "publish:beta-current": "npm publish --tag beta",
+    "publish:github": "npm publish --registry=https://npm.pkg.github.com/",
+    "release:github:patch": "npm version patch && npm run publish:github",
+    "release:github:minor": "npm version minor && npm run publish:github",
+    "release:github:major": "npm version major && npm run publish:github",
+    "github-packages": "./scripts/github-packages.sh",
     "prepublishOnly": "npm run validate && npm run build:prod",
     "postversion": "git push && git push --tags"
   },
@@ -89,9 +98,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontiersi/mapbox-gl-esri-sources"
+    "url": "https://github.com/muimsd/esri-gl"
   },
-  "homepage": "https://frontiersi.github.io/mapbox-gl-esri-sources/",
-  "author": "Rowan Winsemius",
-  "license": "Apache-2.0"
+  "homepage": "https://muimsd.github.io/esri-gl/",
+  "author": "Muhammad Imran Siddique 2025, Rowan Winsemius 2020-2025",
+  "license": "MIT"
 }

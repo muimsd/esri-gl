@@ -1,5 +1,5 @@
-// Type definitions for mapbox-gl-esri-sources
-// Project: https://github.com/frontiersi/mapbox-gl-esri-sources
+// Type definitions for esri-gl
+// Project: https://github.com/muimsd/esri-gl
 // Definitions by: Generated types
 
 import {

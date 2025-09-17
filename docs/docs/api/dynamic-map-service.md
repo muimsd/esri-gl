@@ -36,7 +36,7 @@ For accessing [ArcGIS Dynamic Map Services](https://developers.arcgis.com/rest/s
 ## Basic Example
 
 ```typescript
-import { DynamicMapService } from 'esri-map-gl'
+import { DynamicMapService } from 'esri-gl'
 
 // Create the service
 const service = new DynamicMapService('usa-source', map, {

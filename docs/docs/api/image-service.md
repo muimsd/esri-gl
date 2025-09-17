@@ -38,7 +38,7 @@ For accessing [ArcGIS Image Services](https://developers.arcgis.com/rest/service
 ## Basic Example
 
 ```typescript
-import { ImageService } from 'esri-map-gl'
+import { ImageService } from 'esri-gl'
 
 // World Elevation service
 const elevationService = new ImageService('elevation-source', map, {

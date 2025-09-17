@@ -33,7 +33,7 @@ const output = (file, format, plugins = []) => ({
 })
 
 export default [
-  output('./dist/esri-map-gl.js', 'umd'),
-  output('./dist/esri-map-gl.min.js', 'umd', [terser()]),
-  output('./dist/esri-map-gl.esm.js', 'esm')
+  output('./dist/esri-gl.js', 'umd'),
+  output('./dist/esri-gl.min.js', 'umd', [terser()]),
+  output('./dist/esri-gl.esm.js', 'esm')
 ]

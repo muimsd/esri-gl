@@ -2,18 +2,18 @@
 sidebar_position: 1
 ---
 
-# esri-map-gl Documentation
+# esri-gl Documentation
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS, replicating Esri Leaflet's architecture patterns.
 
 ## Quick Start
 
-esri-map-gl helps you create `sources` for use within MapLibre GL JS and Mapbox GL JS. It supports a range of raster and vector datasources provided by the Esri/ArcGIS ecosystem.
+esri-gl helps you create `sources` for use within MapLibre GL JS and Mapbox GL JS. It supports a range of raster and vector datasources provided by the Esri/ArcGIS ecosystem.
 
 ### Installation
 
 ```bash
-npm install esri-map-gl
+npm install esri-gl
 ```
 
 ### Basic Usage
@@ -21,7 +21,7 @@ npm install esri-map-gl
 Import the desired service class and create sources that are automatically added to your map:
 
 ```typescript
-import { TiledMapService } from 'esri-map-gl'
+import { TiledMapService } from 'esri-gl'
 
 // Create the source
 new TiledMapService('imagery-source', map, {
@@ -41,7 +41,7 @@ map.addLayer({
 Load the package via CDN:
 
 ```html
-<script src="https://unpkg.com/esri-map-gl/dist/esri-map-gl.js"></script>
+<script src="https://unpkg.com/esri-gl/dist/esri-gl.js"></script>
 ```
 
 ```javascript

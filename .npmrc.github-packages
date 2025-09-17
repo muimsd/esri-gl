@@ -1,0 +1,6 @@
+# GitHub Packages registry configuration
+# Uncomment the line below to use GitHub Packages for @muimsd scoped packages
+# @muimsd:registry=https://npm.pkg.github.com/
+
+# For publishing to both registries, you can temporarily modify this file
+# or use npm config commands

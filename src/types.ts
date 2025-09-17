@@ -1,4 +1,4 @@
-// Type definitions for mapbox-gl-esri-sources
+// Type definitions for esri-gl
 
 export interface ServiceMetadata {
   attribution?: string

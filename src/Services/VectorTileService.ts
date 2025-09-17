@@ -6,11 +6,17 @@ interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
   fetchOptions?: RequestInit
 }
 
+interface StyleLayoutPaint {
+  [key: string]: unknown
+}
+
 interface StyleData {
   type: string
+  // Mapbox layer definition fields
+  source?: string
   'source-layer': string
-  layout?: Record<string, any>
-  paint?: Record<string, any>
+  layout?: StyleLayoutPaint
+  paint?: StyleLayoutPaint
 }
 
 export class VectorTileService {
@@ -60,53 +66,55 @@ export class VectorTileService {
     return this._serviceMetadata.tiles?.[0] || '/tile/{z}/{y}/{x}.pbf';
   }
 
-  get _source(): any {
+  get _source(): VectorSourceOptions & { type: 'vector'; tiles: string[] } {
     return {
-      ...this.vectorSrcOptions,
+      ...(this.vectorSrcOptions || {}),
       type: 'vector',
       tiles: [`${this.options.url}${this._tileUrl}`],
-    };
+    } as VectorSourceOptions & { type: 'vector'; tiles: string[] };
   }
 
   private _createSource(): void {
     this._map.addSource(this._sourceId, this._source);
   }
 
-  get defaultStyle(): any {
-    if (this._defaultStyleData === null) return {};
+  private _mapToLocalSource(style: StyleData): StyleData {
     return {
-      type: this._defaultStyleData.type,
+      type: style.type,
       source: this._sourceId,
-      'source-layer': this._defaultStyleData['source-layer'],
-      layout: this._defaultStyleData.layout,
-      paint: this._defaultStyleData.paint,
+      'source-layer': style['source-layer'],
+      layout: style.layout,
+      paint: style.paint,
     };
   }
 
+  get defaultStyle(): StyleData {
+    // Consumers should only call after getStyle resolves
+    return this._mapToLocalSource(this._defaultStyleData!);
+  }
+
   get _styleUrl(): string {
-    if (this._serviceMetadata === null) return 'resources/styles';
-    return `${this.options.url}/${this._serviceMetadata.defaultStyles || 'resources/styles'}`;
+    // Return a RELATIVE path which will be prefixed with options.url during fetch
+    // ArcGIS VectorTileServer typically exposes defaultStyles like 'resources/styles/root.json'
+    if (this._serviceMetadata === null) return 'resources/styles/root.json';
+    return this._serviceMetadata.defaultStyles || 'resources/styles/root.json';
   }
 
   getStyle(): Promise<StyleData> {
-    if (this._defaultStyleData !== null) return Promise.resolve(this._defaultStyleData);
+    // Always resolve the mapped defaultStyle so the 'source' equals this._sourceId
+    if (this._defaultStyleData !== null) return Promise.resolve(this.defaultStyle);
     return new Promise((resolve, reject) => {
-      if (this._serviceMetadata !== null) {
+      const load = () =>
+        this._retrieveStyle()
+          .then(() => resolve(this.defaultStyle))
+          .catch(error => reject(error));
+
+      if (this._serviceMetadata === null) {
         this.getMetadata()
-          .then(() => {
-            this._retrieveStyle()
-              .then(() => {
-                resolve(this._defaultStyleData!);
-              })
-              .catch(error => reject(error));
-          })
+          .then(() => load())
           .catch(error => reject(error));
       } else {
-        this._retrieveStyle()
-          .then(() => {
-            resolve(this._defaultStyleData!);
-          })
-          .catch(error => reject(error));
+        load();
       }
     });
   }
@@ -114,8 +122,15 @@ export class VectorTileService {
   private _retrieveStyle(): Promise<void> {
     return new Promise((resolve, reject) => {
       fetch(`${this.options.url}/${this._styleUrl}`, this.esriServiceOptions.fetchOptions)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to fetch style: ${response.status}`);
+          return response.json();
+        })
         .then(data => {
+          if (!data || !Array.isArray(data.layers) || data.layers.length === 0) {
+            throw new Error('VectorTile style document is missing layers.');
+          }
+          // Use the first layer as a simple default style for the demo
           this._defaultStyleData = data.layers[0];
           resolve();
         })

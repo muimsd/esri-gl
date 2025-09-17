@@ -5,7 +5,7 @@ The `FeatureService` class allows you to add Esri Feature Services as GeoJSON so
 ## Basic Usage
 
 ```javascript
-import { FeatureService } from 'esri-map-gl'
+import { FeatureService } from 'esri-gl'
 
 // Create a FeatureService instance
 const featureService = new FeatureService(

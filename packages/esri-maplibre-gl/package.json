@@ -1,7 +1,7 @@
 {
   "name": "esri-maplibre-gl",
-  "version": "1.0.0",
-  "description": "⚠️ DEPRECATED: This package has been consolidated into 'esri-map-gl'. Please use 'esri-map-gl' instead.",
+  "version": "1.0.1",
+  "description": "⚠️ DEPRECATED: This package has been consolidated into 'esri-gl'. Please use 'esri-gl' instead.",
   "main": "index.js",
   "keywords": [
     "esri",
@@ -17,15 +17,15 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/muimsd/esri-map-gl"
+    "url": "https://github.com/muimsd/esri-gl"
   },
-  "homepage": "https://github.com/muimsd/esri-map-gl",
+  "homepage": "https://github.com/muimsd/esri-gl",
   "bugs": {
-    "url": "https://github.com/muimsd/esri-map-gl/issues"
+    "url": "https://github.com/muimsd/esri-gl/issues"
   },
   "deprecated": true,
   "dependencies": {
-    "esri-map-gl": "^0.0.7"
+    "esri-gl": "^0.0.7"
   },
   "engines": {
     "node": ">=14.0.0"

@@ -1,6 +1,6 @@
 # ⚠️ DEPRECATED: esri-mapbox-gl
 
-**This package has been consolidated into [`esri-map-gl`](https://www.npmjs.com/package/esri-map-gl)**
+**This package has been consolidated into [`esri-gl`](https://www.npmjs.com/package/esri-gl)**
 
 ## Migration Guide
 
@@ -23,24 +23,25 @@ import { DynamicMapService } from 'esri-mapbox-gl'
 ```json
 {
   "dependencies": {
-    "esri-map-gl": "^0.0.7"
+    "esri-gl": "^0.0.7"
   }
 }
 ```
 
 ```javascript
-import { DynamicMapService } from 'esri-map-gl'
+import { DynamicMapService } from 'esri-gl'
 ```
 
 ## Why the Change?
 
-The `esri-map-gl` package provides better compatibility with both Mapbox GL JS and MapLibre GL JS in a single package, eliminating the need for separate packages.
+The `esri-gl` package provides better compatibility with both Mapbox GL JS and MapLibre GL JS in a single package, eliminating the need for separate packages.
 
-## Features in esri-map-gl
+## Features in esri-gl
 
 - ✅ Compatible with both Mapbox GL JS and MapLibre GL JS
 - ✅ TypeScript support
 - ✅ ArcGIS Dynamic Map Services
+- ✅ ArcGIS Feature Layer Services
 - ✅ ArcGIS Tiled Map Services  
 - ✅ ArcGIS Image Services
 - ✅ ArcGIS Vector Tile Services
@@ -49,10 +50,10 @@ The `esri-map-gl` package provides better compatibility with both Mapbox GL JS a
 
 ## Links
 
-- [GitHub Repository](https://github.com/muimsd/esri-map-gl)
-- [NPM Package](https://www.npmjs.com/package/esri-map-gl)
-- [Documentation](https://github.com/muimsd/esri-map-gl#readme)
+- [GitHub Repository](https://github.com/muimsd/esri-gl)
+- [NPM Package](https://www.npmjs.com/package/esri-gl)
+- [Documentation](https://github.com/muimsd/esri-gl#readme)
 
 ---
 
-**Note**: This package will continue to work by re-exporting from `esri-map-gl`, but it's recommended to migrate to the main package for better long-term support.
+**Note**: This package will continue to work by re-exporting from `esri-gl`, but it's recommended to migrate to the main package for better long-term support.

@@ -7,7 +7,7 @@ Get started with simple examples of each service type.
 Display server-rendered raster tiles from an ArcGIS Dynamic Map Service:
 
 ```typescript
-import { DynamicMapService } from 'esri-map-gl'
+import { DynamicMapService } from 'esri-gl'
 import maplibregl from 'maplibre-gl'
 
 const map = new maplibregl.Map({
@@ -40,7 +40,7 @@ map.on('load', () => {
 Display pre-cached raster tiles from an ArcGIS Tiled Map Service:
 
 ```typescript
-import { TiledMapService } from 'esri-map-gl'
+import { TiledMapService } from 'esri-gl'
 
 map.on('load', () => {
     // Create Tiled Map Service
@@ -62,7 +62,7 @@ map.on('load', () => {
 Display analytical raster data from an ArcGIS Image Service:
 
 ```typescript
-import { ImageService } from 'esri-map-gl'
+import { ImageService } from 'esri-gl'
 
 map.on('load', () => {
     // Create Image Service
@@ -87,7 +87,7 @@ map.on('load', () => {
 Display vector tiles from an ArcGIS Vector Tile Service:
 
 ```typescript
-import { VectorTileService } from 'esri-map-gl'
+import { VectorTileService } from 'esri-gl'
 
 map.on('load', () => {
     // Create Vector Tile Service
@@ -105,7 +105,7 @@ map.on('load', () => {
 Display GeoJSON features from an ArcGIS Feature Service:
 
 ```typescript
-import { FeatureService } from 'esri-map-gl'
+import { FeatureService } from 'esri-gl'
 
 map.on('load', () => {
     // Create Feature Service
