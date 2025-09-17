@@ -45,7 +45,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/muimsd/esri-map-gl/tree/master/docs-new/',
+            'https://github.com/muimsd/esri-map-gl/tree/master/docs/',
         },
         blog: {
           showReadingTime: true,
@@ -56,7 +56,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/muimsd/esri-map-gl/tree/master/docs-new/',
+            'https://github.com/muimsd/esri-map-gl/tree/master/docs/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
