@@ -1,4 +1,4 @@
-import { Map } from '../types';
+import type { Map } from '@/types';
 
 export interface LayerOptions {
   url?: string;

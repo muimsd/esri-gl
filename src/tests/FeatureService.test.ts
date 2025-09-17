@@ -1,5 +1,5 @@
 import { FeatureService } from '@/Services/FeatureService.pending';
-import { Map, FeatureServiceOptions } from '@/types';
+import type { Map, FeatureServiceOptions } from '@/types';
 
 // Mock map object
 const mockMap: Map = {

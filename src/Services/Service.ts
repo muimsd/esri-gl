@@ -1,5 +1,5 @@
-import { cleanTrailingSlash, updateAttribution } from '../utils';
-import { Map, ServiceMetadata } from '../types';
+import { cleanTrailingSlash, updateAttribution } from '@/utils';
+import type { Map, ServiceMetadata } from '@/types';
 
 export interface ServiceOptions {
   url: string;

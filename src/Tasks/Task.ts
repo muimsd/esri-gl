@@ -1,5 +1,6 @@
-import { cleanTrailingSlash } from '../utils';
-import { Service, ServiceCallback } from '../Services/Service';
+import { cleanTrailingSlash } from '@/utils';
+import { Service } from '@/Services/Service';
+import type { ServiceCallback } from '@/Services/Service';
 
 export interface TaskOptions {
   url?: string;

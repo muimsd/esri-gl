@@ -1,4 +1,4 @@
-import { Task, TaskOptions } from '@/Task';
+import { Task, type TaskOptions } from '@/Task';
 import { Service } from '@/Services/Service';
 
 export interface IdentifyFeaturesOptions {

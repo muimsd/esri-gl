@@ -1,5 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails } from '@/utils';
-import {
+import type {
   Map,
   VectorTileServiceOptions,
   VectorSourceOptions,

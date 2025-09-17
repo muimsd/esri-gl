@@ -1,5 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
-import { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
+import type { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   fetchOptions?: RequestInit;
