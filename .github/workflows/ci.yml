@@ -24,7 +24,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci (lockfile present)"
+            npm ci
+          else
+            echo "No package-lock.json found. Falling back to npm install"
+            npm install
+          fi
 
       - name: Run type check
         run: npm run type-check
@@ -54,7 +61,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci (lockfile present)"
+            npm ci
+          else
+            echo "No package-lock.json found. Falling back to npm install"
+            npm install
+          fi
 
       - name: Build demo
         run: npm run build:example
@@ -72,10 +86,25 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci (lockfile present)"
+            npm ci
+          else
+            echo "No package-lock.json found. Falling back to npm install"
+            npm install
+          fi
 
       - name: Install docs dependencies
-        run: cd docs && npm ci
+        run: |
+          cd docs
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci for docs (lockfile present)"
+            npm ci
+          else
+            echo "No docs package-lock.json found. Falling back to npm install"
+            npm install
+          fi
 
       - name: Build documentation
         run: npm run build-docs

@@ -154,3 +154,11 @@ npm install @muimsd/esri-gl
 - ✅ Support for both automated and manual publishing
 - ✅ Prerelease and stable release channels
 - ✅ Multi-Node version testing
+
+## Notes on Dependency Installation
+
+- These workflows use a safe install pattern to avoid failures when no lockfile is present in the repository. Specifically:
+  - If `package-lock.json` exists, they run `npm ci` for reproducible installs.
+  - If no lockfile is found, they fall back to `npm install`.
+- The same conditional logic is applied for `docs/` installs in the CI workflow.
+- This ensures CI and publish jobs don't fail with the npm EUSAGE error: "This command requires an existing lockfile" when the project doesn't commit a lockfile.
