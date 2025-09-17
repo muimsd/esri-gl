@@ -63,8 +63,8 @@ const TiledMapServiceDemo: React.FC = () => {
         }
       });
     } catch (err) {
-      setError('Failed to initialize map: ' + (err as Error).message);
-      setLoading(false);
+      setError('Failed to initialize map: ' + (err as Error).message);  
+      setLoading(false);  
     }
 
     return () => {
@@ -123,20 +123,7 @@ const TiledMapServiceDemo: React.FC = () => {
       </div>
 
       {loading && (
-        <div
-          className="loading-overlay"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.7)',
-          }}
-        >
+        <div className="loading" style={{}}>
           Loading Tiled Map Service...
         </div>
       )}
@@ -150,6 +137,7 @@ const TiledMapServiceDemo: React.FC = () => {
             left: 10,
             background: 'white',
             padding: '8px 10px',
+            border: '1px solid #ccc',
             borderRadius: 4,
             boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
           }}
