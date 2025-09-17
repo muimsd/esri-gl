@@ -1,4 +1,4 @@
-import { cleanTrailingSlash } from '@/utils'
+import { cleanTrailingSlash } from '@/utils';
 
 export interface IdentifyFeaturesOptions {
   url: string
@@ -45,15 +45,15 @@ export interface GeometryInput {
  * Similar to Esri Leaflet's identifyFeatures functionality
  */
 export class IdentifyFeatures {
-  private _baseUrl: string
-  private _defaultOptions: Partial<IdentifyFeaturesOptions>
+  private _baseUrl: string;
+  private _defaultOptions: Partial<IdentifyFeaturesOptions>;
 
   constructor(options: IdentifyFeaturesOptions) {
     if (!options.url) {
-      throw new Error('A url must be supplied for IdentifyFeatures service')
+      throw new Error('A url must be supplied for IdentifyFeatures service');
     }
 
-    this._baseUrl = cleanTrailingSlash(options.url)
+    this._baseUrl = cleanTrailingSlash(options.url);
     this._defaultOptions = {
       layers: 'all',
       tolerance: 3,
@@ -61,8 +61,8 @@ export class IdentifyFeatures {
       maxAllowableOffset: 0,
       geometryPrecision: 0,
       sr: 4326,
-      ...options
-    }
+      ...options,
+    };
   }
 
   /**
@@ -73,28 +73,28 @@ export class IdentifyFeatures {
       x: point.lng,
       y: point.lat,
       spatialReference: {
-        wkid: 4326
-      }
-    }
+        wkid: 4326,
+      },
+    };
 
     // If map is provided, get current extent and display info
-    let mapExtent: [number, number, number, number] | undefined
-    let imageDisplay: [number, number, number] | undefined
+    let mapExtent: [number, number, number, number] | undefined;
+    let imageDisplay: [number, number, number] | undefined;
 
     if (map) {
       try {
-        const bounds = map.getBounds()
+        const bounds = map.getBounds();
         if (bounds && bounds.toArray) {
-          const boundsArray = bounds.toArray()
-          mapExtent = [boundsArray[0][0], boundsArray[0][1], boundsArray[1][0], boundsArray[1][1]]
+          const boundsArray = bounds.toArray();
+          mapExtent = [boundsArray[0][0], boundsArray[0][1], boundsArray[1][0], boundsArray[1][1]];
         }
 
-        const canvas = map.getCanvas()
+        const canvas = map.getCanvas();
         if (canvas) {
-          imageDisplay = [canvas.width, canvas.height, 96]
+          imageDisplay = [canvas.width, canvas.height, 96];
         }
       } catch (error) {
-        console.warn('Could not extract map extent and display info:', error)
+        console.warn('Could not extract map extent and display info:', error);
       }
     }
 
@@ -102,8 +102,8 @@ export class IdentifyFeatures {
       geometry,
       geometryType: 'esriGeometryPoint',
       mapExtent,
-      imageDisplay
-    })
+      imageDisplay,
+    });
   }
 
   /**
@@ -118,21 +118,21 @@ export class IdentifyFeatures {
     tolerance?: number
     returnGeometry?: boolean
   }): Promise<IdentifyResponse> {
-    const params = this._buildIdentifyParams(options)
-    const url = `${this._baseUrl}/identify?${params.toString()}`
+    const params = this._buildIdentifyParams(options);
+    const url = `${this._baseUrl}/identify?${params.toString()}`;
 
     try {
-      const response = await fetch(url, this._defaultOptions.fetchOptions)
-      
+      const response = await fetch(url, this._defaultOptions.fetchOptions);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json()
-      return this._processResponse(data)
+      const data = await response.json();
+      return this._processResponse(data);
     } catch (error) {
-      console.error('IdentifyFeatures error:', error)
-      throw error
+      console.error('IdentifyFeatures error:', error);
+      throw error;
     }
   }
 
@@ -140,32 +140,32 @@ export class IdentifyFeatures {
    * Set layer definitions for filtering
    */
   setLayerDefs(layerDefs: Record<string, string>): IdentifyFeatures {
-    this._defaultOptions.layerDefs = layerDefs
-    return this
+    this._defaultOptions.layerDefs = layerDefs;
+    return this;
   }
 
   /**
    * Set which layers to identify
    */
   setLayers(layers: number[] | number | string): IdentifyFeatures {
-    this._defaultOptions.layers = layers
-    return this
+    this._defaultOptions.layers = layers;
+    return this;
   }
 
   /**
    * Set tolerance for identify operation
    */
   setTolerance(tolerance: number): IdentifyFeatures {
-    this._defaultOptions.tolerance = tolerance
-    return this
+    this._defaultOptions.tolerance = tolerance;
+    return this;
   }
 
   /**
    * Set whether to return geometry with results
    */
   setReturnGeometry(returnGeometry: boolean): IdentifyFeatures {
-    this._defaultOptions.returnGeometry = returnGeometry
-    return this
+    this._defaultOptions.returnGeometry = returnGeometry;
+    return this;
   }
 
   /**
@@ -173,11 +173,11 @@ export class IdentifyFeatures {
    */
   setTime(from: Date | number, to?: Date | number): IdentifyFeatures {
     if (to) {
-      this._defaultOptions.time = [from, to] as any
+      this._defaultOptions.time = [from, to] as any;
     } else {
-      this._defaultOptions.time = [from] as any
+      this._defaultOptions.time = [from] as any;
     }
-    return this
+    return this;
   }
 
   private _buildIdentifyParams(options: {
@@ -189,77 +189,79 @@ export class IdentifyFeatures {
     tolerance?: number
     returnGeometry?: boolean
   }): URLSearchParams {
-    const mergedOptions = { ...this._defaultOptions, ...options }
-    
+    const mergedOptions = { ...this._defaultOptions, ...options };
+
     const params = new URLSearchParams({
       f: 'json',
       geometry: JSON.stringify(options.geometry),
       geometryType: options.geometryType || 'esriGeometryPoint',
       sr: mergedOptions.sr?.toString() || '4326',
       tolerance: (mergedOptions.tolerance || 3).toString(),
-      returnGeometry: (mergedOptions.returnGeometry || false).toString()
-    })
+      returnGeometry: (mergedOptions.returnGeometry || false).toString(),
+    });
 
     // Handle layers parameter
-    const layers = mergedOptions.layers
+    const layers = mergedOptions.layers;
     if (layers !== undefined && layers !== 'all') {
-      let layersStr: string
+      let layersStr: string;
       if (Array.isArray(layers)) {
-        layersStr = `visible:${layers.join(',')}`
+        layersStr = `visible:${layers.join(',')}`;
       } else if (typeof layers === 'number') {
-        layersStr = `visible:${layers}`
+        layersStr = `visible:${layers}`;
       } else {
-        layersStr = layers.toString()
+        layersStr = layers.toString();
       }
-      params.append('layers', layersStr)
+      params.append('layers', layersStr);
     } else {
-      params.append('layers', 'all')
+      params.append('layers', 'all');
     }
 
     // Add map extent if provided
     if (options.mapExtent) {
-      params.append('mapExtent', options.mapExtent.join(','))
+      params.append('mapExtent', options.mapExtent.join(','));
     }
 
     // Add image display if provided
     if (options.imageDisplay) {
-      params.append('imageDisplay', options.imageDisplay.join(','))
+      params.append('imageDisplay', options.imageDisplay.join(','));
     }
 
     // Add layer definitions if set
     if (mergedOptions.layerDefs) {
-      params.append('layerDefs', JSON.stringify(mergedOptions.layerDefs))
+      params.append('layerDefs', JSON.stringify(mergedOptions.layerDefs));
     }
 
     // Add time if set
     if (mergedOptions.time) {
-      const timeArray = mergedOptions.time as any[]
-      const timeStr = timeArray.map(t => {
-        if (t instanceof Date) return t.valueOf()
-        return t
-      }).join(',')
-      params.append('time', timeStr)
+      const timeArray = mergedOptions.time as any[];
+      const timeStr = timeArray
+        .map(t => {
+          if (t instanceof Date) return t.valueOf();
+          return t;
+        })
+        .join(',');
+      params.append('time', timeStr);
     }
 
     // Add other optional parameters
     if (mergedOptions.maxAllowableOffset) {
-      params.append('maxAllowableOffset', mergedOptions.maxAllowableOffset.toString())
+      params.append('maxAllowableOffset', mergedOptions.maxAllowableOffset.toString());
     }
 
     if (mergedOptions.geometryPrecision) {
-      params.append('geometryPrecision', mergedOptions.geometryPrecision.toString())
+      params.append('geometryPrecision', mergedOptions.geometryPrecision.toString());
     }
 
     if (mergedOptions.dynamicLayers) {
-      params.append('dynamicLayers', JSON.stringify(mergedOptions.dynamicLayers))
+      params.append('dynamicLayers', JSON.stringify(mergedOptions.dynamicLayers));
     }
 
-    return params
+    return params;
   }
 
   private _processResponse(data: any): IdentifyResponse {
     if (!data || !data.results) {
-      return { results: [] }
+      return { results: [] };
     }
 
     const results: IdentifyResult[] = data.results.map((result: any) => ({
@@ -269,9 +271,9 @@ export class IdentifyFeatures {
       displayFieldName: result.displayFieldName || '',
       attributes: result.attributes || {},
       geometry: result.geometry,
-      geometryType: result.geometryType
-    }))
+      geometryType: result.geometryType,
+    }));
 
-    return { results }
+    return { results };
   }
 }

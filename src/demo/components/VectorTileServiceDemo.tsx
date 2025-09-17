@@ -1,15 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react'
-import maplibregl from 'maplibre-gl'
-import { VectorTileService } from '../../main'
+import React, { useRef, useEffect, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import { VectorTileService } from '../../main';
 
 const VectorTileServiceDemo: React.FC = () => {
-  const mapContainer = useRef<HTMLDivElement | null>(null)
-  const map = useRef<maplibregl.Map | null>(null)
-  const service = useRef<VectorTileService | null>(null)
-  const [layerAdded, setLayerAdded] = useState(false)
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
+  const service = useRef<VectorTileService | null>(null);
+  const [layerAdded, setLayerAdded] = useState(false);
 
   useEffect(() => {
-    if (map.current || !mapContainer.current) return // Initialize map only once
+    if (map.current || !mapContainer.current) return; // Initialize map only once
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -20,29 +20,29 @@ const VectorTileServiceDemo: React.FC = () => {
       },
       center: [-118.2437, 34.0522],
       zoom: 9,
-    })
+    });
 
     map.current.on('load', () => {
       // Example Vector Tile Service URL
       const serviceUrl =
-        'https://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Counties_Generalized_Boundaries/VectorTileServer'
+        'https://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Counties_Generalized_Boundaries/VectorTileServer';
 
       service.current = new VectorTileService('vector-tiles-demo', map.current!, {
         url: serviceUrl,
-      })
-    })
+      });
+    });
 
     return () => {
       if (map.current) {
-        map.current.remove()
+        map.current.remove();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const addLayer = async (): Promise<void> => {
     if (service.current && map.current && !layerAdded) {
       try {
-        const style = await service.current.getStyle()
+        const style = await service.current.getStyle();
         // Add layer with dynamic type checking
         const layerConfig = {
           id: 'vector-tiles-layer',
@@ -50,24 +50,24 @@ const VectorTileServiceDemo: React.FC = () => {
           'source-layer': style['source-layer'],
           layout: style.layout || {},
           paint: style.paint || {},
-        }
+        };
 
         if (style.type === 'fill') {
-          map.current.addLayer({ ...layerConfig, type: 'fill' })
+          map.current.addLayer({ ...layerConfig, type: 'fill' });
         } else if (style.type === 'line') {
-          map.current.addLayer({ ...layerConfig, type: 'line' })
+          map.current.addLayer({ ...layerConfig, type: 'line' });
         } else if (style.type === 'symbol') {
-          map.current.addLayer({ ...layerConfig, type: 'symbol' })
+          map.current.addLayer({ ...layerConfig, type: 'symbol' });
         } else if (style.type === 'circle') {
-          map.current.addLayer({ ...layerConfig, type: 'circle' })
+          map.current.addLayer({ ...layerConfig, type: 'circle' });
         } else {
           // Default to fill
-          map.current.addLayer({ ...layerConfig, type: 'fill' })
+          map.current.addLayer({ ...layerConfig, type: 'fill' });
         }
 
-        setLayerAdded(true)
+        setLayerAdded(true);
       } catch (error) {
-        console.error('Error adding vector tile layer:', error)
+        console.error('Error adding vector tile layer:', error);
         // Fallback style
         map.current.addLayer({
           id: 'vector-tiles-layer',
@@ -78,18 +78,18 @@ const VectorTileServiceDemo: React.FC = () => {
             'fill-color': '#088',
             'fill-opacity': 0.8,
           },
-        })
-        setLayerAdded(true)
+        });
+        setLayerAdded(true);
       }
     }
-  }
+  };
 
   const removeLayer = (): void => {
     if (map.current && layerAdded) {
-      map.current.removeLayer('vector-tiles-layer')
-      setLayerAdded(false)
+      map.current.removeLayer('vector-tiles-layer');
+      setLayerAdded(false);
     }
-  }
+  };
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -129,7 +129,7 @@ const VectorTileServiceDemo: React.FC = () => {
       </div>
       <div ref={mapContainer} style={{ width: '100%', height: 'calc(100% - 100px)' }} />
     </div>
-  )
-}
+  );
+};
 
-export default VectorTileServiceDemo
+export default VectorTileServiceDemo;

@@ -1,5 +1,5 @@
-import { Layer, LayerOptions } from './Layer'
-import { Service } from '../Services/Service'
+import { Layer, LayerOptions } from './Layer';
+import { Service } from '../Services/Service';
 
 export interface RasterLayerOptions extends LayerOptions {
   service?: Service
@@ -17,11 +17,11 @@ export interface RasterLayerOptions extends LayerOptions {
  * Equivalent to Esri Leaflet's RasterLayer but adapted for MapLibre GL JS
  */
 export class RasterLayer extends Layer {
-  protected service?: Service
+  protected service?: Service;
   protected _currentImage?: {
     bounds: [number, number, number, number]
     url: string
-  }
+  };
 
   constructor(options: RasterLayerOptions = {}) {
     super({
@@ -31,11 +31,11 @@ export class RasterLayer extends Layer {
       transparent: true,
       f: 'image',
       useCors: true,
-      ...options
-    })
+      ...options,
+    });
 
     if (options.service) {
-      this.service = options.service
+      this.service = options.service;
     }
   }
 
@@ -43,18 +43,18 @@ export class RasterLayer extends Layer {
    * Set time range for temporal data
    */
   setTimeRange(from: Date, to: Date): RasterLayer {
-    ;(this.options as RasterLayerOptions).from = from
-    ;(this.options as RasterLayerOptions).to = to
-    this._update()
-    return this
+    (this.options as RasterLayerOptions).from = from
+    ;(this.options as RasterLayerOptions).to = to;
+    this._update();
+    return this;
   }
 
   /**
    * Get time range
    */
   getTimeRange(): [Date?, Date?] {
-    const opts = this.options as RasterLayerOptions
-    return [opts.from, opts.to]
+    const opts = this.options as RasterLayerOptions;
+    return [opts.from, opts.to];
   }
 
   /**
@@ -62,9 +62,9 @@ export class RasterLayer extends Layer {
    */
   authenticate(token: string): RasterLayer {
     if (this.service) {
-      this.service.authenticate(token)
+      this.service.authenticate(token);
     }
-    return this
+    return this;
   }
 
   /**
@@ -72,45 +72,45 @@ export class RasterLayer extends Layer {
    */
   metadata(callback: (error: Error | null, metadata?: any) => void, context?: any): RasterLayer {
     if (this.service) {
-      this.service.metadata(callback, context)
+      this.service.metadata(callback, context);
     }
-    return this
+    return this;
   }
 
   /**
    * Redraw the layer
    */
   redraw(): RasterLayer {
-    this._update()
-    return this
+    this._update();
+    return this;
   }
 
   protected _createSource(): void {
-    if (!this._map) return
+    if (!this._map) return;
 
     // Create a raster source that will be updated with image URLs
     const source = {
       type: 'raster',
       tiles: [], // Will be populated by _update
-      tileSize: 512
-    }
+      tileSize: 512,
+    };
 
-    this._map.addSource(this._sourceId, source)
+    this._map.addSource(this._sourceId, source);
   }
 
   protected _createLayer(): void {
-    if (!this._map) return
+    if (!this._map) return;
 
     const layer = {
       id: this._layerId,
       type: 'raster',
       source: this._sourceId,
       paint: {
-        'raster-opacity': this.options.opacity || 1
-      }
-    }
+        'raster-opacity': this.options.opacity || 1,
+      },
+    };
 
-    this._map.addLayer(layer)
+    this._map.addLayer(layer);
   }
 
   /**
@@ -125,13 +125,16 @@ export class RasterLayer extends Layer {
    */
   protected _buildExportParams(): Record<string, any> {
     // Override in subclasses
-    return {}
+    return {};
   }
 
   /**
    * Request export - to be implemented by subclasses
    */
-  protected _requestExport(params: Record<string, any>, bounds: [number, number, number, number]): void {
+  protected _requestExport(
+    params: Record<string, any>,
+    bounds: [number, number, number, number]
+  ): void {
     // Override in subclasses
   }
 
@@ -139,32 +142,32 @@ export class RasterLayer extends Layer {
    * Calculate bounding box for current map view
    */
   protected _calculateBbox(): string {
-    if (!this._map) return ''
-    
+    if (!this._map) return '';
+
     // This would need to be implemented based on MapLibre GL JS bounds
     // For now, return empty string
-    return ''
+    return '';
   }
 
   /**
    * Calculate image size for current map view
    */
   protected _calculateImageSize(): string {
-    if (!this._map) return '256,256'
-    
+    if (!this._map) return '256,256';
+
     // This would need to be implemented based on MapLibre GL JS size
     // For now, return default size
-    return '256,256'
+    return '256,256';
   }
 
   /**
    * Render image overlay
    */
   protected _renderImage(url: string, bounds: [number, number, number, number]): void {
-    if (!this._map) return
+    if (!this._map) return;
 
     // Store current image info
-    this._currentImage = { url, bounds }
+    this._currentImage = { url, bounds };
 
     // Update the raster source with the new image
     // This would need specific MapLibre GL JS implementation
@@ -172,4 +175,4 @@ export class RasterLayer extends Layer {
   }
 }
 
-export default RasterLayer
+export default RasterLayer;

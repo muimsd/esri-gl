@@ -1,5 +1,5 @@
-import { Task } from './Task'
-import { Service } from '../Services/Service'
+import { Task } from './Task';
+import { Service } from '../Services/Service';
 
 export interface FindOptions {
   url: string
@@ -38,47 +38,47 @@ export class Find extends Task {
     returnZ: 'returnZ',
     returnM: 'returnM',
     gdbVersion: 'gdbVersion',
-    token: 'token'
-  }
+    token: 'token',
+  };
 
-  protected path = 'find'
-  
+  protected path = 'find';
+
   protected params: Record<string, unknown> = {
     sr: 4326,
     contains: true,
     returnGeometry: true,
     returnZ: true,
     returnM: false,
-    f: 'json'
-  }
+    f: 'json',
+  };
 
   constructor(options: string | FindOptions | Service) {
-    super(options)
-    this.path = 'find'
+    super(options);
+    this.path = 'find';
   }
 
   /**
    * Set the text to search for
    */
   text(searchText: string): Find {
-    this.params.searchText = searchText
-    return this
+    this.params.searchText = searchText;
+    return this;
   }
 
   /**
    * Set the fields to search in
    */
   fields(fields: string | string[]): Find {
-    this.params.searchFields = Array.isArray(fields) ? fields.join(',') : fields
-    return this
+    this.params.searchFields = Array.isArray(fields) ? fields.join(',') : fields;
+    return this;
   }
 
   /**
    * Set whether the search should contain the text (partial match) or exact match
    */
   contains(contains: boolean): Find {
-    this.params.contains = contains
-    return this
+    this.params.contains = contains;
+    return this;
   }
 
   /**
@@ -86,38 +86,41 @@ export class Find extends Task {
    */
   layers(layers: number | number[] | string): Find {
     if (Array.isArray(layers)) {
-      this.params.layers = layers.join(',')
+      this.params.layers = layers.join(',');
     } else {
-      this.params.layers = layers
+      this.params.layers = layers;
     }
-    return this
+    return this;
   }
 
   /**
    * Set layer definitions for filtering specific layers
    */
   layerDefs(layerId: number | string, whereClause: string): Find {
-    const currentLayerDefs = this.params.layerDefs as string || ''
-    this.params.layerDefs = currentLayerDefs 
+    const currentLayerDefs = (this.params.layerDefs as string) || '';
+    this.params.layerDefs = currentLayerDefs
       ? `${currentLayerDefs};${layerId}:${whereClause}`
-      : `${layerId}:${whereClause}`
-    return this
+      : `${layerId}:${whereClause}`;
+    return this;
   }
 
   /**
    * Simplify geometries based on map resolution
    */
-  simplify(map: { 
-    getBounds(): { 
-      getWest(): number
-      getEast(): number 
-    }
-    getSize(): { x: number; y: number }
-  }, factor: number): Find {
-    const bounds = map.getBounds()
-    const mapWidth = Math.abs(bounds.getWest() - bounds.getEast())
-    this.params.maxAllowableOffset = (mapWidth / map.getSize().x) * factor
-    return this
+  simplify(
+    map: {
+      getBounds(): {
+        getWest(): number
+        getEast(): number
+      }
+      getSize(): { x: number; y: number }
+    },
+    factor: number
+  ): Find {
+    const bounds = map.getBounds();
+    const mapWidth = Math.abs(bounds.getWest() - bounds.getEast());
+    this.params.maxAllowableOffset = (mapWidth / map.getSize().x) * factor;
+    return this;
   }
 
   /**
@@ -126,12 +129,12 @@ export class Find extends Task {
   async run(): Promise<GeoJSON.FeatureCollection> {
     try {
       // Try GeoJSON format first if supported
-      this.params.f = 'geojson'
-      const response = await this.request<GeoJSON.FeatureCollection>()
-      return response
+      this.params.f = 'geojson';
+      const response = await this.request<GeoJSON.FeatureCollection>();
+      return response;
     } catch (error) {
       // Fallback to JSON format and convert
-      this.params.f = 'json'
+      this.params.f = 'json';
       const response = await this.request<{
         results: Array<{
           layerId: number
@@ -141,9 +144,9 @@ export class Find extends Task {
           attributes: Record<string, unknown>
           geometry?: unknown
         }>
-      }>()
-      
-      return this._convertToGeoJSON(response)
+      }>();
+
+      return this._convertToGeoJSON(response);
     }
   }
 
@@ -164,20 +167,20 @@ export class Find extends Task {
         layerId: result.layerId,
         layerName: result.layerName,
         foundFieldName: result.foundFieldName,
-        value: result.value
+        value: result.value,
       },
-      geometry: result.geometry as GeoJSON.Geometry || null
-    }))
+      geometry: (result.geometry as GeoJSON.Geometry) || null,
+    }));
 
     return {
       type: 'FeatureCollection',
-      features
-    }
+      features,
+    };
   }
 }
 
 export function find(options: string | FindOptions): Find {
-  return new Find(options)
+  return new Find(options);
 }
 
-export default find
+export default find;

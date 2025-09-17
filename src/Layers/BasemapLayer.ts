@@ -1,5 +1,5 @@
-import { Layer, LayerOptions } from './Layer'
-import { Map } from '../types'
+import { Layer, LayerOptions } from './Layer';
+import { Map } from '../types';
 
 export interface BasemapLayerOptions extends LayerOptions {
   key?: string
@@ -31,101 +31,109 @@ export class BasemapLayer extends Layer {
       options: {
         minZoom: 0,
         maxZoom: 23,
-        attribution: 'Esri Community Maps Contributors, © Esri, HERE, Garmin, METI/NASA, USGS'
-      }
+        attribution: 'Esri Community Maps Contributors, © Esri, HERE, Garmin, METI/NASA, USGS',
+      },
     },
     'arcgis/navigation': {
       urlTemplate: 'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Navigation',
       options: {
         minZoom: 0,
         maxZoom: 23,
-        attribution: 'Esri Community Maps Contributors, © Esri, HERE, Garmin, METI/NASA, USGS'
-      }
+        attribution: 'Esri Community Maps Contributors, © Esri, HERE, Garmin, METI/NASA, USGS',
+      },
     },
     'arcgis/topographic': {
       urlTemplate: 'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Topographic',
       options: {
         minZoom: 0,
         maxZoom: 23,
-        attribution: 'Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), © OpenStreetMap contributors, and the GIS User Community'
-      }
+        attribution:
+          'Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), © OpenStreetMap contributors, and the GIS User Community',
+      },
     },
     'arcgis/light-gray': {
-      urlTemplate: 'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:LightGray:Base',
+      urlTemplate:
+        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:LightGray:Base',
       options: {
         minZoom: 0,
         maxZoom: 16,
-        attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community'
-      }
+        attribution:
+          'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
+      },
     },
     'arcgis/dark-gray': {
-      urlTemplate: 'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:DarkGray:Base',
+      urlTemplate:
+        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:DarkGray:Base',
       options: {
         minZoom: 0,
         maxZoom: 16,
-        attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community'
-      }
+        attribution:
+          'Esri, HERE, Garmin, © OpenStreetMap contributors, and the GIS user community',
+      },
     },
     'arcgis/imagery': {
       urlTemplate: 'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Imagery',
       options: {
         minZoom: 0,
         maxZoom: 23,
-        attribution: 'Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-      }
-    }
-  }
+        attribution: 'Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+      },
+    },
+  };
 
-  private config: BasemapConfig
+  private config: BasemapConfig;
 
   constructor(key: string | BasemapLayerOptions, options?: BasemapLayerOptions) {
-    let basemapOptions: BasemapLayerOptions
+    let basemapOptions: BasemapLayerOptions;
 
     if (typeof key === 'string') {
-      basemapOptions = { key, ...options }
+      basemapOptions = { key, ...options };
     } else {
-      basemapOptions = key
+      basemapOptions = key;
     }
 
-    super(basemapOptions)
+    super(basemapOptions);
 
     // Get basemap configuration
-    const basemapKey = basemapOptions.key || 'arcgis/streets'
-    this.config = BasemapLayer.BASEMAPS[basemapKey]
-    
+    const basemapKey = basemapOptions.key || 'arcgis/streets';
+    this.config = BasemapLayer.BASEMAPS[basemapKey];
+
     if (!this.config) {
-      throw new Error(`Unknown basemap: ${basemapKey}. Available basemaps: ${Object.keys(BasemapLayer.BASEMAPS).join(', ')}`)
+      throw new Error(
+        `Unknown basemap: ${basemapKey}. Available basemaps: ${Object.keys(BasemapLayer.BASEMAPS).join(', ')}`
+      );
     }
 
     // Merge config options with user options
     this.options = {
       ...this.config.options,
       ...this.options,
-      attribution: this.options.attribution || this.config.options.attribution
-    }
+      attribution: this.options.attribution || this.config.options.attribution,
+    };
   }
 
   protected _createSource(): void {
-    if (!this._map) return
+    if (!this._map) return;
 
-    const token = (this.options as BasemapLayerOptions).token || (this.options as BasemapLayerOptions).apikey
-    let url = this.config.urlTemplate
+    const token =
+      (this.options as BasemapLayerOptions).token || (this.options as BasemapLayerOptions).apikey;
+    let url = this.config.urlTemplate;
 
     if (token) {
-      url += `?token=${token}`
+      url += `?token=${token}`;
     }
 
     const source = {
       type: 'vector',
       url: url,
-      attribution: this.options.attribution
-    }
+      attribution: this.options.attribution,
+    };
 
-    this._map.addSource(this._sourceId, source)
+    this._map.addSource(this._sourceId, source);
   }
 
   protected _createLayer(): void {
-    if (!this._map) return
+    if (!this._map) return;
 
     // For vector basemaps, we need to load and apply the style
     // This is a simplified version - in practice you'd fetch the full style JSON
@@ -134,36 +142,39 @@ export class BasemapLayer extends Layer {
       type: 'background',
       source: this._sourceId,
       paint: {
-        'background-opacity': this.options.opacity || 1
-      }
-    }
+        'background-opacity': this.options.opacity || 1,
+      },
+    };
 
-    this._map.addLayer(layer)
+    this._map.addLayer(layer);
   }
 
   /**
    * Set the basemap key
    */
   setBasemap(key: string): BasemapLayer {
-    this.config = BasemapLayer.BASEMAPS[key]
+    this.config = BasemapLayer.BASEMAPS[key];
     if (!this.config) {
-      throw new Error(`Unknown basemap: ${key}`)
+      throw new Error(`Unknown basemap: ${key}`);
     }
-    
-    this._updateSource()
-    return this
+
+    this._updateSource();
+    return this;
   }
 
   /**
    * Get available basemap keys
    */
   static getAvailableBasemaps(): string[] {
-    return Object.keys(BasemapLayer.BASEMAPS)
+    return Object.keys(BasemapLayer.BASEMAPS);
   }
 }
 
-export function basemapLayer(key: string | BasemapLayerOptions, options?: BasemapLayerOptions): BasemapLayer {
-  return new BasemapLayer(key, options)
+export function basemapLayer(
+  key: string | BasemapLayerOptions,
+  options?: BasemapLayerOptions
+): BasemapLayer {
+  return new BasemapLayer(key, options);
 }
 
-export default basemapLayer
+export default basemapLayer;

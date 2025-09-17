@@ -13,7 +13,9 @@
   "rules": {
     "no-unused-vars": "error",
     "prefer-const": "error",
-    "no-var": "error"
+    "no-var": "error",
+    "semi": ["error", "always"],
+    "semi-spacing": ["error", {"before": false, "after": true}]
   },
   "ignorePatterns": [
     "dist",
@@ -35,6 +37,8 @@
       "rules": {
         "@typescript-eslint/no-unused-vars": "error",
         "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/semi": ["error", "always"],
+        "semi": "off",
         "no-undef": "off"
       }
     }

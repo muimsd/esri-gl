@@ -1,32 +1,40 @@
-import React, { useEffect, useState } from 'react'
-import DynamicMapServiceDemo from './components/DynamicMapServiceDemo'
-import TiledMapServiceDemo from './components/TiledMapServiceDemo'
-import FeatureServiceDemo from './components/FeatureServiceDemo'
-import ImageServiceDemo from './components/ImageServiceDemo'
-import VectorTileServiceDemo from './components/VectorTileServiceDemo'
-import VectorBasemapStyleDemo from './components/VectorBasemapStyleDemo'
-import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo'
+import React, { useEffect, useState } from 'react';
+import DynamicMapServiceDemo from './components/DynamicMapServiceDemo';
+import TiledMapServiceDemo from './components/TiledMapServiceDemo';
+import FeatureServiceDemo from './components/FeatureServiceDemo';
+import ImageServiceDemo from './components/ImageServiceDemo';
+import VectorTileServiceDemo from './components/VectorTileServiceDemo';
+import VectorBasemapStyleDemo from './components/VectorBasemapStyleDemo';
+import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo';
 
-type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify'
+type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify';
 
 const App: React.FC = () => {
-  const TAB_KEY = 'esri-map-gl:activeTab'
+  const TAB_KEY = 'esri-map-gl:activeTab';
 
   // Initialize from localStorage if present and valid
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     try {
       if (typeof window !== 'undefined') {
-        const stored = window.localStorage.getItem(TAB_KEY)
-        const allowed: TabType[] = ['dynamic', 'tiled', 'features', 'image', 'vector', 'basemap', 'identify']
+        const stored = window.localStorage.getItem(TAB_KEY);
+        const allowed: TabType[] = [
+          'dynamic',
+          'tiled',
+          'features',
+          'image',
+          'vector',
+          'basemap',
+          'identify',
+        ];
         if (stored && (allowed as string[]).includes(stored)) {
-          return stored as TabType
+          return stored as TabType;
         }
       }
     } catch (_) {
       // ignore storage errors and fall back
     }
-    return 'dynamic'
-  })
+    return 'dynamic';
+  });
 
   const tabs = [
     { id: 'dynamic' as TabType, label: 'Dynamic Map Service', component: DynamicMapServiceDemo },
@@ -36,20 +44,20 @@ const App: React.FC = () => {
     { id: 'vector' as TabType, label: 'Vector Tile Service', component: VectorTileServiceDemo },
     { id: 'basemap' as TabType, label: 'Vector Basemap Style', component: VectorBasemapStyleDemo },
     { id: 'identify' as TabType, label: 'Identify Features', component: IdentifyFeaturesDemo },
-  ]
+  ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo
+  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo;
 
   // Persist selection
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(TAB_KEY, activeTab)
+        window.localStorage.setItem(TAB_KEY, activeTab);
       }
     } catch (_) {
       // ignore storage errors
     }
-  }, [activeTab])
+  }, [activeTab]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -102,7 +110,7 @@ const App: React.FC = () => {
         <ActiveComponent />
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;

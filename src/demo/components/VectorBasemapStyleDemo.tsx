@@ -1,13 +1,13 @@
-import React, { useRef, useEffect, useState } from 'react'
-import maplibregl from 'maplibre-gl'
-import { VectorBasemapStyle } from '../../main'
+import React, { useRef, useEffect, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import { VectorBasemapStyle } from '../../main';
 
 const VectorBasemapStyleDemo: React.FC = () => {
-  const mapContainer = useRef<HTMLDivElement | null>(null)
-  const map = useRef<maplibregl.Map | null>(null)
-  const [currentStyle, setCurrentStyle] = useState<string>('ArcGIS:Streets')
-  const [apiKey, setApiKey] = useState<string>('')
-  const [hasApiKey, setHasApiKey] = useState<boolean>(false)
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
+  const [currentStyle, setCurrentStyle] = useState<string>('ArcGIS:Streets');
+  const [apiKey, setApiKey] = useState<string>('');
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   const styleOptions = [
     { id: 'ArcGIS:Streets', name: 'Streets' },
@@ -17,10 +17,10 @@ const VectorBasemapStyleDemo: React.FC = () => {
     { id: 'ArcGIS:DarkGray', name: 'Dark Gray' },
     { id: 'ArcGIS:LightGray', name: 'Light Gray' },
     { id: 'ArcGIS:Oceans', name: 'Oceans' },
-  ]
+  ];
 
   useEffect(() => {
-    if (map.current || !mapContainer.current) return // Initialize map only once
+    if (map.current || !mapContainer.current) return; // Initialize map only once
 
     // Initialize with a basic style first
     map.current = new maplibregl.Map({
@@ -45,35 +45,35 @@ const VectorBasemapStyleDemo: React.FC = () => {
       },
       center: [-118.2437, 34.0522],
       zoom: 9,
-    })
+    });
 
     return () => {
       if (map.current) {
-        map.current.remove()
+        map.current.remove();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const setEsriApiKey = (): void => {
     if (apiKey.trim()) {
-      setHasApiKey(true)
+      setHasApiKey(true);
     }
-  }
+  };
 
   const setStyle = async (styleId: string): Promise<void> => {
-    if (!map.current || !hasApiKey) return
+    if (!map.current || !hasApiKey) return;
 
     try {
-      const vectorStyle = new VectorBasemapStyle(styleId, apiKey)
-      const response = await fetch(vectorStyle.styleUrl)
-      const style = await response.json()
-      map.current.setStyle(style)
-      setCurrentStyle(styleId)
+      const vectorStyle = new VectorBasemapStyle(styleId, apiKey);
+      const response = await fetch(vectorStyle.styleUrl);
+      const style = await response.json();
+      map.current.setStyle(style);
+      setCurrentStyle(styleId);
     } catch (error) {
-      console.error('Error loading style:', error)
-      alert('Error loading Esri style. Please check your API key.')
+      console.error('Error loading style:', error);
+      alert('Error loading Esri style. Please check your API key.');
     }
-  }
+  };
 
   if (!hasApiKey) {
     return (
@@ -126,7 +126,7 @@ const VectorBasemapStyleDemo: React.FC = () => {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -171,7 +171,7 @@ const VectorBasemapStyleDemo: React.FC = () => {
       </div>
       <div ref={mapContainer} style={{ width: '100%', height: 'calc(100% - 140px)' }} />
     </div>
-  )
-}
+  );
+};
 
-export default VectorBasemapStyleDemo
+export default VectorBasemapStyleDemo;

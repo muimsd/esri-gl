@@ -1,16 +1,16 @@
-import React, { useRef, useEffect, useState } from 'react'
-import maplibregl from 'maplibre-gl'
-import { ImageService } from '../../main'
+import React, { useRef, useEffect, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import { ImageService } from '../../main';
 
 const ImageServiceDemo: React.FC = () => {
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<maplibregl.Map | null>(null)
-  const service = useRef<ImageService | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<maplibregl.Map | null>(null);
+  const service = useRef<ImageService | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (map.current || !mapContainer.current) return
+    if (map.current || !mapContainer.current) return;
 
     try {
       map.current = new maplibregl.Map({
@@ -19,15 +19,15 @@ const ImageServiceDemo: React.FC = () => {
           '{ version: 8, sources: { "osm": { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "© OpenStreetMap contributors" } }, layers: [{ id: "osm", type: "raster", source: "osm" }] }',
         center: [-95, 40],
         zoom: 4,
-      })
+      });
 
       map.current.on('load', () => {
         try {
           service.current = new ImageService('landsat-image', map.current!, {
             url: 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer',
-            format: 'jpgpng',
+            format: 'jpg',
             renderingRule: false,
-          })
+          });
 
           map.current!.addLayer({
             id: 'landsat-layer',
@@ -36,54 +36,54 @@ const ImageServiceDemo: React.FC = () => {
             paint: {
               'raster-opacity': 0.8,
             },
-          })
+          });
 
-          setLoading(false)
+          setLoading(false);
         } catch (err) {
-          setError('Failed to load Image Service: ' + (err as Error).message)
-          setLoading(false)
+          setError('Failed to load Image Service: ' + (err as Error).message);
+          setLoading(false);
         }
-      })
+      });
     } catch (err) {
-      setError('Failed to initialize map: ' + (err as Error).message)
-      setLoading(false)
+      setError('Failed to initialize map: ' + (err as Error).message);
+      setLoading(false);
     }
 
     return () => {
       if (map.current) {
-        map.current.remove()
+        map.current.remove();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const applyColorInfraredRule = (): void => {
     if (service.current) {
       service.current.setRenderingRule({
         rasterFunction: 'Color Infrared',
-      })
+      });
     }
-  }
+  };
 
   const applyNaturalColorRule = (): void => {
     if (service.current) {
       service.current.setRenderingRule({
         rasterFunction: 'Natural Color',
-      })
+      });
     }
-  }
+  };
 
   const clearRenderingRule = (): void => {
     if (service.current) {
-      service.current.setRenderingRule({})
+      service.current.setRenderingRule({});
     }
-  }
+  };
 
   if (loading) {
-    return <div className="loading">Loading Image Service...</div>
+    return <div className="loading">Loading Image Service...</div>;
   }
 
   if (error) {
-    return <div className="error">{error}</div>
+    return <div className="error">{error}</div>;
   }
 
   return (
@@ -105,7 +105,7 @@ const ImageServiceDemo: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ImageServiceDemo
+export default ImageServiceDemo;
