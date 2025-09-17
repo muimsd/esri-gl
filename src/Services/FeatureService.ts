@@ -4,6 +4,15 @@ import type { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata }
 interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   fetchOptions?: RequestInit;
   useVectorTiles?: boolean;
+  useBoundingBox?: boolean; // Enable screen bounding box filtering
+}
+
+interface StyleData {
+  type: string;
+  source?: string;
+  'source-layer'?: string;
+  layout?: Record<string, unknown>;
+  paint?: Record<string, unknown>;
 }
 
 export class FeatureService {
@@ -11,6 +20,8 @@ export class FeatureService {
   private _map: Map;
   private _defaultEsriOptions: Partial<FeatureServiceOptions>;
   private _serviceMetadata: ServiceMetadata | null = null;
+  private _defaultStyleData: StyleData | null = null;
+  private _boundingBoxUpdateHandler: (() => void) | null = null;
 
   public vectorSrcOptions?: VectorSourceOptions;
   public esriServiceOptions: FeatureServiceExtendedOptions;
@@ -49,6 +60,11 @@ export class FeatureService {
       this.esriServiceOptions.useVectorTiles = true;
     }
 
+    // Default to bounding box filtering for better performance
+    if (this.esriServiceOptions.useBoundingBox === undefined) {
+      this.esriServiceOptions.useBoundingBox = true;
+    }
+
     this._createSource();
   }
 
@@ -59,11 +75,6 @@ export class FeatureService {
         this.esriServiceOptions.url,
         this.esriServiceOptions.fetchOptions
       );
-
-      // Update attribution if available in service metadata
-      if (this._serviceMetadata?.copyrightText) {
-        updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map);
-      }
 
       // Check if vector tiles should be used (default behavior)
       const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
@@ -87,6 +98,16 @@ export class FeatureService {
           type: 'geojson',
           data: queryUrl,
         });
+      }
+
+      // Update attribution after source is added if available in service metadata
+      if (this._serviceMetadata?.copyrightText) {
+        updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map);
+      }
+
+      // Set up bounding box update listeners if using GeoJSON and bounding box filtering
+      if (!useVectorTiles && this.esriServiceOptions.useBoundingBox) {
+        this._setupBoundingBoxUpdates();
       }
     } catch (error) {
       console.error('Error creating FeatureService source:', error);
@@ -114,8 +135,26 @@ export class FeatureService {
     params.append('f', options.f || 'geojson');
     params.append('returnGeometry', (options.returnGeometry !== false).toString());
 
-    // Only include geometry-related params when geometry is present
-    if (options.geometry) {
+    // Add bounding box geometry if enabled and map is available
+    if (options.useBoundingBox !== false && this._map) {
+      const bounds = this._map.getBounds();
+      if (bounds) {
+        const geometry = {
+          xmin: bounds.getWest(),
+          ymin: bounds.getSouth(),
+          xmax: bounds.getEast(),
+          ymax: bounds.getNorth(),
+          spatialReference: { wkid: 4326 }
+        };
+        params.append('geometry', JSON.stringify(geometry));
+        params.append('geometryType', 'esriGeometryEnvelope');
+        params.append('spatialRel', 'esriSpatialRelIntersects');
+        params.append('inSR', '4326');
+      }
+    }
+
+    // Only include geometry-related params when geometry is present (and not bounding box)
+    if (options.geometry && options.useBoundingBox === false) {
       params.append('geometry', JSON.stringify(options.geometry));
       if (options.geometryType) params.append('geometryType', options.geometryType);
       if (options.spatialRel) params.append('spatialRel', options.spatialRel);
@@ -148,13 +187,127 @@ export class FeatureService {
     return this._serviceMetadata;
   }
 
-  updateData(): void {
-    // Vector tile sources don't need dynamic data updates like GeoJSON
-    // The tiles are fetched automatically based on the tile URL
-    // For filtering, we would need to recreate the source or use layer filtering
-    console.warn(
-      'updateData() is not applicable for vector tile sources. Use layer filtering instead.'
+  get defaultStyle(): StyleData {
+    if (this._defaultStyleData) return this._defaultStyleData;
+    
+    // Generate default style based on geometry type from service metadata
+    const geometryType = String(this._serviceMetadata?.geometryType || 'esriGeometryPoint');
+    
+    if (geometryType.includes('Point')) {
+      return {
+        type: 'circle',
+        source: this._sourceId,
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#3b82f6',
+          'circle-stroke-color': '#1e40af',
+          'circle-stroke-width': 1,
+        },
+      };
+    } else if (geometryType.includes('Polyline')) {
+      return {
+        type: 'line',
+        source: this._sourceId,
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 2,
+        },
+      };
+    } else if (geometryType.includes('Polygon')) {
+      return {
+        type: 'fill',
+        source: this._sourceId,
+        paint: {
+          'fill-color': 'rgba(59, 130, 246, 0.4)',
+          'fill-outline-color': '#1e40af',
+        },
+      };
+    }
+
+    // Default to circle for unknown geometry types
+    return {
+      type: 'circle',
+      source: this._sourceId,
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#3b82f6',
+        'circle-stroke-color': '#1e40af',
+        'circle-stroke-width': 1,
+      },
+    };
+  }
+
+  getStyle(): Promise<StyleData> {
+    return new Promise((resolve, reject) => {
+      if (this._serviceMetadata) {
+        resolve(this.defaultStyle);
+      } else {
+        // Wait for service metadata to be loaded
+        this._getServiceMetadata()
+          .then(() => resolve(this.defaultStyle))
+          .catch(error => reject(error));
+      }
+    });
+  }
+
+  private async _getServiceMetadata(): Promise<void> {
+    if (this._serviceMetadata) return;
+    
+    this._serviceMetadata = await getServiceDetails(
+      this.esriServiceOptions.url,
+      this.esriServiceOptions.fetchOptions
     );
+  }
+
+  updateData(): void {
+    // For GeoJSON sources with bounding box filtering, update the data URL
+    if (this.esriServiceOptions.useVectorTiles === false && this.esriServiceOptions.useBoundingBox) {
+      const source = this._map.getSource(this._sourceId);
+      if (source && 'setData' in source && typeof source.setData === 'function') {
+        const newQueryUrl = this._buildQueryUrl();
+        console.log('Updating FeatureService data with new bounding box:', newQueryUrl);
+        // @ts-ignore - GeoJSON source setData method not in generic Source type
+        source.setData(newQueryUrl);
+      }
+    } else {
+      // Vector tile sources don't need dynamic data updates like GeoJSON
+      // The tiles are fetched automatically based on the tile URL
+      // For filtering, we would need to recreate the source or use layer filtering
+      console.warn(
+        'updateData() is only applicable for GeoJSON sources with bounding box filtering.'
+      );
+    }
+  }
+
+  private _setupBoundingBoxUpdates(): void {
+    if (this._boundingBoxUpdateHandler) {
+      // Remove existing handler
+      this._map.off('moveend', this._boundingBoxUpdateHandler);
+      this._map.off('zoomend', this._boundingBoxUpdateHandler);
+    }
+
+    // Debounced update function to prevent excessive API calls
+    let updateTimeout: NodeJS.Timeout | null = null;
+    this._boundingBoxUpdateHandler = () => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+      updateTimeout = setTimeout(() => {
+        this.updateData();
+      }, 300); // 300ms debounce
+    };
+
+    // Listen for map movement and zoom changes
+    this._map.on('moveend', this._boundingBoxUpdateHandler);
+    this._map.on('zoomend', this._boundingBoxUpdateHandler);
+  }
+
+  private _removeBoundingBoxUpdates(): void {
+    if (this._boundingBoxUpdateHandler) {
+      this._map.off('moveend', this._boundingBoxUpdateHandler);
+      this._map.off('zoomend', this._boundingBoxUpdateHandler);
+      this._boundingBoxUpdateHandler = null;
+    }
   }
 
   updateSource(): void {
@@ -194,9 +347,20 @@ export class FeatureService {
     this.updateSource();
   }
 
+  setBoundingBoxFilter(enabled: boolean): void {
+    this.esriServiceOptions.useBoundingBox = enabled;
+    if (enabled && this.esriServiceOptions.useVectorTiles === false) {
+      this._setupBoundingBoxUpdates();
+    } else {
+      this._removeBoundingBoxUpdates();
+    }
+    this.updateSource();
+  }
+
   // Note: maxRecordCount is a server capability; not settable via query params
 
   remove(): void {
+    this._removeBoundingBoxUpdates();
     if (this._map.getSource(this._sourceId)) {
       this._map.removeSource(this._sourceId);
     }

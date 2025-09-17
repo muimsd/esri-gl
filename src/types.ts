@@ -1,5 +1,5 @@
 // Type definitions for esri-gl
-
+export type { Map } from 'maplibre-gl';
 export interface ServiceMetadata {
   attribution?: string;
   copyrightText?: string;
@@ -80,6 +80,8 @@ export interface FeatureServiceOptions {
   resultRecordCount?: number;
   maxRecordCount?: number;
   getAttributionFromService?: boolean;
+  useBoundingBox?: boolean; // Enable screen bounding box filtering for better performance
+  useVectorTiles?: boolean; // Use vector tiles instead of GeoJSON
   token?: string;
   // Not standard query params but kept for API symmetry; ignored for query URL
   layers?: number[] | number;
@@ -108,20 +110,4 @@ export interface LayerSpecification {
   type: string;
   source?: string | SourceSpecification;
   [key: string]: unknown;
-}
-
-// Map interface (basic definition for mapbox-gl/maplibre-gl compatibility)
-export interface Map {
-  addSource(id: string, source: SourceSpecification): void;
-  removeSource(id: string): void;
-  getSource(id: string): SourceSpecification | undefined;
-  addLayer(layer: LayerSpecification, beforeId?: string): void;
-  removeLayer(id: string): void;
-  getLayer(id: string): LayerSpecification | undefined;
-  setPaintProperty(layerId: string, property: string, value: unknown): void;
-  moveLayer(id: string, beforeId?: string): void;
-  on(type: string, listener: (...args: unknown[]) => void): void;
-  off(type: string, listener: (...args: unknown[]) => void): void;
-  fire(type: string, data?: unknown): void;
-  _controls?: unknown[];
 }

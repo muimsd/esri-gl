@@ -1,6 +1,6 @@
 {
   "name": "esri-gl",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "type": "module",
   "description": "A module for making it easier to use Esri services in mapbox-gl or maplibre-gl.",
   "main": "dist/esri-gl.js",

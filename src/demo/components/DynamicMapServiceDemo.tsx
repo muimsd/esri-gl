@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
+//@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { DynamicMapService, IdentifyFeatures } from '../../main';
 

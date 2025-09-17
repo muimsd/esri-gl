@@ -36,10 +36,13 @@ export function updateAttribution(newAttribution: string, sourceId: string, map:
   }
 
   const mapStyle = (map as any).style;
-  if (mapStyle.sourceCaches) {
+  if (mapStyle.sourceCaches && mapStyle.sourceCaches[sourceId]) {
     mapStyle.sourceCaches[sourceId]._source.attribution = newAttribution;
-  } else if (mapStyle._otherSourceCaches) {
+  } else if (mapStyle._otherSourceCaches && mapStyle._otherSourceCaches[sourceId]) {
     mapStyle._otherSourceCaches[sourceId]._source.attribution = newAttribution;
+  } else {
+    console.warn(`Source ${sourceId} not found when trying to update attribution`);
+    return; // Don't try to update attributions if source doesn't exist
   }
   attributionController._updateAttributions();
 }

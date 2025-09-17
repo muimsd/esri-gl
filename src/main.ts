@@ -5,7 +5,7 @@ export { TiledMapService } from '@/Services/TiledMapService';
 export { ImageService } from '@/Services/ImageService';
 export { VectorBasemapStyle } from '@/Services/VectorBasemapStyle';
 export { VectorTileService } from '@/Services/VectorTileService';
-export { FeatureService } from '@/Services/FeatureService.pending';
+export { FeatureService } from '@/Services/FeatureService';
 
 // Tasks
 export { Task } from '@/Tasks/Task';
