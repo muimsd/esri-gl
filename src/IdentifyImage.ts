@@ -1,39 +1,39 @@
 import { Task } from '@/Task';
 
 export interface IdentifyImageOptions {
-  url: string
-  token?: string
-  geometry?: unknown
-  geometryType?: string
-  sr?: string | number
-  mosaic?: boolean
-  renderingRules?: unknown[]
-  pixelSize?: [number, number]
-  returnGeometry?: boolean
-  returnCatalogItems?: boolean
-  f?: string
+  url: string;
+  token?: string;
+  geometry?: unknown;
+  geometryType?: string;
+  sr?: string | number;
+  mosaic?: boolean;
+  renderingRules?: unknown[];
+  pixelSize?: [number, number];
+  returnGeometry?: boolean;
+  returnCatalogItems?: boolean;
+  f?: string;
 }
 
 export interface PixelValue {
-  attributes: Record<string, unknown>
-  geometry?: unknown
+  attributes: Record<string, unknown>;
+  geometry?: unknown;
 }
 
 export interface IdentifyImageResult {
-  objectId?: number
-  name?: string
-  value?: string
+  objectId?: number;
+  name?: string;
+  value?: string;
   location?: {
-    x: number
-    y: number
+    x: number;
+    y: number;
     spatialReference?: {
-      wkid: number
-      latestWkid?: number
-    }
-  }
-  attributes?: Record<string, unknown>
-  catalogItems?: unknown[]
-  catalogItemVisibilities?: number[]
+      wkid: number;
+      latestWkid?: number;
+    };
+  };
+  attributes?: Record<string, unknown>;
+  catalogItems?: unknown[];
+  catalogItemVisibilities?: number[];
 }
 
 /**
@@ -144,31 +144,31 @@ export class IdentifyImage extends Task {
    * Execute the identify operation
    */
   async run(): Promise<{
-    results: IdentifyImageResult[]
+    results: IdentifyImageResult[];
     location?: {
-      x: number
-      y: number
+      x: number;
+      y: number;
       spatialReference?: {
-        wkid: number
-        latestWkid?: number
-      }
-    }
+        wkid: number;
+        latestWkid?: number;
+      };
+    };
   }> {
     const response = await this.request<{
-      results?: IdentifyImageResult[]
+      results?: IdentifyImageResult[];
       location?: {
-        x: number
-        y: number
+        x: number;
+        y: number;
         spatialReference?: {
-          wkid: number
-          latestWkid?: number
-        }
-      }
+          wkid: number;
+          latestWkid?: number;
+        };
+      };
       // Handle different response formats
-      value?: string
-      values?: string[]
-      properties?: Record<string, unknown>
-      catalogItems?: unknown[]
+      value?: string;
+      values?: string[];
+      properties?: Record<string, unknown>;
+      catalogItems?: unknown[];
     }>();
 
     // Normalize different response formats

@@ -1,8 +1,8 @@
 import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
-import { Map, EsriServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types/types';
+import { Map, EsriServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface TiledMapServiceOptions extends EsriServiceOptions {
-  fetchOptions?: RequestInit
+  fetchOptions?: RequestInit;
 }
 
 export class TiledMapService {

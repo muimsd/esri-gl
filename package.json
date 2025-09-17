@@ -24,7 +24,7 @@
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
-    "lint": "eslint src --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 50",
+  "lint": "eslint src --ext ts,tsx,js,jsx --report-unused-disable-directives",
     "lint:fix": "eslint src --ext ts,tsx,js,jsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,md}\"",

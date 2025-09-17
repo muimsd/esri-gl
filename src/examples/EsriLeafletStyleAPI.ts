@@ -12,44 +12,42 @@ const service = mapService({
 });
 
 // Identify - returns a task that can be chained
-service
-  .identify()
-  .at([-122.45, 37.75])
-  .tolerance(5)
-  .layers('visible')
-  .run((error, response) => {
-    if (error) {
-      console.error('Identify error:', error);
-    } else {
-      console.log('Identify results:', response);
-    }
+const identifyTask = service.identify().at([-122.45, 37.75]).tolerance(5).layers('visible');
+
+// Execute with modern Promise API
+identifyTask
+  .run()
+  .then(response => {
+    console.log('Identify results:', response);
+  })
+  .catch((error: unknown) => {
+    console.error('Identify error:', error);
   });
 
 // Query - returns a task that can be chained
-service
-  .query()
-  .layer(0)
-  .where("STATE_NAME='California'")
-  .returnGeometry(false)
-  .run((error, response) => {
-    if (error) {
-      console.error('Query error:', error);
-    } else {
-      console.log('Query results:', response);
-    }
+const queryTask = service.query().layer(0).where("STATE_NAME='California'");
+
+// Execute with modern Promise API
+queryTask
+  .run()
+  .then(response => {
+    console.log('Query results:', response);
+  })
+  .catch((error: unknown) => {
+    console.error('Query error:', error);
   });
 
 // Find - returns a task that can be chained
-service
-  .find()
-  .text('California')
-  .fields(['STATE_NAME'])
-  .run((error, response) => {
-    if (error) {
-      console.error('Find error:', error);
-    } else {
-      console.log('Find results:', response);
-    }
+const findTask = service.find().text('California').fields(['STATE_NAME']);
+
+// Execute with modern Promise API
+findTask
+  .run()
+  .then(response => {
+    console.log('Find results:', response);
+  })
+  .catch((error: unknown) => {
+    console.error('Find error:', error);
   });
 
 // Example 2: Layer Usage (same as Esri Leaflet)
@@ -59,20 +57,26 @@ const dynamicLayer = new DynamicMapLayer({
 });
 
 // Layer methods return tasks (just like Esri Leaflet)
-dynamicLayer
-  .identify()
-  .at([-122.45, 37.75])
-  .tolerance(3)
-  .run((error, response) => {
+const layerIdentifyTask = dynamicLayer.identify().at([-122.45, 37.75]).tolerance(3);
+
+layerIdentifyTask
+  .run()
+  .then(response => {
     console.log('Layer identify:', response);
+  })
+  .catch((error: unknown) => {
+    console.error('Layer identify error:', error);
   });
 
-dynamicLayer
-  .query()
-  .layer(0)
-  .where('1=1')
-  .run((error, response) => {
+const layerQueryTask = dynamicLayer.query().layer(0).where('1=1');
+
+layerQueryTask
+  .run()
+  .then(response => {
     console.log('Layer query:', response);
+  })
+  .catch((error: unknown) => {
+    console.error('Layer query error:', error);
   });
 
 // Example 3: Promise-based API (our extension)

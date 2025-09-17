@@ -1,10 +1,10 @@
 import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
-import { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types/types';
+import { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface ImageServiceExtendedOptions extends ImageServiceOptions {
-  from?: Date | number
-  to?: Date | number
-  fetchOptions?: RequestInit
+  from?: Date | number;
+  to?: Date | number;
+  fetchOptions?: RequestInit;
 }
 
 export class ImageService {
@@ -109,11 +109,11 @@ export class ImageService {
       src.setTiles(this._source.tiles);
     } else if ((this._map as any).style.sourceCaches) {
       // Old MapboxGL and MaplibreGL
-      (this._map as any).style.sourceCaches[this._sourceId].clearTiles()
-      ;(this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+      (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
+      (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
     } else if ((this._map as any).style._otherSourceCaches) {
-      (this._map as any).style.sourceCaches[this._sourceId].clearTiles()
-      ;(this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+      (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
+      (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
     }
   }
 

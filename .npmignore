@@ -1,1 +1,17 @@
 docs/
+packages/
+scripts/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+coverage/

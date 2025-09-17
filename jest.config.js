@@ -6,16 +6,29 @@ export default {
     '**/tests/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
+  testPathIgnorePatterns: ['<rootDir>/src/__tests__/'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: true,
+      tsconfig: {
+        moduleResolution: 'node',
+        baseUrl: '.',
+        paths: {
+          '@/*': ['src/*'],
+          '@/types': ['src/types.ts']
+        }
+      }
+    }]
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@/types/(.*)$': '<rootDir>/types/$1'
+    '^@/types$': '<rootDir>/src/types.ts',
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts'
+    '!src/**/*.d.ts',
+    '!src/demo/**',
+    '!src/examples/**'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: [
@@ -24,9 +37,5 @@ export default {
     'html'
   ],
   extensionsToTreatAsEsm: ['.ts'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  }
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
 }

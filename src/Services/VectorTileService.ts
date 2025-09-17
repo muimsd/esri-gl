@@ -1,22 +1,28 @@
 import { cleanTrailingSlash, getServiceDetails } from '@/utils';
-import { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types/types';
+import {
+  Map,
+  VectorTileServiceOptions,
+  VectorSourceOptions,
+  ServiceMetadata,
+  SourceSpecification,
+} from '@/types';
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
-  useDefaultStyle?: boolean
-  fetchOptions?: RequestInit
+  useDefaultStyle?: boolean;
+  fetchOptions?: RequestInit;
 }
 
 interface StyleLayoutPaint {
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 interface StyleData {
-  type: string
+  type: string;
   // Mapbox layer definition fields
-  source?: string
-  'source-layer': string
-  layout?: StyleLayoutPaint
-  paint?: StyleLayoutPaint
+  source?: string;
+  'source-layer': string;
+  layout?: StyleLayoutPaint;
+  paint?: StyleLayoutPaint;
 }
 
 export class VectorTileService {
@@ -75,7 +81,7 @@ export class VectorTileService {
   }
 
   private _createSource(): void {
-    this._map.addSource(this._sourceId, this._source);
+    this._map.addSource(this._sourceId, this._source as unknown as SourceSpecification);
   }
 
   private _mapToLocalSource(style: StyleData): StyleData {

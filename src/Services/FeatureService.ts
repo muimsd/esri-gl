@@ -2,8 +2,8 @@ import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/util
 import { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
-  fetchOptions?: RequestInit
-  useVectorTiles?: boolean
+  fetchOptions?: RequestInit;
+  useVectorTiles?: boolean;
 }
 
 export class FeatureService {

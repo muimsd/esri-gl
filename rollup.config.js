@@ -19,7 +19,7 @@ const output = (file, format, plugins = []) => ({
   plugins: [
     alias({
       entries: [
-        { find: '@/types/types', replacement: path.resolve(__dirname, 'types/types') },
+        { find: '@/types', replacement: path.resolve(__dirname, 'src/types.ts') },
         { find: '@', replacement: path.resolve(__dirname, 'src') }
       ]
     }),

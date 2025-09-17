@@ -1,43 +1,43 @@
 import { cleanTrailingSlash } from '@/utils';
 
 export interface IdentifyFeaturesOptions {
-  url: string
-  layers?: number[] | number | string
-  layerDefs?: Record<string, string>
-  tolerance?: number
-  returnGeometry?: boolean
-  maxAllowableOffset?: number
-  geometryPrecision?: number
-  dynamicLayers?: any[]
-  mapExtent?: [number, number, number, number]
-  imageDisplay?: [number, number, number]
-  sr?: string | number
-  layerTimeOptions?: Record<string, any>
-  time?: number[] | Date[]
-  fetchOptions?: RequestInit
+  url: string;
+  layers?: number[] | number | string;
+  layerDefs?: Record<string, string>;
+  tolerance?: number;
+  returnGeometry?: boolean;
+  maxAllowableOffset?: number;
+  geometryPrecision?: number;
+  dynamicLayers?: any[];
+  mapExtent?: [number, number, number, number];
+  imageDisplay?: [number, number, number];
+  sr?: string | number;
+  layerTimeOptions?: Record<string, any>;
+  time?: number[] | Date[];
+  fetchOptions?: RequestInit;
 }
 
 export interface IdentifyResult {
-  layerId: number
-  layerName: string
-  value: string
-  displayFieldName: string
-  attributes: Record<string, any>
-  geometry?: any
-  geometryType?: string
+  layerId: number;
+  layerName: string;
+  value: string;
+  displayFieldName: string;
+  attributes: Record<string, any>;
+  geometry?: any;
+  geometryType?: string;
 }
 
 export interface IdentifyResponse {
-  results: IdentifyResult[]
+  results: IdentifyResult[];
 }
 
 export interface GeometryInput {
-  x: number
-  y: number
+  x: number;
+  y: number;
   spatialReference?: {
-    wkid: number
-    latestWkid?: number
-  }
+    wkid: number;
+    latestWkid?: number;
+  };
 }
 
 /**
@@ -110,13 +110,13 @@ export class IdentifyFeatures {
    * Perform identify operation with custom geometry
    */
   async identify(options: {
-    geometry: GeometryInput | any
-    geometryType?: string
-    mapExtent?: [number, number, number, number]
-    imageDisplay?: [number, number, number]
-    layers?: number[] | number | string
-    tolerance?: number
-    returnGeometry?: boolean
+    geometry: GeometryInput | any;
+    geometryType?: string;
+    mapExtent?: [number, number, number, number];
+    imageDisplay?: [number, number, number];
+    layers?: number[] | number | string;
+    tolerance?: number;
+    returnGeometry?: boolean;
   }): Promise<IdentifyResponse> {
     const params = this._buildIdentifyParams(options);
     const url = `${this._baseUrl}/identify?${params.toString()}`;
@@ -181,13 +181,13 @@ export class IdentifyFeatures {
   }
 
   private _buildIdentifyParams(options: {
-    geometry: GeometryInput | any
-    geometryType?: string
-    mapExtent?: [number, number, number, number]
-    imageDisplay?: [number, number, number]
-    layers?: number[] | number | string
-    tolerance?: number
-    returnGeometry?: boolean
+    geometry: GeometryInput | any;
+    geometryType?: string;
+    mapExtent?: [number, number, number, number];
+    imageDisplay?: [number, number, number];
+    layers?: number[] | number | string;
+    tolerance?: number;
+    returnGeometry?: boolean;
   }): URLSearchParams {
     const mergedOptions = { ...this._defaultOptions, ...options };
 

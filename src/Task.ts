@@ -1,12 +1,12 @@
 import { cleanTrailingSlash } from '@/utils';
 
 export interface TaskOptions {
-  url?: string
-  proxy?: boolean
-  useCors?: boolean
-  requestParams?: Record<string, unknown>
-  token?: string
-  apikey?: string
+  url?: string;
+  proxy?: boolean;
+  useCors?: boolean;
+  requestParams?: Record<string, unknown>;
+  token?: string;
+  apikey?: string;
 }
 
 /**
@@ -37,8 +37,8 @@ export class Task {
     // Generate setter methods based on the setters object
     if (this.setters) {
       for (const setter in this.setters) {
-        const param = this.setters[setter]
-        ;(this as Record<string, unknown>)[setter] = this.generateSetter(param, this);
+        const param = this.setters[setter];
+        (this as Record<string, unknown>)[setter] = this.generateSetter(param, this);
       }
     }
   }

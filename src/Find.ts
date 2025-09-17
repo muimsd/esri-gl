@@ -1,21 +1,21 @@
 import { Task } from '@/Task';
 
 export interface FindOptions {
-  url: string
-  token?: string
-  searchText?: string
-  contains?: boolean
-  searchFields?: string | string[]
-  sr?: string | number
-  layers?: number | number[] | string
-  returnGeometry?: boolean
-  maxAllowableOffset?: number
-  geometryPrecision?: number
-  dynamicLayers?: unknown[]
-  returnZ?: boolean
-  returnM?: boolean
-  gdbVersion?: string
-  layerDefs?: string
+  url: string;
+  token?: string;
+  searchText?: string;
+  contains?: boolean;
+  searchFields?: string | string[];
+  sr?: string | number;
+  layers?: number | number[] | string;
+  returnGeometry?: boolean;
+  maxAllowableOffset?: number;
+  geometryPrecision?: number;
+  dynamicLayers?: unknown[];
+  returnZ?: boolean;
+  returnM?: boolean;
+  gdbVersion?: string;
+  layerDefs?: string;
 }
 
 /**
@@ -108,10 +108,10 @@ export class Find extends Task {
   simplify(
     map: {
       getBounds(): {
-        getWest(): number
-        getEast(): number
-      }
-      getSize(): { x: number; y: number }
+        getWest(): number;
+        getEast(): number;
+      };
+      getSize(): { x: number; y: number };
     },
     factor: number
   ): Find {
@@ -135,13 +135,13 @@ export class Find extends Task {
       this.params.f = 'json';
       const response = await this.request<{
         results: Array<{
-          layerId: number
-          layerName: string
-          foundFieldName: string
-          value: string
-          attributes: Record<string, unknown>
-          geometry?: unknown
-        }>
+          layerId: number;
+          layerName: string;
+          foundFieldName: string;
+          value: string;
+          attributes: Record<string, unknown>;
+          geometry?: unknown;
+        }>;
       }>();
 
       return this._convertToGeoJSON(response);
@@ -150,13 +150,13 @@ export class Find extends Task {
 
   private _convertToGeoJSON(response: {
     results: Array<{
-      layerId: number
-      layerName: string
-      foundFieldName: string
-      value: string
-      attributes: Record<string, unknown>
-      geometry?: unknown
-    }>
+      layerId: number;
+      layerName: string;
+      foundFieldName: string;
+      value: string;
+      attributes: Record<string, unknown>;
+      geometry?: unknown;
+    }>;
   }): GeoJSON.FeatureCollection {
     const features: GeoJSON.Feature[] = response.results.map(result => ({
       type: 'Feature',

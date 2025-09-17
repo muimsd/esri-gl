@@ -1,23 +1,22 @@
 import { Layer, LayerOptions } from './Layer';
-import { Map } from '../types';
 
 export interface BasemapLayerOptions extends LayerOptions {
-  key?: string
-  apikey?: string
-  token?: string
-  language?: string
-  worldview?: string
-  style?: string
+  key?: string;
+  apikey?: string;
+  token?: string;
+  language?: string;
+  worldview?: string;
+  style?: string;
 }
 
 interface BasemapConfig {
-  urlTemplate: string
+  urlTemplate: string;
   options: {
-    minZoom: number
-    maxZoom: number
-    attribution?: string
-    style?: string
-  }
+    minZoom: number;
+    maxZoom: number;
+    attribution?: string;
+    style?: string;
+  };
 }
 
 /**

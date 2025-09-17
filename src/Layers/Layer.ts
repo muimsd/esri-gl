@@ -1,12 +1,12 @@
 import { Map } from '../types';
 
 export interface LayerOptions {
-  url?: string
-  opacity?: number
-  attribution?: string
-  interactive?: boolean
-  zIndex?: number
-  className?: string
+  url?: string;
+  opacity?: number;
+  attribution?: string;
+  interactive?: boolean;
+  zIndex?: number;
+  className?: string;
 }
 
 /**

@@ -2,11 +2,11 @@ import { RasterLayer, RasterLayerOptions } from './RasterLayer';
 import { MapService } from '../Services/MapService';
 
 export interface DynamicMapLayerOptions extends RasterLayerOptions {
-  url: string
-  layers?: number[] | false
-  layerDefs?: Record<string, string> | false
-  timeOptions?: Record<string, unknown> | false
-  dynamicLayers?: unknown[] | false
+  url: string;
+  layers?: number[] | false;
+  layerDefs?: Record<string, string> | false;
+  timeOptions?: Record<string, unknown> | false;
+  dynamicLayers?: unknown[] | false;
 }
 
 /**
