@@ -1,4 +1,4 @@
-import { Task } from '@/Task'
+import { Task, TaskOptions } from '@/Task'
 import { Service } from '@/Services/Service'
 
 export interface IdentifyFeaturesOptions {
@@ -50,22 +50,43 @@ export class IdentifyFeatures extends Task {
     layers: 'layers',
     precision: 'geometryPrecision',
     tolerance: 'tolerance',
-    returnGeometry: 'returnGeometry'
+    returnGeometry: 'returnGeometry',
   }
 
-  protected path = 'identify'
-  
+  protected path = '/identify'
+
   protected params: Record<string, unknown> = {
     sr: 4326,
     layers: 'all',
     tolerance: 3,
     returnGeometry: true,
-    f: 'json'
+    f: 'json',
   }
 
   constructor(options: string | IdentifyFeaturesOptions | Service) {
-    super(options)
-    this.path = 'identify'
+    // Handle different input types and convert to TaskOptions format
+    let taskOptions: string | TaskOptions
+
+    if (typeof options === 'string') {
+      taskOptions = options
+    } else if (options instanceof Service) {
+      // Extract URL from Service instance
+      taskOptions = { url: (options as Service & { options: { url: string } }).options.url }
+    } else {
+      // It's IdentifyFeaturesOptions, use as TaskOptions
+      taskOptions = options
+    }
+
+    super(taskOptions)
+    this.path = '/identify'
+
+    // Ensure dynamic setters are available even though subclass fields
+    // are initialized after super() runs. This rebinds setter methods.
+    if (this.setters) {
+      for (const [method, param] of Object.entries(this.setters)) {
+        ;(this as unknown as Record<string, unknown>)[method] = this.generateSetter(param, this)
+      }
+    }
   }
 
   /**
@@ -73,18 +94,18 @@ export class IdentifyFeatures extends Task {
    */
   at(point: { lng: number; lat: number } | [number, number]): IdentifyFeatures {
     let geometry: GeometryInput
-    
+
     if (Array.isArray(point)) {
       geometry = {
         x: point[0],
         y: point[1],
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       }
     } else {
       geometry = {
         x: point.lng,
         y: point.lat,
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       }
     }
 
@@ -93,19 +114,40 @@ export class IdentifyFeatures extends Task {
     return this
   }
 
+  // Strongly-typed chainable setters for common Identify params
+  layers(value: number[] | number | string): IdentifyFeatures {
+    this.params.layers = value
+    return this
+  }
+
+  tolerance(value: number): IdentifyFeatures {
+    this.params.tolerance = value
+    return this
+  }
+
+  returnGeometry(value: boolean): IdentifyFeatures {
+    this.params.returnGeometry = value
+    return this
+  }
+
+  precision(value: number): IdentifyFeatures {
+    this.params.geometryPrecision = value
+    return this
+  }
+
   /**
    * Set the map extent and image display for the identify operation
    */
-  on(map: { 
-    getBounds(): { 
-      toArray(): [[number, number], [number, number]] 
+  on(map: {
+    getBounds(): {
+      toArray(): [[number, number], [number, number]]
     }
     getCanvas(): { width: number; height: number }
   }): IdentifyFeatures {
     try {
       const bounds = map.getBounds().toArray()
       this.params.mapExtent = [bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1]].join(',')
-      
+
       const canvas = map.getCanvas()
       this.params.imageDisplay = [canvas.width, canvas.height, 96].join(',')
     } catch (error) {
@@ -118,8 +160,8 @@ export class IdentifyFeatures extends Task {
    * Set layer definitions for filtering specific layers
    */
   layerDef(layerId: number | string, whereClause: string): IdentifyFeatures {
-    const currentLayerDefs = this.params.layerDefs as string || ''
-    this.params.layerDefs = currentLayerDefs 
+    const currentLayerDefs = (this.params.layerDefs as string) || ''
+    this.params.layerDefs = currentLayerDefs
       ? `${currentLayerDefs};${layerId}:${whereClause}`
       : `${layerId}:${whereClause}`
     return this
@@ -128,13 +170,16 @@ export class IdentifyFeatures extends Task {
   /**
    * Simplify geometries based on map resolution
    */
-  simplify(map: { 
-    getBounds(): { 
-      getWest(): number
-      getEast(): number 
-    }
-    getSize(): { x: number; y: number }
-  }, factor: number): IdentifyFeatures {
+  simplify(
+    map: {
+      getBounds(): {
+        getWest(): number
+        getEast(): number
+      }
+      getSize(): { x: number; y: number }
+    },
+    factor: number
+  ): IdentifyFeatures {
     const bounds = map.getBounds()
     const mapWidth = Math.abs(bounds.getWest() - bounds.getEast())
     this.params.maxAllowableOffset = (mapWidth / map.getSize().x) * factor
@@ -156,7 +201,7 @@ export class IdentifyFeatures extends Task {
           geometry?: unknown
         }>
       }>()
-      
+
       return this._convertToGeoJSON(response)
     } catch (error) {
       console.error('IdentifyFeatures error:', error)
@@ -182,20 +227,21 @@ export class IdentifyFeatures extends Task {
           layerId: result.layerId,
           layerName: result.layerName,
           displayFieldName: result.displayFieldName,
-          value: result.value
+          value: result.value,
         },
-        geometry: result.geometry as GeoJSON.Geometry || null
+        geometry: (result.geometry as GeoJSON.Geometry) || null,
       }
-      
+
       // Add layerId as a custom property for easier identification
-      ;(feature as any).layerId = result.layerId
-      
+      const featureWithLayerId = feature as GeoJSON.Feature & { layerId: number }
+      featureWithLayerId.layerId = result.layerId
+
       return feature
     })
 
     return {
       type: 'FeatureCollection',
-      features
+      features,
     }
   }
 }

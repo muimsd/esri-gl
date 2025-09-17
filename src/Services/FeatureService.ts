@@ -1,5 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils'
-import { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types/types'
+import { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types'
 
 interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   fetchOptions?: RequestInit
@@ -35,18 +35,9 @@ export class FeatureService {
       outFields: '*',
       f: 'geojson',
       returnGeometry: true,
-      spatialRel: 'esriSpatialRelIntersects',
-      geometryType: 'esriGeometryEnvelope',
-      inSR: '4326',
-      outSR: '4326',
-      maxRecordCount: 1000,
-      orderByFields: '',
-      groupByFieldsForStatistics: '',
-      outStatistics: [],
-      having: '',
-      resultOffset: 0,
-      resultRecordCount: 1000,
-      getAttributionFromService: true,
+      // Only include geometry/spatial params when geometry is specified
+      // No defaults for inSR/outSR; let server defaults apply
+      // Do not send maxRecordCount: it's a server capability, not a query param
       token: ''
     }
 
@@ -66,7 +57,8 @@ export class FeatureService {
       // Get service metadata
       this._serviceMetadata = await getServiceDetails(this.esriServiceOptions.url, this.esriServiceOptions.fetchOptions)
       
-      if (this.esriServiceOptions.getAttributionFromService !== false && this._serviceMetadata?.copyrightText) {
+      // Update attribution if available in service metadata
+      if (this._serviceMetadata?.copyrightText) {
         updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map)
       }
 
@@ -110,29 +102,27 @@ export class FeatureService {
     const baseUrl = `${options.url}/query`
     const params = new URLSearchParams()
 
-    // Add query parameters
-    if (options.layers !== undefined) {
-      const layerIds = Array.isArray(options.layers) ? options.layers.join(',') : options.layers.toString()
-      params.append('layers', layerIds)
-    }
+    // Add query parameters (FeatureServer /layerId/query does not accept 'layers')
     
     params.append('where', options.where || '1=1')
     params.append('outFields', Array.isArray(options.outFields) ? options.outFields.join(',') : (options.outFields || '*'))
     params.append('f', options.f || 'geojson')
     params.append('returnGeometry', (options.returnGeometry !== false).toString())
     
-    if (options.spatialRel) params.append('spatialRel', options.spatialRel)
-    if (options.geometry) params.append('geometry', JSON.stringify(options.geometry))
-    if (options.geometryType) params.append('geometryType', options.geometryType)
-    if (options.inSR) params.append('inSR', options.inSR)
+    // Only include geometry-related params when geometry is present
+    if (options.geometry) {
+      params.append('geometry', JSON.stringify(options.geometry))
+      if (options.geometryType) params.append('geometryType', options.geometryType)
+      if (options.spatialRel) params.append('spatialRel', options.spatialRel)
+      if (options.inSR) params.append('inSR', options.inSR)
+    }
     if (options.outSR) params.append('outSR', options.outSR)
-    if (options.maxRecordCount) params.append('maxRecordCount', options.maxRecordCount.toString())
     if (options.orderByFields) params.append('orderByFields', options.orderByFields)
     if (options.groupByFieldsForStatistics) params.append('groupByFieldsForStatistics', options.groupByFieldsForStatistics)
     if (options.outStatistics && options.outStatistics.length > 0) params.append('outStatistics', JSON.stringify(options.outStatistics))
     if (options.having) params.append('having', options.having)
     if (options.resultOffset) params.append('resultOffset', options.resultOffset.toString())
-    if (options.resultRecordCount) params.append('resultRecordCount', options.resultRecordCount.toString())
+  if (options.resultRecordCount) params.append('resultRecordCount', options.resultRecordCount.toString())
     if (options.token) params.append('token', options.token)
 
     return `${baseUrl}?${params.toString()}`
@@ -194,10 +184,7 @@ export class FeatureService {
     this.updateSource()
   }
 
-  setMaxRecordCount(count: number): void {
-    this.esriServiceOptions.maxRecordCount = count
-    this.updateSource()
-  }
+  // Note: maxRecordCount is a server capability; not settable via query params
 
   remove(): void {
     if (this._map.getSource(this._sourceId)) {
@@ -226,29 +213,26 @@ export class FeatureService {
     const baseUrl = `${mergedOptions.url}/query`
     const params = new URLSearchParams()
 
-    // Add query parameters using the same logic as _buildQueryUrl
-    if (mergedOptions.layers !== undefined) {
-      const layerIds = Array.isArray(mergedOptions.layers) ? mergedOptions.layers.join(',') : mergedOptions.layers.toString()
-      params.append('layers', layerIds)
-    }
+    // Add query parameters using the same logic as _buildQueryUrl (omit 'layers')
     
     params.append('where', mergedOptions.where || '1=1')
     params.append('outFields', Array.isArray(mergedOptions.outFields) ? mergedOptions.outFields.join(',') : (mergedOptions.outFields || '*'))
     params.append('f', mergedOptions.f || 'geojson')
     params.append('returnGeometry', (mergedOptions.returnGeometry !== false).toString())
     
-    if (mergedOptions.spatialRel) params.append('spatialRel', mergedOptions.spatialRel)
-    if (mergedOptions.geometry) params.append('geometry', JSON.stringify(mergedOptions.geometry))
-    if (mergedOptions.geometryType) params.append('geometryType', mergedOptions.geometryType)
-    if (mergedOptions.inSR) params.append('inSR', mergedOptions.inSR)
+    if (mergedOptions.geometry) {
+      params.append('geometry', JSON.stringify(mergedOptions.geometry))
+      if (mergedOptions.geometryType) params.append('geometryType', mergedOptions.geometryType)
+      if (mergedOptions.spatialRel) params.append('spatialRel', mergedOptions.spatialRel)
+      if (mergedOptions.inSR) params.append('inSR', mergedOptions.inSR)
+    }
     if (mergedOptions.outSR) params.append('outSR', mergedOptions.outSR)
-    if (mergedOptions.maxRecordCount) params.append('maxRecordCount', mergedOptions.maxRecordCount.toString())
     if (mergedOptions.orderByFields) params.append('orderByFields', mergedOptions.orderByFields)
     if (mergedOptions.groupByFieldsForStatistics) params.append('groupByFieldsForStatistics', mergedOptions.groupByFieldsForStatistics)
     if (mergedOptions.outStatistics && mergedOptions.outStatistics.length > 0) params.append('outStatistics', JSON.stringify(mergedOptions.outStatistics))
     if (mergedOptions.having) params.append('having', mergedOptions.having)
     if (mergedOptions.resultOffset) params.append('resultOffset', mergedOptions.resultOffset.toString())
-    if (mergedOptions.resultRecordCount) params.append('resultRecordCount', mergedOptions.resultRecordCount.toString())
+  if (mergedOptions.resultRecordCount) params.append('resultRecordCount', mergedOptions.resultRecordCount.toString())
     if (mergedOptions.token) params.append('token', mergedOptions.token)
 
     return `${baseUrl}?${params.toString()}`

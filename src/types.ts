@@ -5,7 +5,7 @@ export interface ServiceMetadata {
   copyrightText?: string
   tiles?: string[]
   defaultStyles?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface EsriServiceOptions {
@@ -39,13 +39,36 @@ export interface VectorSourceOptions {
 }
 
 export interface ImageServiceOptions extends EsriServiceOptions {
-  renderingRule?: Record<string, any> | false;
-  mosaicRule?: Record<string, any> | false;
+  renderingRule?: Record<string, unknown> | false;
+  mosaicRule?: Record<string, unknown> | false;
   bbox?: [number, number, number, number];
   size?: [number, number];
   bboxSR?: string;
   imageSR?: string;
   format?: 'jpgpng' | 'png' | 'png8' | 'png24' | 'jpg' | 'bmp' | 'gif' | 'tiff' | 'png32' | 'bip' | 'bsq' | 'lerc';
+}
+
+// Feature Service query options (subset of ArcGIS REST parameters)
+export interface FeatureServiceOptions {
+  url: string; // Layer endpoint e.g., .../FeatureServer/0
+  where?: string;
+  outFields?: string | string[];
+  f?: 'json' | 'geojson' | string;
+  returnGeometry?: boolean;
+  geometry?: Record<string, unknown>;
+  geometryType?: string; // esriGeometryPoint|Polyline|Polygon|Envelope
+  spatialRel?: string; // esriSpatialRelIntersects, etc.
+  inSR?: string;
+  outSR?: string;
+  orderByFields?: string;
+  groupByFieldsForStatistics?: string;
+  outStatistics?: Array<Record<string, unknown>>;
+  having?: string;
+  resultOffset?: number;
+  resultRecordCount?: number;
+  token?: string;
+  // Not standard query params but kept for API symmetry; ignored for query URL
+  layers?: number[] | number;
 }
 
 export interface VectorTileServiceOptions {

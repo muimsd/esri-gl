@@ -89,9 +89,12 @@ export class Task {
       Object.assign(params, this.options.requestParams)
     }
 
+    // Ensure path always has a leading slash when appending to cleaned base URL
+    const normalizedPath = this.path?.startsWith('/') ? this.path : `/${this.path}`
+
     const url = this.options.proxy 
-      ? `${this.options.proxy}?${this.options.url}${this.path}`
-      : `${this.options.url}${this.path}`
+      ? `${this.options.proxy}?${this.options.url}${normalizedPath}`
+      : `${this.options.url}${normalizedPath}`
 
     // Convert params to URLSearchParams
     const searchParams = new URLSearchParams()

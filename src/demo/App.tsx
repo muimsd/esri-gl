@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DynamicMapServiceDemo from './components/DynamicMapServiceDemo'
 import TiledMapServiceDemo from './components/TiledMapServiceDemo'
 import FeatureServiceDemo from './components/FeatureServiceDemo'
@@ -10,7 +10,23 @@ import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo'
 type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify'
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('dynamic')
+  const TAB_KEY = 'esri-map-gl:activeTab'
+
+  // Initialize from localStorage if present and valid
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = window.localStorage.getItem(TAB_KEY)
+        const allowed: TabType[] = ['dynamic', 'tiled', 'features', 'image', 'vector', 'basemap', 'identify']
+        if (stored && (allowed as string[]).includes(stored)) {
+          return stored as TabType
+        }
+      }
+    } catch (_) {
+      // ignore storage errors and fall back
+    }
+    return 'dynamic'
+  })
 
   const tabs = [
     { id: 'dynamic' as TabType, label: 'Dynamic Map Service', component: DynamicMapServiceDemo },
@@ -23,6 +39,17 @@ const App: React.FC = () => {
   ]
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo
+
+  // Persist selection
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(TAB_KEY, activeTab)
+      }
+    } catch (_) {
+      // ignore storage errors
+    }
+  }, [activeTab])
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>

@@ -31,7 +31,8 @@ const FeatureServiceDemo: React.FC = () => {
           }
         ]
       },
-      center: [-118.2437, 34.0522], // Los Angeles
+      center: [-86.5804, 36.1627], // Tennessee
+      // center: [-118.2437, 34.0522], // Los Angeles
       zoom: 10
     })
 
@@ -43,11 +44,10 @@ const FeatureServiceDemo: React.FC = () => {
         'counties-source', 
         map.current, 
         {
-          url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Counties_Generalized/FeatureServer/0',
+          url: 'https://services6.arcgis.com/drBkxhK7nF7o7hKT/arcgis/rest/services/TN_Bridges/FeatureServer/0',
           useVectorTiles: false, // Use GeoJSON for better compatibility
           where: '1=1',
-          outFields: '*',
-          maxRecordCount: 1000
+          outFields: '*'
         }
       )
 
@@ -55,7 +55,7 @@ const FeatureServiceDemo: React.FC = () => {
       setTimeout(() => {
         if (!map.current) return
         
-        // Add a layer to visualize the features
+        // Add a layer to visualize the features (states polygons)
         map.current.addLayer({
           id: 'counties-fill',
           type: 'fill',
