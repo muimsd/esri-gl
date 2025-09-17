@@ -63,8 +63,8 @@ const TiledMapServiceDemo: React.FC = () => {
         }
       });
     } catch (err) {
-      setError('Failed to initialize map: ' + (err as Error).message);  
-      setLoading(false);  
+      setError('Failed to initialize map: ' + (err as Error).message);
+      setLoading(false);
     }
 
     return () => {

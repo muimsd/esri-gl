@@ -46,7 +46,8 @@ const App: React.FC = () => {
     { id: 'identify' as TabType, label: 'Identify Features', component: IdentifyFeaturesDemo },
   ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo;
+  const ActiveComponent =
+    tabs.find(tab => tab.id === activeTab)?.component || DynamicMapServiceDemo;
 
   // Persist selection
   useEffect(() => {

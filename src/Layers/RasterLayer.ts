@@ -2,14 +2,14 @@ import { Layer, LayerOptions } from './Layer';
 import { Service } from '../Services/Service';
 
 export interface RasterLayerOptions extends LayerOptions {
-  service?: Service
-  updateInterval?: number
-  format?: string
-  transparent?: boolean
-  f?: string
-  useCors?: boolean
-  from?: Date
-  to?: Date
+  service?: Service;
+  updateInterval?: number;
+  format?: string;
+  transparent?: boolean;
+  f?: string;
+  useCors?: boolean;
+  from?: Date;
+  to?: Date;
 }
 
 /**
@@ -19,8 +19,8 @@ export interface RasterLayerOptions extends LayerOptions {
 export class RasterLayer extends Layer {
   protected service?: Service;
   protected _currentImage?: {
-    bounds: [number, number, number, number]
-    url: string
+    bounds: [number, number, number, number];
+    url: string;
   };
 
   constructor(options: RasterLayerOptions = {}) {
@@ -43,8 +43,8 @@ export class RasterLayer extends Layer {
    * Set time range for temporal data
    */
   setTimeRange(from: Date, to: Date): RasterLayer {
-    (this.options as RasterLayerOptions).from = from
-    ;(this.options as RasterLayerOptions).to = to;
+    (this.options as RasterLayerOptions).from = from;
+    (this.options as RasterLayerOptions).to = to;
     this._update();
     return this;
   }
@@ -70,9 +70,16 @@ export class RasterLayer extends Layer {
   /**
    * Get service metadata
    */
-  metadata(callback: (error: Error | null, metadata?: any) => void, context?: any): RasterLayer {
+  metadata(callback: (error: Error | null, metadata?: unknown) => void): RasterLayer {
     if (this.service) {
-      this.service.metadata(callback, context);
+      this.service
+        .metadata()
+        .then((metadata: unknown) => {
+          callback(null, metadata);
+        })
+        .catch((error: unknown) => {
+          callback(error instanceof Error ? error : new Error(String(error)));
+        });
     }
     return this;
   }
@@ -123,7 +130,7 @@ export class RasterLayer extends Layer {
   /**
    * Build export parameters - to be implemented by subclasses
    */
-  protected _buildExportParams(): Record<string, any> {
+  protected _buildExportParams(): Record<string, unknown> {
     // Override in subclasses
     return {};
   }
@@ -132,8 +139,10 @@ export class RasterLayer extends Layer {
    * Request export - to be implemented by subclasses
    */
   protected _requestExport(
-    params: Record<string, any>,
-    bounds: [number, number, number, number]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    _params: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    _bounds: [number, number, number, number]
   ): void {
     // Override in subclasses
   }

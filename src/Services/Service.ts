@@ -2,34 +2,34 @@ import { cleanTrailingSlash, updateAttribution } from '../utils';
 import { Map, ServiceMetadata } from '../types';
 
 export interface ServiceOptions {
-  url: string
-  proxy?: boolean
-  useCors?: boolean
-  timeout?: number
-  token?: string
-  requestParams?: Record<string, unknown>
-  getAttributionFromService?: boolean
+  url: string;
+  proxy?: boolean;
+  useCors?: boolean;
+  timeout?: number;
+  token?: string;
+  requestParams?: Record<string, unknown>;
+  getAttributionFromService?: boolean;
 }
 
 export type ServiceCallback<T = unknown> = (error?: Error, response?: T) => void;
 
 export interface ServiceEvents {
-  requeststart: { url: string; params: Record<string, unknown>; method: string }
+  requeststart: { url: string; params: Record<string, unknown>; method: string };
   requestsuccess: {
-    url: string
-    params: Record<string, unknown>
-    response: unknown
-    method: string
-  }
+    url: string;
+    params: Record<string, unknown>;
+    response: unknown;
+    method: string;
+  };
   requesterror: {
-    url: string
-    params: Record<string, unknown>
-    message: string
-    code?: number
-    method: string
-  }
-  requestend: { url: string; params: Record<string, unknown>; method: string }
-  authenticationrequired: { authenticate: (token: string) => void }
+    url: string;
+    params: Record<string, unknown>;
+    message: string;
+    code?: number;
+    method: string;
+  };
+  requestend: { url: string; params: Record<string, unknown>; method: string };
+  authenticationrequired: { authenticate: (token: string) => void };
 }
 
 /**
@@ -38,10 +38,10 @@ export interface ServiceEvents {
  */
 export class Service {
   protected options: ServiceOptions & {
-    proxy: boolean
-    useCors: boolean
-    timeout: number
-    getAttributionFromService: boolean
+    proxy: boolean;
+    useCors: boolean;
+    timeout: number;
+    getAttributionFromService: boolean;
   };
   protected _requestQueue: Array<
     [string, string, Record<string, unknown>, (error?: Error, response?: unknown) => void, unknown]
@@ -365,10 +365,10 @@ export class Service {
         // Fire event for users to handle re-authentication
         this.fire('authenticationrequired', {
           authenticate: (token: string) => this.authenticate(token),
-        })
+        });
 
         // Add authenticate method to error for callback handling
-        ;(error as any).authenticate = (token: string) => this.authenticate(token);
+        (error as any).authenticate = (token: string) => this.authenticate(token);
       }
 
       if (error) {

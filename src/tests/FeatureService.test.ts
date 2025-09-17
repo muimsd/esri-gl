@@ -1,11 +1,19 @@
 import { FeatureService } from '@/Services/FeatureService.pending';
-import { Map, FeatureServiceOptions } from '@/types/types';
+import { Map, FeatureServiceOptions } from '@/types';
 
 // Mock map object
 const mockMap: Map = {
   addSource: jest.fn(),
   removeSource: jest.fn(),
   getSource: jest.fn(),
+  addLayer: jest.fn(),
+  removeLayer: jest.fn(),
+  getLayer: jest.fn(),
+  setPaintProperty: jest.fn(),
+  moveLayer: jest.fn(),
+  on: jest.fn(),
+  off: jest.fn(),
+  fire: jest.fn(),
   _controls: [],
 };
 
@@ -13,6 +21,7 @@ const mockMap: Map = {
 global.fetch = jest.fn();
 
 describe('FeatureService', () => {
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0));
   const mockServiceOptions: FeatureServiceOptions = {
     url: 'https://example.com/arcgis/rest/services/TestService/FeatureServer/0',
     where: '1=1',
@@ -21,8 +30,8 @@ describe('FeatureService', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(global.fetch as jest.Mock).mockResolvedValue({
+    jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -43,7 +52,7 @@ describe('FeatureService', () => {
 
   it('should throw error when url is not provided', () => {
     const invalidOptions = { ...mockServiceOptions };
-    delete (invalidOptions as any).url;
+    delete (invalidOptions as Record<string, unknown>).url;
 
     expect(() => {
       new FeatureService('test-source', mockMap, invalidOptions);
@@ -63,42 +72,45 @@ describe('FeatureService', () => {
     );
   });
 
-  it('should set where clause', () => {
+  it('should set where clause', async () => {
     const service = new FeatureService('test-source', mockMap, mockServiceOptions);
-    const mockSource = { setData: jest.fn() }
-    ;(mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
+    (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setWhere('STATE_NAME = "California"');
+    await flush();
 
     expect(service.esriServiceOptions.where).toBe('STATE_NAME = "California"');
-    expect(mockSource.setData).toHaveBeenCalled();
+    expect(mockMap.removeSource).toHaveBeenCalledWith('test-source');
+    expect(mockMap.addSource).toHaveBeenCalled();
   });
 
-  it('should set output fields', () => {
+  it('should set output fields', async () => {
     const service = new FeatureService('test-source', mockMap, mockServiceOptions);
-    const mockSource = { setData: jest.fn() }
-    ;(mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
+    (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setOutFields(['STATE_NAME', 'POP2000']);
+    await flush();
 
     expect(service.esriServiceOptions.outFields).toEqual(['STATE_NAME', 'POP2000']);
-    expect(mockSource.setData).toHaveBeenCalled();
+    expect(mockMap.removeSource).toHaveBeenCalledWith('test-source');
+    expect(mockMap.addSource).toHaveBeenCalled();
   });
 
-  it('should set layers', () => {
+  it('should set layers', async () => {
     const service = new FeatureService('test-source', mockMap, mockServiceOptions);
-    const mockSource = { setData: jest.fn() }
-    ;(mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
+    (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setLayers([0, 1]);
+    await flush();
 
     expect(service.esriServiceOptions.layers).toEqual([0, 1]);
-    expect(mockSource.setData).toHaveBeenCalled();
+    expect(mockMap.removeSource).toHaveBeenCalledWith('test-source');
+    expect(mockMap.addSource).toHaveBeenCalled();
   });
 
   it('should remove source', () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions)
-    ;(mockMap.getSource as jest.Mock).mockReturnValue({});
+    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.remove();
 

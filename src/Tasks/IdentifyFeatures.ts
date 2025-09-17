@@ -2,43 +2,43 @@ import { Task, TaskOptions } from '@/Task';
 import { Service } from '@/Services/Service';
 
 export interface IdentifyFeaturesOptions {
-  url: string
-  layers?: number[] | number | string
-  layerDefs?: Record<string, string>
-  tolerance?: number
-  returnGeometry?: boolean
-  maxAllowableOffset?: number
-  geometryPrecision?: number
-  dynamicLayers?: unknown[]
-  mapExtent?: [number, number, number, number]
-  imageDisplay?: [number, number, number]
-  sr?: string | number
-  layerTimeOptions?: Record<string, unknown>
-  time?: number[] | Date[]
-  fetchOptions?: RequestInit
+  url: string;
+  layers?: number[] | number | string;
+  layerDefs?: Record<string, string>;
+  tolerance?: number;
+  returnGeometry?: boolean;
+  maxAllowableOffset?: number;
+  geometryPrecision?: number;
+  dynamicLayers?: unknown[];
+  mapExtent?: [number, number, number, number];
+  imageDisplay?: [number, number, number];
+  sr?: string | number;
+  layerTimeOptions?: Record<string, unknown>;
+  time?: number[] | Date[];
+  fetchOptions?: RequestInit;
 }
 
 export interface IdentifyResult {
-  layerId: number
-  layerName: string
-  value: string
-  displayFieldName: string
-  attributes: Record<string, unknown>
-  geometry?: unknown
-  geometryType?: string
+  layerId: number;
+  layerName: string;
+  value: string;
+  displayFieldName: string;
+  attributes: Record<string, unknown>;
+  geometry?: unknown;
+  geometryType?: string;
 }
 
 export interface IdentifyResponse {
-  results: IdentifyResult[]
+  results: IdentifyResult[];
 }
 
 export interface GeometryInput {
-  x: number
-  y: number
+  x: number;
+  y: number;
   spatialReference?: {
-    wkid: number
-    latestWkid?: number
-  }
+    wkid: number;
+    latestWkid?: number;
+  };
 }
 
 /**
@@ -140,9 +140,9 @@ export class IdentifyFeatures extends Task {
    */
   on(map: {
     getBounds(): {
-      toArray(): [[number, number], [number, number]]
-    }
-    getCanvas(): { width: number; height: number }
+      toArray(): [[number, number], [number, number]];
+    };
+    getCanvas(): { width: number; height: number };
   }): IdentifyFeatures {
     try {
       const bounds = map.getBounds().toArray();
@@ -173,10 +173,10 @@ export class IdentifyFeatures extends Task {
   simplify(
     map: {
       getBounds(): {
-        getWest(): number
-        getEast(): number
-      }
-      getSize(): { x: number; y: number }
+        getWest(): number;
+        getEast(): number;
+      };
+      getSize(): { x: number; y: number };
     },
     factor: number
   ): IdentifyFeatures {
@@ -193,13 +193,13 @@ export class IdentifyFeatures extends Task {
     try {
       const response = await this.request<{
         results: Array<{
-          layerId: number
-          layerName: string
-          value: string
-          displayFieldName: string
-          attributes: Record<string, unknown>
-          geometry?: unknown
-        }>
+          layerId: number;
+          layerName: string;
+          value: string;
+          displayFieldName: string;
+          attributes: Record<string, unknown>;
+          geometry?: unknown;
+        }>;
       }>();
 
       return this._convertToGeoJSON(response);
@@ -211,13 +211,13 @@ export class IdentifyFeatures extends Task {
 
   private _convertToGeoJSON(response: {
     results: Array<{
-      layerId: number
-      layerName: string
-      value: string
-      displayFieldName: string
-      attributes: Record<string, unknown>
-      geometry?: unknown
-    }>
+      layerId: number;
+      layerName: string;
+      value: string;
+      displayFieldName: string;
+      attributes: Record<string, unknown>;
+      geometry?: unknown;
+    }>;
   }): GeoJSON.FeatureCollection {
     const features: GeoJSON.Feature[] = (response.results || []).map(result => {
       const feature: GeoJSON.Feature = {

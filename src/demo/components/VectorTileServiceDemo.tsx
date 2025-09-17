@@ -43,7 +43,7 @@ const VectorTileServiceDemo: React.FC = () => {
           ],
         },
         zoom: 12, // starting zoom
-        center: [-118.805, 34.027] // starting location [longitude, latitude]
+        center: [-118.805, 34.027], // starting location [longitude, latitude]
       });
 
       map.current.on('load', () => {

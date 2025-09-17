@@ -87,7 +87,7 @@ const IdentifyFeaturesDemo: React.FC = () => {
             // Create popup content
             let content = '<div style="max-width: 300px; max-height: 300px; overflow-y: auto;">';
 
-            results.results.forEach((result: any, index: number) => {
+            results.results.forEach((result: any) => {
               content += `<div style="margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">`;
               content += `<div style="font-weight: bold; color: #0066cc; margin-bottom: 5px;">${result.layerName || `Layer ${result.layerId}`}</div>`;
 

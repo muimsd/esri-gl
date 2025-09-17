@@ -1,55 +1,55 @@
 import { Task } from '@/Task';
 
 export interface QueryOptions {
-  url: string
-  token?: string
-  where?: string
-  outFields?: string | string[]
-  returnGeometry?: boolean
-  spatialRel?: string
-  geometry?: unknown
-  geometryType?: string
-  inSR?: string | number
-  outSR?: string | number
-  returnDistinctValues?: boolean
-  returnIdsOnly?: boolean
-  returnCountOnly?: boolean
-  returnExtentOnly?: boolean
-  orderByFields?: string
-  groupByFieldsForStatistics?: string
-  outStatistics?: unknown[]
-  resultOffset?: number
-  resultRecordCount?: number
-  maxAllowableOffset?: number
-  geometryPrecision?: number
-  time?: number[]
-  gdbVersion?: string
-  historicMoment?: number
-  returnTrueCurves?: boolean
-  returnZ?: boolean
-  returnM?: boolean
-  f?: string
+  url: string;
+  token?: string;
+  where?: string;
+  outFields?: string | string[];
+  returnGeometry?: boolean;
+  spatialRel?: string;
+  geometry?: unknown;
+  geometryType?: string;
+  inSR?: string | number;
+  outSR?: string | number;
+  returnDistinctValues?: boolean;
+  returnIdsOnly?: boolean;
+  returnCountOnly?: boolean;
+  returnExtentOnly?: boolean;
+  orderByFields?: string;
+  groupByFieldsForStatistics?: string;
+  outStatistics?: unknown[];
+  resultOffset?: number;
+  resultRecordCount?: number;
+  maxAllowableOffset?: number;
+  geometryPrecision?: number;
+  time?: number[];
+  gdbVersion?: string;
+  historicMoment?: number;
+  returnTrueCurves?: boolean;
+  returnZ?: boolean;
+  returnM?: boolean;
+  f?: string;
 }
 
 export interface QueryGeometry {
-  x?: number
-  y?: number
-  xmin?: number
-  ymin?: number
-  xmax?: number
-  ymax?: number
-  paths?: number[][][]
-  rings?: number[][][]
-  points?: number[][]
+  x?: number;
+  y?: number;
+  xmin?: number;
+  ymin?: number;
+  xmax?: number;
+  ymax?: number;
+  paths?: number[][][];
+  rings?: number[][][];
+  points?: number[][];
   spatialReference?: {
-    wkid: number
-    latestWkid?: number
-  }
+    wkid: number;
+    latestWkid?: number;
+  };
 }
 
 export interface Bounds {
-  _southWest: { lat: number; lng: number }
-  _northEast: { lat: number; lng: number }
+  _southWest: { lat: number; lng: number };
+  _northEast: { lat: number; lng: number };
 }
 
 /**
@@ -249,9 +249,9 @@ export class Query extends Task {
       this.params.f = 'json';
       const response = await this.request<{
         features: Array<{
-          attributes: Record<string, unknown>
-          geometry?: unknown
-        }>
+          attributes: Record<string, unknown>;
+          geometry?: unknown;
+        }>;
       }>();
 
       return this._convertToGeoJSON(response);
@@ -282,18 +282,18 @@ export class Query extends Task {
    * Execute the query and return extent bounds (ArcGIS Server 10.3+)
    */
   async bounds(): Promise<{
-    _southWest: { lat: number; lng: number }
-    _northEast: { lat: number; lng: number }
+    _southWest: { lat: number; lng: number };
+    _northEast: { lat: number; lng: number };
   }> {
     this._cleanParams();
     this.params.returnExtentOnly = true;
     const response = await this.request<{
       extent: {
-        xmin: number
-        ymin: number
-        xmax: number
-        ymax: number
-      }
+        xmin: number;
+        ymin: number;
+        xmax: number;
+        ymax: number;
+      };
     }>();
 
     if (!response.extent) {
@@ -364,9 +364,9 @@ export class Query extends Task {
 
   private _convertToGeoJSON(response: {
     features: Array<{
-      attributes: Record<string, unknown>
-      geometry?: unknown
-    }>
+      attributes: Record<string, unknown>;
+      geometry?: unknown;
+    }>;
   }): GeoJSON.FeatureCollection {
     const features: GeoJSON.Feature[] = response.features.map(feature => ({
       type: 'Feature',

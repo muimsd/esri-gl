@@ -1,12 +1,28 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.app.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
     "noEmit": false,
     "declaration": true,
-    "declarationMap": true,
-    "outDir": "dist/types"
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/types": ["src/types.ts"]
+    }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "docs", "**/*.test.*", "src/demo"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/demo/**/*",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "**/*.d.ts"
+  ]
 }
