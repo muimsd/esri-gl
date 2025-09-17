@@ -161,4 +161,4 @@ npm install @muimsd/esri-gl
   - If `package-lock.json` exists, they run `npm ci` for reproducible installs.
   - If no lockfile is found, they fall back to `npm install`.
 - The same conditional logic is applied for `docs/` installs in the CI workflow.
-- This ensures CI and publish jobs don't fail with the npm EUSAGE error: "This command requires an existing lockfile" when the project doesn't commit a lockfile.
+- This ensures CI and publish jobs don't fail with the npm EUSAGE error: "This command requires an existing lockfile" when the project doesn't commit a lockfile.# NPM Token configured for automated publishing
