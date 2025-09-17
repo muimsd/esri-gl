@@ -33,7 +33,6 @@ const FeatureServiceDemo: React.FC = () => {
         ],
       },
       center: [-86.5804, 36.1627], // Tennessee
-      // center: [-118.2437, 34.0522], // Los Angeles
       zoom: 8,
     });
 
@@ -44,9 +43,10 @@ const FeatureServiceDemo: React.FC = () => {
       const sourceId = 'tn-bridges-source';
       const layerId = 'tn-bridges-layer';
       const featureService = new FeatureService(sourceId, map.current, {
+        // Test with Santa Monica Parcels which has both FeatureServer and VectorTileServer
         url: 'https://services2.arcgis.com/nf3p7v7Zy4fTOh6M/ArcGIS/rest/services/Road_Segment/FeatureServer/0',
         // url: 'https://services6.arcgis.com/drBkxhK7nF7o7hKT/arcgis/rest/services/TN_Bridges/FeatureServer/0',
-        useVectorTiles: false, // Use GeoJSON for better compatibility (point dataset)
+        useVectorTiles: true, // Try vector tiles first, will fallback to GeoJSON if not available
         useBoundingBox: true, // Enable screen bounding box filtering for performance
         where: '1=1',
         outFields: '*',
@@ -152,7 +152,7 @@ const FeatureServiceDemo: React.FC = () => {
           fontSize: '14px',
         }}
       >
-        <strong>Feature Service Demo</strong> - Road Segments from ArcGIS FeatureServer with dynamic bounding box filtering. Features automatically update when you pan/zoom. Click features for details.
+        <strong>Feature Service Demo</strong> - Road Segments from ArcGIS FeatureServer with vector tile detection and dynamic bounding box filtering. Auto-detects vector tile support and falls back to GeoJSON. Features automatically update when you pan/zoom. Click features for details.
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
     </div>

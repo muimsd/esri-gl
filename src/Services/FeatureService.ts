@@ -77,11 +77,18 @@ export class FeatureService {
       );
 
       // Check if vector tiles should be used (default behavior)
-      const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
+      // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
+      console.log('FeatureService: useVectorTiles setting:', this.esriServiceOptions.useVectorTiles);
+      const vectorTileSupport = await this._checkVectorTileSupport();
+      console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
+      
+      const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
+      console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
 
       if (useVectorTiles) {
         // Create vector tile source
         const tileUrl = this._buildTileUrl();
+        console.log('FeatureService: Using vector tiles for FeatureService:', tileUrl);
 
         // Add vector source to map
         this._map.addSource(this._sourceId, {
@@ -91,8 +98,9 @@ export class FeatureService {
           ...this.vectorSrcOptions,
         });
       } else {
-        // Fallback to GeoJSON (legacy behavior)
+        // Fallback to GeoJSON (most common for FeatureServers)
         const queryUrl = this._buildQueryUrl();
+        console.log('FeatureService: Using GeoJSON for FeatureService:', queryUrl);
 
         this._map.addSource(this._sourceId, {
           type: 'geojson',
@@ -115,9 +123,50 @@ export class FeatureService {
     }
   }
 
+  private async _checkVectorTileSupport(): Promise<boolean> {
+    try {
+      // Try to check if a VectorTileServer endpoint exists
+      const vectorTileUrl = this.esriServiceOptions.url.replace('/FeatureServer/', '/VectorTileServer/');
+      
+      // Only check if the URL actually changed (meaning it was a FeatureServer URL)
+      if (vectorTileUrl === this.esriServiceOptions.url) {
+        console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
+        return false;
+      }
+
+      console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
+      const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && !data.error) {
+          console.log('FeatureService: Vector tile endpoint found and working:', vectorTileUrl);
+          console.log('FeatureService: Vector tile service data:', data);
+          return true;
+        } else {
+          console.log('FeatureService: Vector tile endpoint returned error:', data?.error);
+          return false;
+        }
+      } else {
+        console.log('FeatureService: Vector tile endpoint returned HTTP', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.log('FeatureService: Vector tile check failed, falling back to GeoJSON:', error);
+      return false;
+    }
+  }
+
   private _buildTileUrl(): string {
     const baseUrl = this.esriServiceOptions.url;
-    return `${baseUrl}/VectorTileServer/tile/{z}/{y}/{x}.pbf`;
+    // Check if this is a FeatureServer that supports vector tiles
+    // Most FeatureServers don't have VectorTileServer endpoints
+    // We'll use a different approach for FeatureServers with vector tile capability
+    
+    // Try to construct vector tile URL from FeatureServer URL
+    // Some services have both FeatureServer and VectorTileServer endpoints
+    const vectorTileUrl = baseUrl.replace('/FeatureServer/', '/VectorTileServer/');
+    return `${vectorTileUrl}/tile/{z}/{y}/{x}.pbf`;
   }
 
   private _buildQueryUrl(): string {
@@ -192,11 +241,21 @@ export class FeatureService {
     
     // Generate default style based on geometry type from service metadata
     const geometryType = String(this._serviceMetadata?.geometryType || 'esriGeometryPoint');
+    const isVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
+    
+    // For vector tiles, we need to include source-layer
+    const baseStyle: Partial<StyleData> = {
+      source: this._sourceId,
+    };
+    
+    if (isVectorTiles && this._serviceMetadata?.name) {
+      baseStyle['source-layer'] = String(this._serviceMetadata.name);
+    }
     
     if (geometryType.includes('Point')) {
       return {
         type: 'circle',
-        source: this._sourceId,
+        ...baseStyle,
         paint: {
           'circle-radius': 4,
           'circle-color': '#3b82f6',
@@ -207,7 +266,7 @@ export class FeatureService {
     } else if (geometryType.includes('Polyline')) {
       return {
         type: 'line',
-        source: this._sourceId,
+        ...baseStyle,
         paint: {
           'line-color': '#3b82f6',
           'line-width': 2,
@@ -216,7 +275,7 @@ export class FeatureService {
     } else if (geometryType.includes('Polygon')) {
       return {
         type: 'fill',
-        source: this._sourceId,
+        ...baseStyle,
         paint: {
           'fill-color': 'rgba(59, 130, 246, 0.4)',
           'fill-outline-color': '#1e40af',
@@ -227,7 +286,7 @@ export class FeatureService {
     // Default to circle for unknown geometry types
     return {
       type: 'circle',
-      source: this._sourceId,
+      ...baseStyle,
       paint: {
         'circle-radius': 4,
         'circle-color': '#3b82f6',
