@@ -33,7 +33,7 @@ jobs:
   publish-github-packages:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     
     steps:
@@ -159,38 +159,6 @@ jobs:
           git push origin "v${{ steps.package-version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ steps.package-version.outputs.version }}"
-          release_name: "v${{ steps.package-version.outputs.version }} (GitHub Packages)"
-          body: |
-            📦 **GitHub Packages Release v${{ steps.package-version.outputs.version }}**
-            
-            This release is published to GitHub Packages npm registry.
-            
-            **Installation:**
-            ```bash
-            # Configure npm to use GitHub Packages for @muimsd scope
-            npm config set @muimsd:registry https://npm.pkg.github.com/
-            
-            # Install the package
-            npm install ${{ steps.package-name.outputs.name }}@${{ steps.npm-tag.outputs.tag }}
-            ```
-            
-            **Or using .npmrc file:**
-            ```
-            @muimsd:registry=https://npm.pkg.github.com/
-            ```
-            
-            **NPM Tag:** `${{ steps.npm-tag.outputs.tag }}`
-            **Package Name:** `${{ steps.package-name.outputs.name }}`
-            **Commit SHA:** ${{ github.sha }}
-          draft: false
-          prerelease: ${{ steps.npm-tag.outputs.tag != 'latest' }}
 
       - name: Restore original package.json
         if: always()
