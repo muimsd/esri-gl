@@ -7,4 +7,3 @@ dist/
 dist-demo/
 coverage/
 *.tsbuildinfo
-package-lock.json
