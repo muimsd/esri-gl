@@ -381,6 +381,14 @@ export class Query extends Task {
           geometryType: 'esriGeometryEnvelope',
         };
       }
+
+      if ('xmin' in geom && 'ymin' in geom && 'xmax' in geom && 'ymax' in geom) {
+        // Esri envelope geometry
+        return {
+          geometry,
+          geometryType: 'esriGeometryEnvelope',
+        };
+      }
     }
 
     // Default: assume it's already in Esri geometry format

@@ -191,10 +191,11 @@ export class Find extends Task {
       attributes: Record<string, unknown>;
       geometry?: unknown;
     }>;
-  }): GeoJSON.FeatureCollection {
-    // Handle cases where results might be undefined or empty
-    const features: GeoJSON.Feature[] = (response.results || []).map(result => ({
-      type: 'Feature',
+  } | null): GeoJSON.FeatureCollection {
+    // Handle cases where response is null or results might be undefined, null, or empty
+    const results = response?.results || [];
+    const features: GeoJSON.Feature[] = results.map(result => ({
+      type: 'Feature' as const,
       properties: {
         ...result.attributes,
         layerId: result.layerId,
@@ -202,13 +203,46 @@ export class Find extends Task {
         foundFieldName: result.foundFieldName,
         value: result.value,
       },
-      geometry: (result.geometry as GeoJSON.Geometry) || null,
+      geometry: this._convertEsriGeometry(result.geometry),
     }));
 
     return {
       type: 'FeatureCollection',
       features,
     };
+  }
+
+  private _convertEsriGeometry(esriGeom: unknown): GeoJSON.Geometry | null {
+    if (!esriGeom || typeof esriGeom !== 'object') return null;
+
+    const geom = esriGeom as Record<string, unknown>;
+
+    // Point geometry
+    if ('x' in geom && 'y' in geom) {
+      return {
+        type: 'Point',
+        coordinates: [geom.x as number, geom.y as number]
+      };
+    }
+
+    // Polygon geometry
+    if ('rings' in geom && Array.isArray(geom.rings)) {
+      return {
+        type: 'Polygon',
+        coordinates: geom.rings as number[][][]
+      };
+    }
+
+    // Polyline geometry
+    if ('paths' in geom && Array.isArray(geom.paths)) {
+      return {
+        type: 'LineString',
+        coordinates: geom.paths[0] as number[][]
+      };
+    }
+
+    // Default: return null for unknown geometry types
+    return null;
   }
 }
 

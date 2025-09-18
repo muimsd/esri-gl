@@ -1,11 +1,16 @@
 import { FeatureService } from '@/Services/FeatureService';
 import type { Map, FeatureServiceOptions } from '@/types';
 
-// Mock map object
-const mockMap: Map = {
+// Mock MapLibre/Mapbox GL Map with minimal interface
+const createMockMap = (): Partial<Map> => ({
   addSource: jest.fn(),
   removeSource: jest.fn(),
-  getSource: jest.fn(),
+  getSource: jest.fn().mockReturnValue({
+    setTiles: jest.fn(),
+    setUrl: jest.fn(),
+    tiles: ['https://example.com/{z}/{x}/{y}.png'],
+    _options: {}
+  }),
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
   getLayer: jest.fn(),
@@ -14,13 +19,21 @@ const mockMap: Map = {
   on: jest.fn(),
   off: jest.fn(),
   fire: jest.fn(),
-  _controls: [],
-};
+  getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
+  getBounds: jest.fn().mockReturnValue({
+    toArray: () => [[-180, -90], [180, 90]]
+  }),
+  project: jest.fn(),
+  unproject: jest.fn(),
+});
 
 // Mock fetch globally
 global.fetch = jest.fn();
+const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 describe('FeatureService', () => {
+  let mockMap: Partial<Map>;
+  
   const flush = () => new Promise(resolve => setTimeout(resolve, 0));
   const mockServiceOptions: FeatureServiceOptions = {
     url: 'https://example.com/arcgis/rest/services/TestService/FeatureServer/0',
@@ -30,19 +43,21 @@ describe('FeatureService', () => {
   };
 
   beforeEach(() => {
+    mockMap = createMockMap();
     jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockResolvedValue({
+    
+    // Default successful metadata response
+    mockFetch.mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service',
-        }),
-    });
+      json: () => Promise.resolve({
+        copyrightText: 'Test Attribution',
+        name: 'Test Service',
+      })
+    } as Response);
   });
 
   it('should create a FeatureService instance', () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
 
     expect(service).toBeInstanceOf(FeatureService);
     expect(service.esriServiceOptions.url).toBe(
@@ -55,7 +70,7 @@ describe('FeatureService', () => {
     delete (invalidOptions as Record<string, unknown>).url;
 
     expect(() => {
-      new FeatureService('test-source', mockMap, invalidOptions);
+      new FeatureService('test-source', mockMap as Map, invalidOptions);
     }).toThrow('A url must be supplied as part of the esriServiceOptions object.');
   });
 
@@ -65,7 +80,7 @@ describe('FeatureService', () => {
       url: 'https://example.com/arcgis/rest/services/TestService/FeatureServer/0/',
     };
 
-    const service = new FeatureService('test-source', mockMap, optionsWithSlash);
+    const service = new FeatureService('test-source', mockMap as Map, optionsWithSlash);
 
     expect(service.esriServiceOptions.url).toBe(
       'https://example.com/arcgis/rest/services/TestService/FeatureServer/0'
@@ -73,7 +88,7 @@ describe('FeatureService', () => {
   });
 
   it('should set where clause', async () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
     (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setWhere('STATE_NAME = "California"');
@@ -85,7 +100,7 @@ describe('FeatureService', () => {
   });
 
   it('should set output fields', async () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
     (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setOutFields(['STATE_NAME', 'POP2000']);
@@ -97,7 +112,7 @@ describe('FeatureService', () => {
   });
 
   it('should set layers', async () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
     (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.setLayers([0, 1]);
@@ -109,7 +124,7 @@ describe('FeatureService', () => {
   });
 
   it('should remove source', () => {
-    const service = new FeatureService('test-source', mockMap, mockServiceOptions);
+    const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
     (mockMap.getSource as jest.Mock).mockReturnValue({});
 
     service.remove();
