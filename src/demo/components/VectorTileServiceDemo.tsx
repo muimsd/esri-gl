@@ -63,7 +63,7 @@ const VectorTileServiceDemo: React.FC = () => {
         center: [-118.805, 34.027], // starting location [longitude, latitude]
       });
 
-      map.current.on('load', () => {
+      map.current.on('load', async () => {
         try {
           // Example Vector Tile Service URL
           const serviceUrl =
@@ -74,6 +74,9 @@ const VectorTileServiceDemo: React.FC = () => {
           });
 
           setLoading(false);
+          
+          // Automatically add the vector tile layer when the map loads
+          await addVectorTileLayer();
         } catch (err) {
           setError('Failed to load Vector Tile Service: ' + (err as Error).message);
           setLoading(false);
@@ -92,7 +95,8 @@ const VectorTileServiceDemo: React.FC = () => {
     };
   }, []);
 
-  const addLayer = async (): Promise<void> => {
+  // Function to add vector tile layer - used both automatically and manually
+  const addVectorTileLayer = async (): Promise<void> => {
     if (service.current && map.current && !layerAdded && !layerLoading) {
       setLayerLoading(true);
       try {
@@ -147,6 +151,10 @@ const VectorTileServiceDemo: React.FC = () => {
     }
   };
 
+  const addLayer = async (): Promise<void> => {
+    await addVectorTileLayer();
+  };
+
   const removeLayer = (): void => {
     if (map.current && layerAdded) {
       map.current.removeLayer('vector-tiles-layer');
@@ -196,7 +204,7 @@ const VectorTileServiceDemo: React.FC = () => {
                 cursor: layerAdded || loading || layerLoading ? 'not-allowed' : 'pointer',
               }}
             >
-              {layerLoading ? 'Adding Layer...' : 'Add Layer'}
+              {layerLoading ? 'Adding Layer...' : layerAdded ? 'Layer Added' : 'Add Layer'}
             </button>
             <button
               onClick={removeLayer}
@@ -269,7 +277,7 @@ const VectorTileServiceDemo: React.FC = () => {
         >
           <h3 style={{ margin: '0 0 6px 0' }}>Vector Tile Service</h3>
           <p style={{ margin: 0 }}>
-            Vector tiles from ArcGIS Server for scalable, interactive mapping with dynamic styling.
+            Vector tiles from ArcGIS Server load automatically on map initialization for scalable, interactive mapping with dynamic styling.
           </p>
           <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
             https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer
