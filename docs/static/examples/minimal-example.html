@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal esri-gl Example</title>
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-95, 40],
+            zoom: 4
+        });
+
+        map.on('load', () => {
+            // Add ArcGIS Dynamic Map Service
+            new esrigl.DynamicMapService('esri-service', map, {
+                url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+            });
+
+            // Add the layer
+            map.addLayer({
+                id: 'esri-layer',
+                type: 'raster',
+                source: 'esri-service'
+            });
+        });
+    </script>
+</body>
+</html>

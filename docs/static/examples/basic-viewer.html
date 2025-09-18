@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>esri-gl with MapLibre GL</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        button {
+            background: #007cbf;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #005a87;
+        }
+        
+        .info-popup {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            max-width: 300px;
+        }
+        
+        .info-popup h3 {
+            margin: 0 0 10px 0;
+            color: #007cbf;
+        }
+        
+        .info-popup p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Service Type:</label>
+            <select id="serviceType">
+                <option value="dynamic">Dynamic Map Service</option>
+                <option value="feature">Feature Service</option>
+                <option value="tiled">Tiled Map Service</option>
+                <option value="vector">Vector Tile Service</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Service URL:</label>
+            <input type="text" id="serviceUrl" 
+                   value="https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer"
+                   placeholder="Enter ArcGIS service URL">
+        </div>
+        
+        <div class="control-group">
+            <button onclick="loadService()">Load Service</button>
+            <button onclick="clearMap()">Clear Map</button>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="enableIdentify" onchange="toggleIdentify()"> 
+                Enable Click to Identify
+            </label>
+        </div>
+    </div>
+
+    <!-- MapLibre GL JavaScript -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <!-- esri-gl Library -->
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+
+    <script>
+        // Initialize MapLibre GL map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'raster-tiles': {
+                        type: 'raster',
+                        tiles: [
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                        ],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap contributors'
+                    }
+                },
+                layers: [
+                    {
+                        id: 'background',
+                        type: 'raster',
+                        source: 'raster-tiles'
+                    }
+                ]
+            },
+            center: [-95, 40],
+            zoom: 4
+        });
+
+        // Global variables
+        let currentService = null;
+        let identifyEnabled = false;
+        let currentPopup = null;
+
+        // Wait for map to load
+        map.on('load', () => {
+            console.log('Map loaded successfully');
+        });
+
+        // Load service based on type
+        function loadService() {
+            const serviceType = document.getElementById('serviceType').value;
+            const serviceUrl = document.getElementById('serviceUrl').value.trim();
+            
+            if (!serviceUrl) {
+                alert('Please enter a service URL');
+                return;
+            }
+
+            // Clear existing service
+            clearMap();
+
+            try {
+                const sourceId = 'esri-service-source';
+                
+                switch (serviceType) {
+                    case 'dynamic':
+                        currentService = new esrigl.DynamicMapService(sourceId, map, {
+                            url: serviceUrl
+                        });
+                        
+                        // Add raster layer
+                        map.addLayer({
+                            id: 'dynamic-layer',
+                            type: 'raster',
+                            source: sourceId
+                        });
+                        
+                        console.log('Dynamic Map Service loaded');
+                        break;
+
+                    case 'feature':
+                        currentService = new esrigl.FeatureService(sourceId, map, {
+                            url: serviceUrl,
+                            useVectorTiles: true,
+                            useBoundingBox: true
+                        });
+                        
+                        // Add vector layers after service is ready
+                        setTimeout(() => {
+                            addFeatureServiceLayers(sourceId);
+                        }, 1000);
+                        
+                        console.log('Feature Service loaded');
+                        break;
+
+                    case 'tiled':
+                        currentService = new esrigl.TiledMapService(sourceId, map, {
+                            url: serviceUrl
+                        });
+                        
+                        // Add raster layer
+                        map.addLayer({
+                            id: 'tiled-layer',
+                            type: 'raster',
+                            source: sourceId
+                        });
+                        
+                        console.log('Tiled Map Service loaded');
+                        break;
+
+                    case 'vector':
+                        currentService = new esrigl.VectorTileService(sourceId, map, {
+                            url: serviceUrl
+                        });
+                        
+                        console.log('Vector Tile Service loaded');
+                        break;
+
+                    default:
+                        alert('Unknown service type');
+                        return;
+                }
+
+                // Update URL examples based on service type
+                updateUrlExample(serviceType);
+
+            } catch (error) {
+                console.error('Error loading service:', error);
+                alert('Error loading service. Please check the URL and try again.');
+            }
+        }
+
+        // Add layers for Feature Service
+        function addFeatureServiceLayers(sourceId) {
+            try {
+                // Get the source to check if it's loaded
+                const source = map.getSource(sourceId);
+                if (!source) {
+                    console.warn('Source not ready yet');
+                    return;
+                }
+
+                // Add fill layer for polygons
+                if (!map.getLayer('features-fill')) {
+                    map.addLayer({
+                        id: 'features-fill',
+                        type: 'fill',
+                        source: sourceId,
+                        paint: {
+                            'fill-color': '#088',
+                            'fill-opacity': 0.6
+                        },
+                        filter: ['==', '$type', 'Polygon']
+                    });
+                }
+
+                // Add line layer
+                if (!map.getLayer('features-line')) {
+                    map.addLayer({
+                        id: 'features-line',
+                        type: 'line',
+                        source: sourceId,
+                        paint: {
+                            'line-color': '#000',
+                            'line-width': 2
+                        },
+                        filter: ['any', ['==', '$type', 'LineString'], ['==', '$type', 'Polygon']]
+                    });
+                }
+
+                // Add circle layer for points
+                if (!map.getLayer('features-circle')) {
+                    map.addLayer({
+                        id: 'features-circle',
+                        type: 'circle',
+                        source: sourceId,
+                        paint: {
+                            'circle-color': '#ff0000',
+                            'circle-radius': 6,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#ffffff'
+                        },
+                        filter: ['==', '$type', 'Point']
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error adding feature layers:', error);
+            }
+        }
+
+        // Clear map
+        function clearMap() {
+            if (currentService && typeof currentService.remove === 'function') {
+                currentService.remove();
+            }
+            
+            // Remove layers
+            const layersToRemove = ['dynamic-layer', 'tiled-layer', 'features-fill', 'features-line', 'features-circle'];
+            layersToRemove.forEach(layerId => {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+            });
+
+            // Remove sources
+            const sourcesToRemove = ['esri-service-source'];
+            sourcesToRemove.forEach(sourceId => {
+                if (map.getSource(sourceId)) {
+                    map.removeSource(sourceId);
+                }
+            });
+
+            currentService = null;
+            
+            // Close popup
+            if (currentPopup) {
+                currentPopup.remove();
+                currentPopup = null;
+            }
+
+            console.log('Map cleared');
+        }
+
+        // Toggle identify functionality
+        function toggleIdentify() {
+            identifyEnabled = document.getElementById('enableIdentify').checked;
+            
+            if (identifyEnabled) {
+                map.on('click', handleMapClick);
+                map.getCanvas().style.cursor = 'crosshair';
+            } else {
+                map.off('click', handleMapClick);
+                map.getCanvas().style.cursor = '';
+                if (currentPopup) {
+                    currentPopup.remove();
+                    currentPopup = null;
+                }
+            }
+        }
+
+        // Handle map click for identify
+        async function handleMapClick(e) {
+            if (!identifyEnabled || !currentService) return;
+
+            try {
+                const serviceType = document.getElementById('serviceType').value;
+                
+                if (serviceType === 'dynamic' && currentService.identify) {
+                    // Use service identify method
+                    const results = await currentService.identify(e.lngLat);
+                    showIdentifyResults(e.lngLat, results);
+                    
+                } else if (serviceType === 'feature') {
+                    // Query features at click point
+                    const features = map.queryRenderedFeatures(e.point, {
+                        layers: ['features-fill', 'features-line', 'features-circle']
+                    });
+                    
+                    if (features.length > 0) {
+                        showFeatureInfo(e.lngLat, features[0]);
+                    } else {
+                        showNoResults(e.lngLat);
+                    }
+                    
+                } else {
+                    showMessage(e.lngLat, 'Identify not supported for this service type');
+                }
+
+            } catch (error) {
+                console.error('Identify error:', error);
+                showMessage(e.lngLat, 'Error identifying features');
+            }
+        }
+
+        // Show identify results
+        function showIdentifyResults(lngLat, results) {
+            if (currentPopup) {
+                currentPopup.remove();
+            }
+
+            if (!results || !results.features || results.features.length === 0) {
+                showNoResults(lngLat);
+                return;
+            }
+
+            const feature = results.features[0];
+            const props = feature.properties || {};
+            
+            let content = '<div class="info-popup"><h3>Feature Information</h3>';
+            
+            Object.keys(props).slice(0, 5).forEach(key => {
+                if (props[key] !== null && props[key] !== undefined) {
+                    content += `<p><strong>${key}:</strong> ${props[key]}</p>`;
+                }
+            });
+            
+            content += '</div>';
+
+            currentPopup = new maplibregl.Popup()
+                .setLngLat(lngLat)
+                .setHTML(content)
+                .addTo(map);
+        }
+
+        // Show feature information
+        function showFeatureInfo(lngLat, feature) {
+            if (currentPopup) {
+                currentPopup.remove();
+            }
+
+            const props = feature.properties || {};
+            
+            let content = '<div class="info-popup"><h3>Feature Properties</h3>';
+            
+            Object.keys(props).slice(0, 8).forEach(key => {
+                if (props[key] !== null && props[key] !== undefined) {
+                    content += `<p><strong>${key}:</strong> ${props[key]}</p>`;
+                }
+            });
+            
+            content += '</div>';
+
+            currentPopup = new maplibregl.Popup()
+                .setLngLat(lngLat)
+                .setHTML(content)
+                .addTo(map);
+        }
+
+        // Show no results message
+        function showNoResults(lngLat) {
+            showMessage(lngLat, 'No features found at this location');
+        }
+
+        // Show message popup
+        function showMessage(lngLat, message) {
+            if (currentPopup) {
+                currentPopup.remove();
+            }
+
+            currentPopup = new maplibregl.Popup()
+                .setLngLat(lngLat)
+                .setHTML(`<div class="info-popup"><p>${message}</p></div>`)
+                .addTo(map);
+        }
+
+        // Update URL example based on service type
+        function updateUrlExample(serviceType) {
+            const urlInput = document.getElementById('serviceUrl');
+            
+            const examples = {
+                dynamic: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+                feature: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0',
+                tiled: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer',
+                vector: 'https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer'
+            };
+
+            if (examples[serviceType] && urlInput.value.includes('sampleserver6')) {
+                urlInput.value = examples[serviceType];
+            }
+        }
+
+        // Initialize service type change handler
+        document.getElementById('serviceType').addEventListener('change', (e) => {
+            updateUrlExample(e.target.value);
+        });
+
+        console.log('esri-gl HTML viewer loaded successfully');
+        console.log('Available services:', Object.keys(esrigl));
+    </script>
+</body>
+</html>

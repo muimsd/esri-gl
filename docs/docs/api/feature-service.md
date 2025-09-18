@@ -4,32 +4,32 @@ For accessing [ArcGIS Feature Services](https://developers.arcgis.com/rest/servi
 
 ## Constructor
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| id | `string` | An id to assign to the MapLibre GL source |
-| map | `Map` | A MapLibre GL or Mapbox GL map instance |
-| esriServiceOptions | `object` | Options for the Feature Service (see below) |
+| Argument             | Type     | Description                                 |
+| -------------------- | -------- | ------------------------------------------- |
+| id                   | `string` | An id to assign to the MapLibre GL source   |
+| map                  | `Map`    | A MapLibre GL or Mapbox GL map instance     |
+| esriServiceOptions   | `object` | Options for the Feature Service (see below) |
 | geoJsonSourceOptions | `object` | Optional MapLibre GL GeoJSON source options |
 
 ## Esri Service Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| url | `string` | | **Required** URL of the FeatureService layer |
-| where | `string` | `'1=1'` | SQL WHERE clause to filter features |
-| outFields | `Array<string> \| string` | `'*'` | Fields to include in response |
-| geometry | `object` | | Geometry to spatially filter features |
-| geometryType | `string` | | Type of geometry filter |
-| spatialRel | `string` | `'esriSpatialRelIntersects'` | Spatial relationship |
-| outSR | `number` | `4326` | Output spatial reference |
-| returnGeometry | `boolean` | `true` | Include geometry in response |
-| maxRecordCount | `number` | | Maximum features to return |
-| resultOffset | `number` | | Starting record for pagination |
-| orderByFields | `string` | | Fields to sort results by |
-| token | `string` | | Authentication token |
-| fetchOptions | `object` | | Fetch request options |
-| **useVectorTiles** | `boolean` | `false` | **NEW** Enable smart vector tile detection with GeoJSON fallback |
-| **useBoundingBox** | `boolean` | `true` | **NEW** Enable viewport-based data loading for performance |
+| Option             | Type                      | Default                      | Description                                                      |
+| ------------------ | ------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| url                | `string`                  |                              | **Required** URL of the FeatureService layer                     |
+| where              | `string`                  | `'1=1'`                      | SQL WHERE clause to filter features                              |
+| outFields          | `Array<string> \| string` | `'*'`                        | Fields to include in response                                    |
+| geometry           | `object`                  |                              | Geometry to spatially filter features                            |
+| geometryType       | `string`                  |                              | Type of geometry filter                                          |
+| spatialRel         | `string`                  | `'esriSpatialRelIntersects'` | Spatial relationship                                             |
+| outSR              | `number`                  | `4326`                       | Output spatial reference                                         |
+| returnGeometry     | `boolean`                 | `true`                       | Include geometry in response                                     |
+| maxRecordCount     | `number`                  |                              | Maximum features to return                                       |
+| resultOffset       | `number`                  |                              | Starting record for pagination                                   |
+| orderByFields      | `string`                  |                              | Fields to sort results by                                        |
+| token              | `string`                  |                              | Authentication token                                             |
+| fetchOptions       | `object`                  |                              | Fetch request options                                            |
+| **useVectorTiles** | `boolean`                 | `false`                      | **NEW** Enable smart vector tile detection with GeoJSON fallback |
+| **useBoundingBox** | `boolean`                 | `true`                       | **NEW** Enable viewport-based data loading for performance       |
 
 ## Advanced Features
 
@@ -45,7 +45,7 @@ const service = new FeatureService('parcels-source', map, {
   useVectorTiles: true, // Automatically detects vector tile support
   useBoundingBox: true, // Optimize with viewport filtering
   where: "STATUS = 'Active'",
-  outFields: '*'
+  outFields: '*',
 });
 
 // The service will:
@@ -65,7 +65,7 @@ const optimizedService = new FeatureService('big-dataset-source', map, {
   useBoundingBox: true, // Only load features in viewport
   maxRecordCount: 1000, // Limit records per request
   where: 'STATUS = "Active"', // Server-side filtering
-  outFields: ['OBJECTID', 'NAME', 'STATUS'] // Limit fields
+  outFields: ['OBJECTID', 'NAME', 'STATUS'], // Limit fields
 });
 
 // Automatically updates when map moves
@@ -76,14 +76,14 @@ map.on('moveend', () => {
 
 ## Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `query(options?)` | `Promise<GeoJSON.FeatureCollection>` | Query features with custom parameters |
-| `updateQuery(options)` | `void` | Update query parameters and refresh |
-| `refresh()` | `void` | Refresh data from service |
-| `setBoundingBox(enabled)` | `void` | Enable/disable bounding box filtering |
-| `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResult[]>` | Identify features at point |
-| `remove()` | `void` | Remove service and clean up resources |
+| Method                              | Returns                              | Description                           |
+| ----------------------------------- | ------------------------------------ | ------------------------------------- |
+| `query(options?)`                   | `Promise<GeoJSON.FeatureCollection>` | Query features with custom parameters |
+| `updateQuery(options)`              | `void`                               | Update query parameters and refresh   |
+| `refresh()`                         | `void`                               | Refresh data from service             |
+| `setBoundingBox(enabled)`           | `void`                               | Enable/disable bounding box filtering |
+| `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResult[]>`          | Identify features at point            |
+| `remove()`                          | `void`                               | Remove service and clean up resources |
 
 ## Usage Examples
 
@@ -97,7 +97,7 @@ const map = new Map({
   container: 'map',
   style: 'https://demotiles.maplibre.org/style.json',
   center: [-95, 37],
-  zoom: 4
+  zoom: 4,
 });
 
 map.on('load', () => {
@@ -105,7 +105,7 @@ map.on('load', () => {
   const statesService = new FeatureService('states-source', map, {
     url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
     where: '1=1',
-    outFields: ['STATE_NAME', 'POP2000', 'AREA']
+    outFields: ['STATE_NAME', 'POP2000', 'AREA'],
   });
 
   map.addLayer({
@@ -114,8 +114,8 @@ map.on('load', () => {
     source: 'states-source',
     paint: {
       'fill-color': '#007cbf',
-      'fill-opacity': 0.5
-    }
+      'fill-opacity': 0.5,
+    },
   });
 
   map.addLayer({
@@ -124,8 +124,8 @@ map.on('load', () => {
     source: 'states-source',
     paint: {
       'line-color': '#004494',
-      'line-width': 2
-    }
+      'line-width': 2,
+    },
   });
 });
 ```
@@ -140,11 +140,8 @@ const parcelsService = new FeatureService('parcels-source', map, {
   useBoundingBox: true, // Only load viewport data
   maxRecordCount: 2000, // Reasonable chunk size
   where: "ZONING NOT IN ('VAC', 'UND')", // Filter server-side
-  outFields: [
-    'OBJECTID', 'PARCEL_ID', 'OWNER', 'ADDRESS', 
-    'ZONING', 'ACRES', 'ASSESSED_VALUE'
-  ],
-  orderByFields: 'ASSESSED_VALUE DESC' // Load high-value parcels first
+  outFields: ['OBJECTID', 'PARCEL_ID', 'OWNER', 'ADDRESS', 'ZONING', 'ACRES', 'ASSESSED_VALUE'],
+  orderByFields: 'ASSESSED_VALUE DESC', // Load high-value parcels first
 });
 
 // Add layers with zoom-based visibility
@@ -156,12 +153,14 @@ map.addLayer({
   paint: {
     'fill-color': [
       'case',
-      ['>', ['get', 'ASSESSED_VALUE'], 1000000], '#ff4444',
-      ['>', ['get', 'ASSESSED_VALUE'], 500000], '#ff8844', 
-      '#44aaff'
+      ['>', ['get', 'ASSESSED_VALUE'], 1000000],
+      '#ff4444',
+      ['>', ['get', 'ASSESSED_VALUE'], 500000],
+      '#ff8844',
+      '#44aaff',
     ],
-    'fill-opacity': 0.6
-  }
+    'fill-opacity': 0.6,
+  },
 });
 
 map.addLayer({
@@ -171,8 +170,8 @@ map.addLayer({
   minzoom: 12, // Detailed view at high zoom
   paint: {
     'fill-color': ['get', 'ZONING'],
-    'fill-opacity': 0.7
-  }
+    'fill-opacity': 0.7,
+  },
 });
 ```
 
@@ -190,14 +189,14 @@ class FeatureServiceManager {
       useVectorTiles: true,
       useBoundingBox: true,
       where: '1=1',
-      outFields: '*'
+      outFields: '*',
     });
   }
 
   // Update filters dynamically
   updateFilters(whereClause: string) {
     this.service.updateQuery({
-      where: whereClause
+      where: whereClause,
     });
   }
 
@@ -211,7 +210,7 @@ class FeatureServiceManager {
     const results = await this.service.query({
       where: `${field} LIKE '%${searchText}%'`,
       returnGeometry: true,
-      maxRecordCount: 50
+      maxRecordCount: 50,
     });
 
     // Zoom to results
@@ -226,7 +225,7 @@ class FeatureServiceManager {
   // Feature identification
   async identifyAt(lngLat: [number, number]) {
     const results = await this.service.identify(lngLat, true);
-    
+
     // Show popup with results
     if (results.length > 0) {
       const feature = results[0];
@@ -257,18 +256,19 @@ class FeatureServiceManager {
 }
 
 // Usage
-const featureManager = new FeatureServiceManager(map, 
+const featureManager = new FeatureServiceManager(
+  map,
   'https://services.arcgis.com/.../FeatureServer/0'
 );
 
 // Update filters based on user input
-document.getElementById('filter-input').addEventListener('input', (e) => {
+document.getElementById('filter-input').addEventListener('input', e => {
   const value = e.target.value;
   featureManager.updateFilters(`NAME LIKE '%${value}%'`);
 });
 
 // Click to identify
-map.on('click', (e) => {
+map.on('click', e => {
   featureManager.identifyAt([e.lngLat.lng, e.lngLat.lat]);
 });
 ```
@@ -280,21 +280,21 @@ map.on('click', (e) => {
 const smartService = new FeatureService('smart-source', map, {
   url: 'https://services.arcgis.com/.../FeatureServer/0',
   useVectorTiles: true, // Enables smart detection
-  useBoundingBox: true
+  useBoundingBox: true,
 });
 
 // Monitor what format is being used
-map.on('sourcedata', (e) => {
+map.on('sourcedata', e => {
   if (e.sourceId === 'smart-source' && e.isSourceLoaded) {
     const source = map.getSource('smart-source');
     console.log('Source type:', source.type); // 'vector' or 'geojson'
-    
+
     // Vector tiles provide:
     // - Better performance for large datasets
     // - Client-side styling capabilities
     // - Smooth zoom interactions
-    
-    // GeoJSON provides:  
+
+    // GeoJSON provides:
     // - Feature properties access
     // - Better popup/identify support
     // - Dynamic filtering capabilities
@@ -312,7 +312,7 @@ const timeEnabledService = new FeatureService('temporal-source', map, {
   useBoundingBox: true,
   where: "DATE_FIELD >= date '2023-01-01' AND DATE_FIELD < date '2024-01-01'",
   outFields: '*',
-  orderByFields: 'DATE_FIELD'
+  orderByFields: 'DATE_FIELD',
 });
 
 // Time slider integration
@@ -324,7 +324,7 @@ class TimeSlider {
 
   setupSlider() {
     const slider = document.getElementById('time-slider') as HTMLInputElement;
-    slider.addEventListener('input', (e) => {
+    slider.addEventListener('input', e => {
       const year = parseInt(e.target.value);
       this.updateTimeFilter(year);
     });
@@ -353,7 +353,7 @@ class OptimizedFeatureService {
     this.service = new FeatureService('optimized-source', map, {
       url,
       useVectorTiles: true,
-      useBoundingBox: true
+      useBoundingBox: true,
     });
 
     // Monitor zoom changes for level-of-detail
@@ -364,18 +364,18 @@ class OptimizedFeatureService {
 
   private handleZoomChange(newZoom: number) {
     const zoomDiff = Math.abs(newZoom - this.currentZoom);
-    
+
     if (zoomDiff > 2) {
       // Significant zoom change, adjust detail level
       const maxRecordCount = newZoom > 12 ? 5000 : 1000;
       const outFields = newZoom > 15 ? '*' : ['OBJECTID', 'NAME'];
-      
+
       this.service.updateQuery({
         maxRecordCount,
-        outFields
+        outFields,
       });
     }
-    
+
     this.currentZoom = newZoom;
   }
 
@@ -390,16 +390,21 @@ class OptimizedFeatureService {
 
 ```typescript
 // For point feature services, add clustering
-const pointService = new FeatureService('points-source', map, {
-  url: 'https://services.arcgis.com/.../PointFeatureServer/0',
-  useVectorTiles: false, // Use GeoJSON for clustering
-  useBoundingBox: true,
-  maxRecordCount: 10000
-}, {
-  cluster: true,
-  clusterMaxZoom: 14,
-  clusterRadius: 50
-});
+const pointService = new FeatureService(
+  'points-source',
+  map,
+  {
+    url: 'https://services.arcgis.com/.../PointFeatureServer/0',
+    useVectorTiles: false, // Use GeoJSON for clustering
+    useBoundingBox: true,
+    maxRecordCount: 10000,
+  },
+  {
+    cluster: true,
+    clusterMaxZoom: 14,
+    clusterRadius: 50,
+  }
+);
 
 // Add cluster layers
 map.addLayer({
@@ -408,17 +413,9 @@ map.addLayer({
   source: 'points-source',
   filter: ['has', 'point_count'],
   paint: {
-    'circle-color': [
-      'step',
-      ['get', 'point_count'],
-      '#51bbd6', 20, '#f1f075', 50, '#f28cb1'
-    ],
-    'circle-radius': [
-      'step',
-      ['get', 'point_count'],
-      20, 20, 30, 50, 40
-    ]
-  }
+    'circle-color': ['step', ['get', 'point_count'], '#51bbd6', 20, '#f1f075', 50, '#f28cb1'],
+    'circle-radius': ['step', ['get', 'point_count'], 20, 20, 30, 50, 40],
+  },
 });
 
 map.addLayer({
@@ -429,8 +426,8 @@ map.addLayer({
   layout: {
     'text-field': '{point_count_abbreviated}',
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-    'text-size': 12
-  }
+    'text-size': 12,
+  },
 });
 
 map.addLayer({
@@ -442,8 +439,8 @@ map.addLayer({
     'circle-color': '#11b4da',
     'circle-radius': 4,
     'circle-stroke-width': 1,
-    'circle-stroke-color': '#fff'
-  }
+    'circle-stroke-color': '#fff',
+  },
 });
 ```
 
@@ -456,11 +453,11 @@ const createRobustFeatureService = async (map: Map, url: string) => {
       url,
       useVectorTiles: true,
       useBoundingBox: true,
-      maxRecordCount: 1000
+      maxRecordCount: 1000,
     });
 
     // Monitor source events
-    map.on('sourcedata', (e) => {
+    map.on('sourcedata', e => {
       if (e.sourceId === 'robust-source') {
         if (e.isSourceLoaded) {
           console.log('✓ Features loaded successfully');
@@ -468,9 +465,9 @@ const createRobustFeatureService = async (map: Map, url: string) => {
       }
     });
 
-    map.on('error', (e) => {
+    map.on('error', e => {
       console.error('✗ Feature service error:', e);
-      
+
       // Implement fallback strategy
       if (e.error?.message?.includes('vector tiles')) {
         console.log('Falling back to GeoJSON...');
@@ -479,17 +476,17 @@ const createRobustFeatureService = async (map: Map, url: string) => {
     });
 
     return service;
-    
   } catch (error) {
     console.error('Failed to create feature service:', error);
-    
+
     // Return null or fallback service
     return null;
   }
 };
 
 // Usage with error handling
-const service = await createRobustFeatureService(map, 
+const service = await createRobustFeatureService(
+  map,
   'https://services.arcgis.com/.../FeatureServer/0'
 );
 
@@ -499,7 +496,7 @@ if (service) {
     id: 'features-layer',
     type: 'fill',
     source: 'robust-source',
-    paint: { 'fill-color': '#007cbf' }
+    paint: { 'fill-color': '#007cbf' },
   });
 } else {
   // Show error message to user
@@ -540,7 +537,7 @@ if (service) {
 const service = new FeatureService('debug-source', map, {
   url: 'https://example.com/FeatureServer/0',
   useVectorTiles: true,
-  useBoundingBox: true
+  useBoundingBox: true,
 });
 
 // Check service metadata
@@ -564,24 +561,24 @@ fetch('https://example.com/VectorTileServer?f=json')
 
 // Add fill layer
 map.addLayer({
-    id: 'states-fill',
-    type: 'fill',
-    source: 'states-source',
-    paint: {
-        'fill-color': '#088',
-        'fill-opacity': 0.6
-    }
+  id: 'states-fill',
+  type: 'fill',
+  source: 'states-source',
+  paint: {
+    'fill-color': '#088',
+    'fill-opacity': 0.6,
+  },
 });
 
 // Add stroke layer
 map.addLayer({
-    id: 'states-stroke',
-    type: 'line',
-    source: 'states-source', 
-    paint: {
-        'line-color': '#000',
-        'line-width': 1
-    }
+  id: 'states-stroke',
+  type: 'line',
+  source: 'states-source',
+  paint: {
+    'line-color': '#000',
+    'line-width': 1,
+  },
 });
 ```
 
@@ -590,28 +587,32 @@ map.addLayer({
 ```typescript
 // Large states only
 const largeStatesService = new FeatureService('large-states-source', map, {
-    url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
-    where: 'AREA > 100000',
-    outFields: ['STATE_NAME', 'AREA'],
-    orderByFields: 'AREA DESC'
-})
+  url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
+  where: 'AREA > 100000',
+  outFields: ['STATE_NAME', 'AREA'],
+  orderByFields: 'AREA DESC',
+});
 
 map.addLayer({
-    id: 'large-states',
-    type: 'fill',
-    source: 'large-states-source',
-    paint: {
-        'fill-color': [
-            'interpolate',
-            ['linear'],
-            ['get', 'AREA'],
-            50000, '#ffffcc',
-            200000, '#a1dab4', 
-            400000, '#41b6c4',
-            600000, '#225ea8'
-        ]
-    }
-})
+  id: 'large-states',
+  type: 'fill',
+  source: 'large-states-source',
+  paint: {
+    'fill-color': [
+      'interpolate',
+      ['linear'],
+      ['get', 'AREA'],
+      50000,
+      '#ffffcc',
+      200000,
+      '#a1dab4',
+      400000,
+      '#41b6c4',
+      600000,
+      '#225ea8',
+    ],
+  },
+});
 ```
 
 ## Point Features
@@ -619,49 +620,52 @@ map.addLayer({
 ```typescript
 // Cities with population data
 const citiesService = new FeatureService('cities-source', map, {
-    url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0',
-    where: 'POP_RANK <= 3',
-    outFields: ['CITY_NAME', 'POP', 'COUNTRY'],
-    orderByFields: 'POP DESC'
-})
+  url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0',
+  where: 'POP_RANK <= 3',
+  outFields: ['CITY_NAME', 'POP', 'COUNTRY'],
+  orderByFields: 'POP DESC',
+});
 
 // Add circle layer for cities
 map.addLayer({
-    id: 'cities-circle',
-    type: 'circle',
-    source: 'cities-source',
-    paint: {
-        'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'POP'],
-            100000, 4,
-            1000000, 8,
-            10000000, 16
-        ],
-        'circle-color': '#ff6b6b',
-        'circle-stroke-color': '#333',
-        'circle-stroke-width': 1
-    }
-})
+  id: 'cities-circle',
+  type: 'circle',
+  source: 'cities-source',
+  paint: {
+    'circle-radius': [
+      'interpolate',
+      ['linear'],
+      ['get', 'POP'],
+      100000,
+      4,
+      1000000,
+      8,
+      10000000,
+      16,
+    ],
+    'circle-color': '#ff6b6b',
+    'circle-stroke-color': '#333',
+    'circle-stroke-width': 1,
+  },
+});
 
 // Add labels
 map.addLayer({
-    id: 'cities-labels',
-    type: 'symbol',
-    source: 'cities-source',
-    layout: {
-        'text-field': ['get', 'CITY_NAME'],
-        'text-font': ['Open Sans Regular'],
-        'text-size': 12,
-        'text-offset': [0, 2]
-    },
-    paint: {
-        'text-color': '#333',
-        'text-halo-color': '#fff',
-        'text-halo-width': 1
-    }
-})
+  id: 'cities-labels',
+  type: 'symbol',
+  source: 'cities-source',
+  layout: {
+    'text-field': ['get', 'CITY_NAME'],
+    'text-font': ['Open Sans Regular'],
+    'text-size': 12,
+    'text-offset': [0, 2],
+  },
+  paint: {
+    'text-color': '#333',
+    'text-halo-color': '#fff',
+    'text-halo-width': 1,
+  },
+});
 ```
 
 ## Spatial Filtering
@@ -669,17 +673,17 @@ map.addLayer({
 ```typescript
 // Features within a bounding box
 const boundedService = new FeatureService('bounded-source', map, {
-    url: 'https://services.arcgis.com/example/FeatureServer/0',
-    geometry: {
-        xmin: -125,
-        ymin: 25,
-        xmax: -65,
-        ymax: 49
-    },
-    geometryType: 'esriGeometryEnvelope',
-    spatialRel: 'esriSpatialRelIntersects',
-    outFields: '*'
-})
+  url: 'https://services.arcgis.com/example/FeatureServer/0',
+  geometry: {
+    xmin: -125,
+    ymin: 25,
+    xmax: -65,
+    ymax: 49,
+  },
+  geometryType: 'esriGeometryEnvelope',
+  spatialRel: 'esriSpatialRelIntersects',
+  outFields: '*',
+});
 ```
 
 ## Dynamic Querying
@@ -687,19 +691,19 @@ const boundedService = new FeatureService('bounded-source', map, {
 ```typescript
 // Update query based on user input
 function filterByState(stateName: string) {
-    statesService.updateQuery({
-        where: `STATE_NAME = '${stateName}'`,
-        outFields: ['STATE_NAME', 'POP2000', 'AREA']
-    })
+  statesService.updateQuery({
+    where: `STATE_NAME = '${stateName}'`,
+    outFields: ['STATE_NAME', 'POP2000', 'AREA'],
+  });
 }
 
 // Advanced query with multiple conditions
 function complexQuery() {
-    statesService.updateQuery({
-        where: "POP2000 > 5000000 AND STATE_NAME LIKE 'C%'",
-        orderByFields: 'POP2000 DESC',
-        maxRecordCount: 10
-    })
+  statesService.updateQuery({
+    where: "POP2000 > 5000000 AND STATE_NAME LIKE 'C%'",
+    orderByFields: 'POP2000 DESC',
+    maxRecordCount: 10,
+  });
 }
 ```
 
@@ -708,25 +712,25 @@ function complexQuery() {
 ```typescript
 // Load features in pages
 async function loadNextPage(offset: number = 0) {
-    const pageSize = 1000
-    
-    const features = await citiesService.query({
-        where: '1=1',
-        outFields: '*',
-        resultOffset: offset,
-        maxRecordCount: pageSize,
-        orderByFields: 'OBJECTID'
-    })
-    
-    console.log(`Loaded ${features.features.length} features`)
-    
-    // Load more if available
-    if (features.features.length === pageSize) {
-        await loadNextPage(offset + pageSize)
-    }
+  const pageSize = 1000;
+
+  const features = await citiesService.query({
+    where: '1=1',
+    outFields: '*',
+    resultOffset: offset,
+    maxRecordCount: pageSize,
+    orderByFields: 'OBJECTID',
+  });
+
+  console.log(`Loaded ${features.features.length} features`);
+
+  // Load more if available
+  if (features.features.length === pageSize) {
+    await loadNextPage(offset + pageSize);
+  }
 }
 
-loadNextPage()
+loadNextPage();
 ```
 
 ## Real-time Updates
@@ -734,35 +738,35 @@ loadNextPage()
 ```typescript
 // Refresh data periodically
 setInterval(() => {
-    statesService.refresh()
-}, 30000) // Every 30 seconds
+  statesService.refresh();
+}, 30000); // Every 30 seconds
 
 // Listen for source data updates
-map.on('sourcedata', (e) => {
-    if (e.sourceId === 'states-source' && e.isSourceLoaded) {
-        console.log('States data updated')
-    }
-})
+map.on('sourcedata', e => {
+  if (e.sourceId === 'states-source' && e.isSourceLoaded) {
+    console.log('States data updated');
+  }
+});
 ```
 
 ## Error Handling
 
 ```typescript
 try {
-    const service = new FeatureService('test-source', map, {
-        url: 'https://services.arcgis.com/invalid/FeatureServer/0',
-        where: '1=1'
-    })
+  const service = new FeatureService('test-source', map, {
+    url: 'https://services.arcgis.com/invalid/FeatureServer/0',
+    where: '1=1',
+  });
 } catch (error) {
-    console.error('Failed to create service:', error)
+  console.error('Failed to create service:', error);
 }
 
 // Handle query errors
-map.on('error', (e) => {
-    if (e.error?.message?.includes('FeatureServer')) {
-        console.error('Feature service error:', e.error)
-    }
-})
+map.on('error', e => {
+  if (e.error?.message?.includes('FeatureServer')) {
+    console.error('Feature service error:', e.error);
+  }
+});
 ```
 
 ## Performance Tips
@@ -780,7 +784,7 @@ map.on('error', (e) => {
 -- Simple equality
 STATE_NAME = 'California'
 
--- Numeric comparison  
+-- Numeric comparison
 POP2000 > 1000000
 
 -- String patterns

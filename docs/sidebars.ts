@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
         'examples/advanced',
         'examples/performance',
         'examples/real-world',
+        'examples/html-viewer',
       ],
     },
   ],

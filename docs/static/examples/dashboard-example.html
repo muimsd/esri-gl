@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>esri-gl Dashboard</title>
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        
+        .service-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 5px;
+        }
+        
+        .service-group h3 {
+            margin: 0 0 15px 0;
+            color: #ecf0f1;
+        }
+        
+        .service-item {
+            margin-bottom: 10px;
+        }
+        
+        .service-item button {
+            width: 100%;
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .service-item button:hover {
+            background: #2980b9;
+        }
+        
+        .service-item button.active {
+            background: #e74c3c;
+        }
+        
+        #map {
+            flex: 1;
+            position: relative;
+        }
+        
+        .map-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            z-index: 2000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>esri-gl Dashboard</h2>
+            
+            <div class="service-group">
+                <h3>Map Services</h3>
+                <div class="service-item">
+                    <button onclick="loadService('dynamic', 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer', 'USA Map')">USA Dynamic Service</button>
+                </div>
+                <div class="service-item">
+                    <button onclick="loadService('tiled', 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer', 'World Time Zones')">World Time Zones</button>
+                </div>
+                <div class="service-item">
+                    <button onclick="loadService('dynamic', 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer', 'Census Data')">Census Data</button>
+                </div>
+            </div>
+            
+            <div class="service-group">
+                <h3>Feature Services</h3>
+                <div class="service-item">
+                    <button onclick="loadService('feature', 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0', 'USA Cities')">USA Cities</button>
+                </div>
+                <div class="service-item">
+                    <button onclick="loadService('feature', 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2', 'USA States')">USA States</button>
+                </div>
+            </div>
+            
+            <div class="service-group">
+                <h3>Vector Services</h3>
+                <div class="service-item">
+                    <button onclick="loadService('vector', 'https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer', 'World Basemap')">World Basemap</button>
+                </div>
+            </div>
+            
+            <div class="service-group">
+                <h3>Actions</h3>
+                <div class="service-item">
+                    <button onclick="clearAllServices()">Clear All</button>
+                </div>
+                <div class="service-item">
+                    <button onclick="toggleIdentify()">Toggle Identify</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map">
+            <div class="loading" id="loading">Loading service...</div>
+            <div class="map-info" id="mapInfo">Click a service to load</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-95, 40],
+            zoom: 4
+        });
+
+        // Add controls
+        map.addControl(new maplibregl.NavigationControl());
+        map.addControl(new maplibregl.ScaleControl());
+
+        let services = new Map();
+        let layerCounter = 0;
+        let identifyEnabled = false;
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function updateMapInfo(text) {
+            document.getElementById('mapInfo').textContent = text;
+        }
+
+        async function loadService(type, url, name) {
+            showLoading();
+            updateMapInfo(`Loading ${name}...`);
+
+            try {
+                const serviceId = `service-${layerCounter++}`;
+                const layerId = `layer-${layerCounter}`;
+
+                let service;
+                switch (type) {
+                    case 'dynamic':
+                        service = new esrigl.DynamicMapService(serviceId, map, { url });
+                        map.addLayer({
+                            id: layerId,
+                            type: 'raster',
+                            source: serviceId
+                        });
+                        break;
+
+                    case 'tiled':
+                        service = new esrigl.TiledMapService(serviceId, map, { url });
+                        map.addLayer({
+                            id: layerId,
+                            type: 'raster',
+                            source: serviceId
+                        });
+                        break;
+
+                    case 'feature':
+                        service = new esrigl.FeatureService(serviceId, map, {
+                            url,
+                            useVectorTiles: true
+                        });
+                        
+                        setTimeout(() => {
+                            // Add feature layers based on geometry
+                            const source = map.getSource(serviceId);
+                            if (source) {
+                                map.addLayer({
+                                    id: `${layerId}-fill`,
+                                    type: 'fill',
+                                    source: serviceId,
+                                    paint: {
+                                        'fill-color': '#3498db',
+                                        'fill-opacity': 0.6
+                                    },
+                                    filter: ['==', '$type', 'Polygon']
+                                });
+
+                                map.addLayer({
+                                    id: `${layerId}-line`,
+                                    type: 'line',
+                                    source: serviceId,
+                                    paint: {
+                                        'line-color': '#2c3e50',
+                                        'line-width': 2
+                                    }
+                                });
+
+                                map.addLayer({
+                                    id: `${layerId}-circle`,
+                                    type: 'circle',
+                                    source: serviceId,
+                                    paint: {
+                                        'circle-radius': 6,
+                                        'circle-color': '#e74c3c',
+                                        'circle-stroke-width': 2,
+                                        'circle-stroke-color': '#ffffff'
+                                    },
+                                    filter: ['==', '$type', 'Point']
+                                });
+                            }
+                        }, 1000);
+                        break;
+
+                    case 'vector':
+                        service = new esrigl.VectorTileService(serviceId, map, { url });
+                        break;
+                }
+
+                services.set(serviceId, { service, name, type, layerId });
+                updateMapInfo(`Loaded: ${name} (${services.size} services active)`);
+
+            } catch (error) {
+                console.error('Error loading service:', error);
+                updateMapInfo(`Error loading ${name}`);
+            }
+
+            hideLoading();
+        }
+
+        function clearAllServices() {
+            services.forEach((serviceInfo, serviceId) => {
+                if (serviceInfo.service && typeof serviceInfo.service.remove === 'function') {
+                    serviceInfo.service.remove();
+                }
+
+                // Remove layers
+                const layersToRemove = [
+                    serviceInfo.layerId,
+                    `${serviceInfo.layerId}-fill`,
+                    `${serviceInfo.layerId}-line`,
+                    `${serviceInfo.layerId}-circle`
+                ];
+
+                layersToRemove.forEach(layerId => {
+                    if (map.getLayer(layerId)) {
+                        map.removeLayer(layerId);
+                    }
+                });
+
+                // Remove source
+                if (map.getSource(serviceId)) {
+                    map.removeSource(serviceId);
+                }
+            });
+
+            services.clear();
+            updateMapInfo('All services cleared');
+        }
+
+        function toggleIdentify() {
+            identifyEnabled = !identifyEnabled;
+            
+            if (identifyEnabled) {
+                map.on('click', handleMapClick);
+                map.getCanvas().style.cursor = 'crosshair';
+                updateMapInfo('Identify mode enabled - click on features');
+            } else {
+                map.off('click', handleMapClick);
+                map.getCanvas().style.cursor = '';
+                updateMapInfo(`${services.size} services active`);
+            }
+        }
+
+        function handleMapClick(e) {
+            if (!identifyEnabled) return;
+
+            // Query all rendered features at click point
+            const features = map.queryRenderedFeatures(e.point);
+            
+            if (features.length > 0) {
+                const feature = features[0];
+                const props = feature.properties || {};
+                
+                let content = '<h3>Feature Properties</h3>';
+                Object.keys(props).slice(0, 5).forEach(key => {
+                    if (props[key] !== null && props[key] !== undefined) {
+                        content += `<p><strong>${key}:</strong> ${props[key]}</p>`;
+                    }
+                });
+
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(content)
+                    .addTo(map);
+            }
+        }
+
+        map.on('load', () => {
+            updateMapInfo('Map ready - click a service to load');
+        });
+    </script>
+</body>
+</html>
