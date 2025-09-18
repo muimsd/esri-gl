@@ -23,7 +23,7 @@ const VectorTileServiceDemo: React.FC = () => {
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       document.head.removeChild(style);
     };
@@ -222,8 +222,8 @@ const VectorTileServiceDemo: React.FC = () => {
       )}
 
       {layerLoading && (
-        <div 
-          className="layer-loading" 
+        <div
+          className="layer-loading"
           style={{
             position: 'absolute',
             top: '50%',
@@ -236,17 +236,17 @@ const VectorTileServiceDemo: React.FC = () => {
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
-            gap: 8
+            gap: 8,
           }}
         >
-          <div 
+          <div
             style={{
               width: 16,
               height: 16,
               border: '2px solid #ccc',
               borderTop: '2px solid #088',
               borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
+              animation: 'spin 1s linear infinite',
             }}
           />
           Adding Vector Tile Layer...

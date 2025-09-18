@@ -30,7 +30,7 @@ const App: React.FC = () => {
           return stored as TabType;
         }
       }
-    } catch (_) {
+    } catch {
       // ignore storage errors and fall back
     }
     return 'dynamic';
@@ -55,7 +55,7 @@ const App: React.FC = () => {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(TAB_KEY, activeTab);
       }
-    } catch (_) {
+    } catch {
       // ignore storage errors
     }
   }, [activeTab]);

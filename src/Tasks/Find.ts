@@ -132,7 +132,7 @@ export class Find extends Task {
       this.params.f = 'geojson';
       const response = await this.request<GeoJSON.FeatureCollection>();
       return response;
-    } catch (error) {
+    } catch {
       // Fallback to JSON format and convert
       this.params.f = 'json';
       const response = await this.request<{

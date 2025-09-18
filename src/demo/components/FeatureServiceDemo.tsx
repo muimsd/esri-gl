@@ -121,7 +121,10 @@ const FeatureServiceDemo: React.FC = () => {
           .map(k => `<div><strong>${k}</strong>: ${String(props[k])}</div>`) // safe stringification
           .join('');
 
-        new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<div>${info}</div>`).addTo(map.current!);
+        new maplibregl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`<div>${info}</div>`)
+          .addTo(map.current!);
       });
 
       // Change cursor to pointer when hovering over counties
@@ -152,7 +155,10 @@ const FeatureServiceDemo: React.FC = () => {
           fontSize: '14px',
         }}
       >
-        <strong>Feature Service Demo</strong> - Road Segments from ArcGIS FeatureServer with vector tile detection and dynamic bounding box filtering. Auto-detects vector tile support and falls back to GeoJSON. Features automatically update when you pan/zoom. Click features for details.
+        <strong>Feature Service Demo</strong> - Road Segments from ArcGIS FeatureServer with vector
+        tile detection and dynamic bounding box filtering. Auto-detects vector tile support and
+        falls back to GeoJSON. Features automatically update when you pan/zoom. Click features for
+        details.
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
     </div>

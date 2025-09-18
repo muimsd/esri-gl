@@ -246,7 +246,7 @@ export class Query extends Task {
     try {
       const response = await this.request<GeoJSON.FeatureCollection>();
       return response;
-    } catch (error) {
+    } catch {
       // Fallback to JSON format and convert
       this.params.f = 'json';
       const response = await this.request<{

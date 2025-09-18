@@ -78,10 +78,13 @@ export class FeatureService {
 
       // Check if vector tiles should be used (default behavior)
       // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
-      console.log('FeatureService: useVectorTiles setting:', this.esriServiceOptions.useVectorTiles);
+      console.log(
+        'FeatureService: useVectorTiles setting:',
+        this.esriServiceOptions.useVectorTiles
+      );
       const vectorTileSupport = await this._checkVectorTileSupport();
       console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
-      
+
       const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
       console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
 
@@ -126,8 +129,11 @@ export class FeatureService {
   private async _checkVectorTileSupport(): Promise<boolean> {
     try {
       // Try to check if a VectorTileServer endpoint exists
-      const vectorTileUrl = this.esriServiceOptions.url.replace('/FeatureServer/', '/VectorTileServer/');
-      
+      const vectorTileUrl = this.esriServiceOptions.url.replace(
+        '/FeatureServer/',
+        '/VectorTileServer/'
+      );
+
       // Only check if the URL actually changed (meaning it was a FeatureServer URL)
       if (vectorTileUrl === this.esriServiceOptions.url) {
         console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
@@ -136,7 +142,7 @@ export class FeatureService {
 
       console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
       const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data && !data.error) {
@@ -162,7 +168,7 @@ export class FeatureService {
     // Check if this is a FeatureServer that supports vector tiles
     // Most FeatureServers don't have VectorTileServer endpoints
     // We'll use a different approach for FeatureServers with vector tile capability
-    
+
     // Try to construct vector tile URL from FeatureServer URL
     // Some services have both FeatureServer and VectorTileServer endpoints
     const vectorTileUrl = baseUrl.replace('/FeatureServer/', '/VectorTileServer/');
@@ -193,7 +199,7 @@ export class FeatureService {
           ymin: bounds.getSouth(),
           xmax: bounds.getEast(),
           ymax: bounds.getNorth(),
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         };
         params.append('geometry', JSON.stringify(geometry));
         params.append('geometryType', 'esriGeometryEnvelope');
@@ -238,20 +244,20 @@ export class FeatureService {
 
   get defaultStyle(): StyleData {
     if (this._defaultStyleData) return this._defaultStyleData;
-    
+
     // Generate default style based on geometry type from service metadata
     const geometryType = String(this._serviceMetadata?.geometryType || 'esriGeometryPoint');
     const isVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
-    
+
     // For vector tiles, we need to include source-layer
     const baseStyle: Partial<StyleData> = {
       source: this._sourceId,
     };
-    
+
     if (isVectorTiles && this._serviceMetadata?.name) {
       baseStyle['source-layer'] = String(this._serviceMetadata.name);
     }
-    
+
     if (geometryType.includes('Point')) {
       return {
         type: 'circle',
@@ -311,7 +317,7 @@ export class FeatureService {
 
   private async _getServiceMetadata(): Promise<void> {
     if (this._serviceMetadata) return;
-    
+
     this._serviceMetadata = await getServiceDetails(
       this.esriServiceOptions.url,
       this.esriServiceOptions.fetchOptions
@@ -320,7 +326,10 @@ export class FeatureService {
 
   updateData(): void {
     // For GeoJSON sources with bounding box filtering, update the data URL
-    if (this.esriServiceOptions.useVectorTiles === false && this.esriServiceOptions.useBoundingBox) {
+    if (
+      this.esriServiceOptions.useVectorTiles === false &&
+      this.esriServiceOptions.useBoundingBox
+    ) {
       const source = this._map.getSource(this._sourceId);
       if (source && 'setData' in source && typeof source.setData === 'function') {
         const newQueryUrl = this._buildQueryUrl();

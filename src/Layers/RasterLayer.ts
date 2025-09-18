@@ -139,9 +139,9 @@ export class RasterLayer extends Layer {
    * Request export - to be implemented by subclasses
    */
   protected _requestExport(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _bounds: [number, number, number, number]
   ): void {
     // Override in subclasses
