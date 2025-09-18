@@ -6,8 +6,11 @@ import ImageServiceDemo from './components/ImageServiceDemo';
 import VectorTileServiceDemo from './components/VectorTileServiceDemo';
 import VectorBasemapStyleDemo from './components/VectorBasemapStyleDemo';
 import IdentifyFeaturesDemo from './components/IdentifyFeaturesDemo';
+import QueryDemo from './components/QueryDemo';
+import FindDemo from './components/FindDemo';
+import IdentifyImageDemo from './components/IdentifyImageDemo';
 
-type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify';
+type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify' | 'query' | 'find' | 'identify-image';
 
 const App: React.FC = () => {
   const TAB_KEY = 'esri-gl:activeTab';
@@ -25,6 +28,9 @@ const App: React.FC = () => {
           'vector',
           'basemap',
           'identify',
+          'query',
+          'find',
+          'identify-image',
         ];
         if (stored && (allowed as string[]).includes(stored)) {
           return stored as TabType;
@@ -44,6 +50,9 @@ const App: React.FC = () => {
     { id: 'vector' as TabType, label: 'Vector Tile Service', component: VectorTileServiceDemo },
     { id: 'basemap' as TabType, label: 'Vector Basemap Style', component: VectorBasemapStyleDemo },
     { id: 'identify' as TabType, label: 'Identify Features', component: IdentifyFeaturesDemo },
+    { id: 'query' as TabType, label: 'Query Task', component: QueryDemo },
+    { id: 'find' as TabType, label: 'Find Task', component: FindDemo },
+    { id: 'identify-image' as TabType, label: 'Identify Image', component: IdentifyImageDemo },
   ];
 
   const ActiveComponent =

@@ -141,9 +141,14 @@ export class Task {
       return;
     }
 
+    // Ensure proper URL construction with path separator
+    const baseUrl = this.options.url.endsWith('/') ? this.options.url.slice(0, -1) : this.options.url;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const fullServiceUrl = `${baseUrl}${cleanPath}`;
+
     const url = this.options.proxy
-      ? `${this.options.proxy}?${this.options.url}${path}`
-      : `${this.options.url}${path}`;
+      ? `${this.options.proxy}?${fullServiceUrl}`
+      : fullServiceUrl;
 
     // Convert params to URLSearchParams
     const searchParams = new URLSearchParams();

@@ -1,5 +1,7 @@
 # Tasks Overview
 
+<iframe src="/examples/dashboard-example.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+
 Tasks provide chainable operations for querying and analyzing Esri services, modeled after Esri Leaflet's task pattern. They offer more flexibility and advanced options compared to direct service methods.
 
 ## Task Architecture

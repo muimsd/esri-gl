@@ -83,6 +83,39 @@ export class Query extends Task {
   constructor(options: string | QueryOptions | Service) {
     super(options);
     this.path = 'query';
+    
+    // If options is a QueryOptions object, merge relevant properties into params
+    if (options && typeof options === 'object' && !('request' in options) && typeof options !== 'string') {
+      const queryOptions = options as QueryOptions;
+      
+      // Merge query-specific options into params
+      if (queryOptions.where !== undefined) this.params.where = queryOptions.where;
+      if (queryOptions.outFields !== undefined) this.params.outFields = queryOptions.outFields;
+      if (queryOptions.returnGeometry !== undefined) this.params.returnGeometry = queryOptions.returnGeometry;
+      if (queryOptions.spatialRel !== undefined) this.params.spatialRel = queryOptions.spatialRel;
+      if (queryOptions.geometry !== undefined) this.params.geometry = queryOptions.geometry;
+      if (queryOptions.geometryType !== undefined) this.params.geometryType = queryOptions.geometryType;
+      if (queryOptions.inSR !== undefined) this.params.inSR = queryOptions.inSR;
+      if (queryOptions.outSR !== undefined) this.params.outSR = queryOptions.outSR;
+      if (queryOptions.returnDistinctValues !== undefined) this.params.returnDistinctValues = queryOptions.returnDistinctValues;
+      if (queryOptions.returnIdsOnly !== undefined) this.params.returnIdsOnly = queryOptions.returnIdsOnly;
+      if (queryOptions.returnCountOnly !== undefined) this.params.returnCountOnly = queryOptions.returnCountOnly;
+      if (queryOptions.returnExtentOnly !== undefined) this.params.returnExtentOnly = queryOptions.returnExtentOnly;
+      if (queryOptions.orderByFields !== undefined) this.params.orderByFields = queryOptions.orderByFields;
+      if (queryOptions.groupByFieldsForStatistics !== undefined) this.params.groupByFieldsForStatistics = queryOptions.groupByFieldsForStatistics;
+      if (queryOptions.outStatistics !== undefined) this.params.outStatistics = queryOptions.outStatistics;
+      if (queryOptions.resultOffset !== undefined) this.params.resultOffset = queryOptions.resultOffset;
+      if (queryOptions.resultRecordCount !== undefined) this.params.resultRecordCount = queryOptions.resultRecordCount;
+      if (queryOptions.maxAllowableOffset !== undefined) this.params.maxAllowableOffset = queryOptions.maxAllowableOffset;
+      if (queryOptions.geometryPrecision !== undefined) this.params.geometryPrecision = queryOptions.geometryPrecision;
+      if (queryOptions.time !== undefined) this.params.time = queryOptions.time;
+      if (queryOptions.gdbVersion !== undefined) this.params.gdbVersion = queryOptions.gdbVersion;
+      if (queryOptions.historicMoment !== undefined) this.params.historicMoment = queryOptions.historicMoment;
+      if (queryOptions.returnTrueCurves !== undefined) this.params.returnTrueCurves = queryOptions.returnTrueCurves;
+      if (queryOptions.returnZ !== undefined) this.params.returnZ = queryOptions.returnZ;
+      if (queryOptions.returnM !== undefined) this.params.returnM = queryOptions.returnM;
+      if (queryOptions.token !== undefined) this.params.token = queryOptions.token;
+    }
   }
 
   // Spatial relationship methods
@@ -250,7 +283,7 @@ export class Query extends Task {
       // Fallback to JSON format and convert
       this.params.f = 'json';
       const response = await this.request<{
-        features: Array<{
+        features?: Array<{
           attributes: Record<string, unknown>;
           geometry?: unknown;
         }>;
@@ -365,12 +398,13 @@ export class Query extends Task {
   }
 
   private _convertToGeoJSON(response: {
-    features: Array<{
+    features?: Array<{
       attributes: Record<string, unknown>;
       geometry?: unknown;
     }>;
   }): GeoJSON.FeatureCollection {
-    const features: GeoJSON.Feature[] = response.features.map(feature => ({
+    // Handle cases where features might be undefined or empty
+    const features: GeoJSON.Feature[] = (response.features || []).map(feature => ({
       type: 'Feature',
       properties: feature.attributes,
       geometry: (feature.geometry as GeoJSON.Geometry) || null,

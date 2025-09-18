@@ -44,17 +44,50 @@ export class Find extends Task {
   protected path = 'find';
 
   protected params: Record<string, unknown> = {
-    sr: 4326,
+    searchText: '', // Required parameter
+    layers: 'all', // Can be 'all' or comma-separated layer IDs
     contains: true,
     returnGeometry: true,
-    returnZ: true,
-    returnM: false,
     f: 'json',
   };
 
   constructor(options: string | FindOptions | Service) {
     super(options);
     this.path = 'find';
+    
+    // If options is a FindOptions object, merge relevant properties into params
+    if (options && typeof options === 'object' && !('request' in options) && typeof options !== 'string') {
+      const findOptions = options as FindOptions;
+      
+      // Merge find-specific options into params
+      if (findOptions.searchText !== undefined) this.params.searchText = findOptions.searchText;
+      if (findOptions.contains !== undefined) this.params.contains = findOptions.contains;
+      if (findOptions.searchFields !== undefined) {
+        this.params.searchFields = Array.isArray(findOptions.searchFields) 
+          ? findOptions.searchFields.join(',') 
+          : findOptions.searchFields;
+      }
+      if (findOptions.sr !== undefined) this.params.sr = findOptions.sr;
+      if (findOptions.layers !== undefined) {
+        // Convert array to comma-separated string or use as-is if already string
+        if (Array.isArray(findOptions.layers)) {
+          this.params.layers = findOptions.layers.join(',');
+        } else if (typeof findOptions.layers === 'string') {
+          this.params.layers = findOptions.layers;
+        } else {
+          this.params.layers = findOptions.layers.toString();
+        }
+      }
+      if (findOptions.returnGeometry !== undefined) this.params.returnGeometry = findOptions.returnGeometry;
+      if (findOptions.maxAllowableOffset !== undefined) this.params.maxAllowableOffset = findOptions.maxAllowableOffset;
+      if (findOptions.geometryPrecision !== undefined) this.params.geometryPrecision = findOptions.geometryPrecision;
+      if (findOptions.dynamicLayers !== undefined) this.params.dynamicLayers = findOptions.dynamicLayers;
+      if (findOptions.returnZ !== undefined) this.params.returnZ = findOptions.returnZ;
+      if (findOptions.returnM !== undefined) this.params.returnM = findOptions.returnM;
+      if (findOptions.gdbVersion !== undefined) this.params.gdbVersion = findOptions.gdbVersion;
+      if (findOptions.layerDefs !== undefined) this.params.layerDefs = findOptions.layerDefs;
+      if (findOptions.token !== undefined) this.params.token = findOptions.token;
+    }
   }
 
   /**
@@ -127,16 +160,12 @@ export class Find extends Task {
    * Execute the find operation
    */
   async run(): Promise<GeoJSON.FeatureCollection> {
+    // Always use JSON format for Find API (GeoJSON might not be supported)
+    this.params.f = 'json';
+    
     try {
-      // Try GeoJSON format first if supported
-      this.params.f = 'geojson';
-      const response = await this.request<GeoJSON.FeatureCollection>();
-      return response;
-    } catch {
-      // Fallback to JSON format and convert
-      this.params.f = 'json';
       const response = await this.request<{
-        results: Array<{
+        results?: Array<{
           layerId: number;
           layerName: string;
           foundFieldName: string;
@@ -147,11 +176,14 @@ export class Find extends Task {
       }>();
 
       return this._convertToGeoJSON(response);
+    } catch (error) {
+      console.error('Find task error:', error);
+      throw error;
     }
   }
 
   private _convertToGeoJSON(response: {
-    results: Array<{
+    results?: Array<{
       layerId: number;
       layerName: string;
       foundFieldName: string;
@@ -160,7 +192,8 @@ export class Find extends Task {
       geometry?: unknown;
     }>;
   }): GeoJSON.FeatureCollection {
-    const features: GeoJSON.Feature[] = response.results.map(result => ({
+    // Handle cases where results might be undefined or empty
+    const features: GeoJSON.Feature[] = (response.results || []).map(result => ({
       type: 'Feature',
       properties: {
         ...result.attributes,

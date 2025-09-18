@@ -1,5 +1,7 @@
 # FeatureService
 
+<iframe src="/examples/dashboard-example.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+
 For accessing [ArcGIS Feature Services](https://developers.arcgis.com/rest/services-reference/feature-service.htm) that provide GeoJSON-compatible vector features with intelligent vector tile detection and automatic fallback.
 
 ## Constructor
