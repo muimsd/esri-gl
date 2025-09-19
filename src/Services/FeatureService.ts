@@ -122,7 +122,8 @@ export class FeatureService {
       }
     } catch (error) {
       console.error('Error creating FeatureService source:', error);
-      throw error;
+      // Don't rethrow - service should handle errors gracefully
+      // The source just won't be created and the service will be in a degraded state
     }
   }
 

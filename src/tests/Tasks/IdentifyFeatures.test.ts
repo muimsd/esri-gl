@@ -1,4 +1,4 @@
-import { IdentifyFeatures } from '@/Tasks/IdentifyFeatures';
+import { IdentifyFeatures, type IdentifyFeaturesOptions } from '@/Tasks/IdentifyFeatures';
 import { Service } from '@/Services/Service';
 import type { Map } from '@/types';
 
@@ -546,8 +546,8 @@ describe('IdentifyFeatures', () => {
 
     it('should create instance with Service object', () => {
       const mockService = {
-        options: { url: 'https://example.com/MapServer' }
-      } as Service & { options: { url: string } };
+        url: 'https://example.com/MapServer'
+      } as IdentifyFeaturesOptions;
       
       const identify = new IdentifyFeatures(mockService);
       expect(identify).toBeInstanceOf(IdentifyFeatures);

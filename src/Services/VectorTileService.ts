@@ -4,7 +4,6 @@ import type {
   VectorTileServiceOptions,
   VectorSourceOptions,
   ServiceMetadata,
-  SourceSpecification,
 } from '@/types';
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
@@ -81,7 +80,7 @@ export class VectorTileService {
   }
 
   private _createSource(): void {
-    this._map.addSource(this._sourceId, this._source as unknown as SourceSpecification);
+    this._map.addSource(this._sourceId, this._source as unknown as Parameters<Map['addSource']>[1]);
   }
 
   private _mapToLocalSource(style: StyleData): StyleData {
