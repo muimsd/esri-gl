@@ -1,7 +1,13 @@
 import { DynamicMapLayer, dynamicMapLayer, DynamicMapLayerOptions } from '@/Layers/DynamicMapLayer';
 
 // Mock the dependencies
-jest.mock('@/Services/MapService');
+jest.mock('@/Services/MapService', () => ({
+  MapService: jest.fn().mockImplementation(() => ({
+    query: jest.fn().mockReturnValue('query-task'),
+    identify: jest.fn().mockReturnValue('identify-task'),
+    find: jest.fn().mockReturnValue('find-task')
+  }))
+}));
 jest.mock('@/Layers/RasterLayer', () => ({
   RasterLayer: jest.fn().mockImplementation(function(options) {
     this.options = options;
@@ -142,17 +148,17 @@ describe('DynamicMapLayer', () => {
 
     it('should create query task from service', () => {
       const result = layer.query();
-      expect(result).toBeDefined();
+      expect(result).toBe('query-task');
     });
 
     it('should create identify task from service', () => {
       const result = layer.identify();
-      expect(result).toBeDefined();
+      expect(result).toBe('identify-task');
     });
 
     it('should create find task from service', () => {
       const result = layer.find();
-      expect(result).toBeDefined();
+      expect(result).toBe('find-task');
     });
   });
 
