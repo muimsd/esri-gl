@@ -6,10 +6,9 @@
   "main": "dist/esri-gl.js",
   "module": "dist/esri-gl.esm.js",
   "browser": "dist/esri-gl.js",
-  "types": "types/index.d.ts",
+  "types": "dist/types/main.d.ts",
   "files": [
-    "dist",
-    "types"
+    "dist"
   ],
   "scripts": {
     "dev": "vite",
@@ -56,6 +55,7 @@
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
     "@types/jest": "^30.0.0",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",

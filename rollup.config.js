@@ -1,6 +1,6 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import terser from '@rollup/plugin-terser'
-import typescript from 'rollup-plugin-typescript2'
+import typescript from '@rollup/plugin-typescript'
 import alias from '@rollup/plugin-alias'
 import { fileURLToPath } from 'url'
 import path from 'path'
@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename)
 const output = (file, format, plugins = []) => ({
   input: './src/main.ts',
   output: {
-    name: 'esriMapGl',
+    name: 'esriGl',
     file,
     format,
     sourcemap: true
@@ -25,7 +25,9 @@ const output = (file, format, plugins = []) => ({
     }),
     nodeResolve(),
     typescript({
-      tsconfig: './tsconfig.build.json'
+      tsconfig: './tsconfig.build.json',
+      declarationDir: './dist/types',
+      rootDir: './src'
     }),
     ...plugins
   ],

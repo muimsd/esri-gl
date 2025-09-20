@@ -168,7 +168,7 @@ export class Find extends Task {
   /**
    * Execute the find operation
    */
-  async run(): Promise<GeoJSON.FeatureCollection> {
+  async run(): Promise<GeoJSON.FeatureCollection<GeoJSON.Geometry | null>> {
     // Always use JSON format for Find API (GeoJSON might not be supported)
     this.params.f = 'json';
 
@@ -205,10 +205,10 @@ export class Find extends Task {
         geometry?: unknown;
       }>;
     } | null
-  ): GeoJSON.FeatureCollection {
+  ): GeoJSON.FeatureCollection<GeoJSON.Geometry | null> {
     // Handle cases where response is null or results might be undefined, null, or empty
     const results = response?.results || [];
-    const features: GeoJSON.Feature[] = results.map(result => ({
+    const features: GeoJSON.Feature<GeoJSON.Geometry | null>[] = results.map(result => ({
       type: 'Feature' as const,
       properties: {
         ...result.attributes,
