@@ -391,4 +391,225 @@ describe('Find Task', () => {
       await expect(find.text('test').run()).rejects.toThrow('Invalid JSON');
     });
   });
+
+  describe('Missing Coverage Areas', () => {
+    let find: Find;
+
+    beforeEach(() => {
+      find = new Find('https://example.com/MapServer');
+    });
+
+    it('should handle layers as string in constructor', () => {
+      const findWithStringLayers = new Find({
+        url: 'https://example.com/MapServer',
+        layers: '0,1,2',
+      });
+      expect((findWithStringLayers as any).params.layers).toBe('0,1,2');
+    });
+
+    it('should handle layers as number in constructor', () => {
+      const findWithNumberLayers = new Find({
+        url: 'https://example.com/MapServer',
+        layers: 5,
+      });
+      expect((findWithNumberLayers as any).params.layers).toBe('5');
+    });
+
+    it('should set maxAllowableOffset parameter in constructor', () => {
+      const findWithOffset = new Find({
+        url: 'https://example.com/MapServer',
+        maxAllowableOffset: 10,
+      });
+      expect((findWithOffset as any).params.maxAllowableOffset).toBe(10);
+    });
+
+    it('should set geometryPrecision parameter in constructor', () => {
+      const findWithPrecision = new Find({
+        url: 'https://example.com/MapServer',
+        geometryPrecision: 3,
+      });
+      expect((findWithPrecision as any).params.geometryPrecision).toBe(3);
+    });
+
+    it('should set dynamicLayers parameter in constructor', () => {
+      const dynamicLayers = [{ id: 0, source: { mapLayerId: 1 } }];
+      const findWithDynamic = new Find({
+        url: 'https://example.com/MapServer',
+        dynamicLayers,
+      });
+      expect((findWithDynamic as any).params.dynamicLayers).toEqual(dynamicLayers);
+    });
+
+    it('should set returnZ parameter in constructor', () => {
+      const findWithZ = new Find({
+        url: 'https://example.com/MapServer',
+        returnZ: true,
+      });
+      expect((findWithZ as any).params.returnZ).toBe(true);
+    });
+
+    it('should set returnM parameter in constructor', () => {
+      const findWithM = new Find({
+        url: 'https://example.com/MapServer',
+        returnM: false,
+      });
+      expect((findWithM as any).params.returnM).toBe(false);
+    });
+
+    it('should handle different geometry types in conversion', async () => {
+      const mockResponse = {
+        results: [
+          {
+            layerId: 1,
+            layerName: 'Lines',
+            foundFieldName: 'NAME',
+            value: 'Highway',
+            attributes: { OBJECTID: 1, NAME: 'Highway' },
+            geometry: {
+              paths: [
+                [
+                  [-118, 34],
+                  [-117, 35],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await find.text('Highway').run();
+
+      expect(result.features[0].geometry).toEqual({
+        type: 'LineString',
+        coordinates: [
+          [-118, 34],
+          [-117, 35],
+        ],
+      });
+    });
+
+    it('should handle multipath geometry', async () => {
+      const mockResponse = {
+        results: [
+          {
+            layerId: 1,
+            layerName: 'Roads',
+            foundFieldName: 'NAME',
+            value: 'Interstate',
+            attributes: { OBJECTID: 1, NAME: 'Interstate' },
+            geometry: {
+              paths: [
+                [
+                  [-118, 34],
+                  [-117, 35],
+                ],
+                [
+                  [-116, 36],
+                  [-115, 37],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await find.text('Interstate').run();
+
+      expect(result.features[0].geometry).toEqual({
+        type: 'MultiLineString',
+        coordinates: [
+          [
+            [-118, 34],
+            [-117, 35],
+          ],
+          [
+            [-116, 36],
+            [-115, 37],
+          ],
+        ],
+      });
+    });
+
+    it('should handle multipolygon geometry', async () => {
+      const mockResponse = {
+        results: [
+          {
+            layerId: 2,
+            layerName: 'Islands',
+            foundFieldName: 'NAME',
+            value: 'Chain',
+            attributes: { OBJECTID: 1, NAME: 'Chain' },
+            geometry: {
+              rings: [
+                [
+                  [-118, 34],
+                  [-117, 34],
+                  [-117, 35],
+                  [-118, 35],
+                  [-118, 34],
+                ],
+                [
+                  [-116, 33],
+                  [-115, 33],
+                  [-115, 34],
+                  [-116, 34],
+                  [-116, 33],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await find.text('Chain').run();
+
+      expect(result.features[0].geometry.type).toBe('Polygon');
+      expect((result.features[0].geometry as any).coordinates).toHaveLength(2);
+    });
+
+    it('should handle unknown geometry types by defaulting to null', async () => {
+      const mockResponse = {
+        results: [
+          {
+            layerId: 0,
+            layerName: 'Unknown',
+            foundFieldName: 'NAME',
+            value: 'Test',
+            attributes: { OBJECTID: 1, NAME: 'Test' },
+            geometry: {
+              unknownType: 'something',
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await find.text('Test').run();
+
+      expect(result.features[0].geometry).toBeNull();
+    });
+  });
 });
