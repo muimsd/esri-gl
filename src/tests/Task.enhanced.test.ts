@@ -299,14 +299,13 @@ describe('Task', () => {
 
       task = new TestableTask({
         url: 'https://example.com/MapServer',
-        proxy: true, // proxy is boolean, not string
+        proxy: 'https://proxy.example.com/', // proxy is now a string URL
       });
 
       await task.request();
 
-      // Since proxy is just a boolean flag, but the implementation uses it as string
-      // We expect it to use the proxy value directly as URL prefix
-      expect(mockFetch).toHaveBeenCalledWith('true?https://example.com/MapServer/test?');
+      // We expect the proxy URL to prefix the request URL
+      expect(mockFetch).toHaveBeenCalledWith('https://proxy.example.com/https://example.com/MapServer/test?');
     });
 
     it('should handle path without leading slash', async () => {
