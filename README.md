@@ -335,9 +335,11 @@ const service = new FeatureService('optimized-source', map, {
 ## Development
 
 ### Build System
-- **Library Build**: Rollup (UMD + ESM outputs)
+- **Library Build**: Rollup with `@rollup/plugin-typescript` (UMD + ESM outputs)
+- **Type Declarations**: Consolidated in `dist/types/` directory
 - **Demo Development**: Vite dev server  
-- **Documentation**: Webpack build system
+- **Documentation**: Docusaurus build system
+- **Test Coverage**: 92.94% with 651 focused test cases
 
 ### Development Commands
 
@@ -380,11 +382,19 @@ src/
 │   ├── VectorTileService.ts
 │   └── VectorBasemapStyle.ts
 ├── Tasks/             # Task-based operations
+│   ├── Find.ts
 │   ├── IdentifyFeatures.ts
 │   ├── IdentifyImage.ts
 │   └── Query.ts
 ├── demo/              # Demo React components
+├── tests/             # Comprehensive test suite (92.94% coverage)
 └── types.ts           # TypeScript interfaces
+
+dist/
+├── types/             # Consolidated TypeScript declarations
+├── esri-gl.js         # UMD build
+├── esri-gl.esm.js     # ESM build  
+└── esri-gl.min.js     # Minified UMD build
 ```
 
 ## Browser Support
@@ -395,7 +405,7 @@ src/
 
 ## TypeScript Support
 
-esri-gl is written in TypeScript and provides full type definitions:
+esri-gl is written in TypeScript and provides full type definitions consolidated in a single directory:
 
 ```typescript
 import type { 
@@ -411,6 +421,8 @@ const options: FeatureServiceOptions = {
   where: '1=1'
 };
 ```
+
+All type declarations are available in the `dist/types/` directory after building.
 
 ## Contributing
 

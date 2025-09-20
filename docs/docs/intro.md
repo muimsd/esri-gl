@@ -8,6 +8,10 @@ sidebar_position: 1
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS, replicating Esri Leaflet's architecture patterns.
 
+:::info Current Version
+**v0.9.0-alpha.3** - Features major improvements including consolidated TypeScript declarations, 92.94% test coverage, and streamlined build system.
+:::
+
 ## Quick Start
 
 esri-gl helps you create `sources` for use within MapLibre GL JS and Mapbox GL JS. It supports a range of raster and vector datasources provided by the Esri/ArcGIS ecosystem.
