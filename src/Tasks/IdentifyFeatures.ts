@@ -1,4 +1,4 @@
-import { Task, type TaskOptions } from '@/Task';
+import { Task, type TaskOptions } from '@/Tasks/Task';
 import { Service } from '@/Services/Service';
 import type { Map } from '@/types';
 export interface IdentifyFeaturesOptions {

@@ -252,12 +252,18 @@ describe('Utils', () => {
     });
 
     it('should handle undefined map style', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const mapWithUndefinedStyle = { ...mockMap, style: undefined } as unknown as Map;
 
-      // The function will throw an error when trying to access properties of undefined style
+      // The function should handle undefined style gracefully and warn about missing source
       expect(() => {
         updateAttribution('New Attribution', 'test-source', mapWithUndefinedStyle);
-      }).toThrow();
+      }).not.toThrow();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Source test-source not found when trying to update attribution'
+      );
+      consoleWarnSpy.mockRestore();
     });
 
     it('should handle missing _controls array', () => {

@@ -384,16 +384,21 @@ describe('IdentifyFeatures', () => {
         .run();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://example.com/MapServer/identify')
+        expect.stringContaining('https://example.com/MapServer/identify'),
+        expect.any(Object)
       );
 
       const callUrl = mockFetch.mock.calls[0][0] as string;
-      expect(callUrl).toContain('f=json');
-      expect(callUrl).toContain('tolerance=5');
-      expect(callUrl).toContain('layers=visible%3A0%2C1%2C2');
-      expect(callUrl).toContain('geometryType=esriGeometryPoint');
-      expect(callUrl).toContain('mapExtent=-180%2C-90%2C180%2C90');
-      expect(callUrl).toContain('imageDisplay=800%2C600%2C96');
+      const requestOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const requestBody = requestOptions.body as string;
+
+      expect(callUrl).toBe('https://example.com/MapServer/identify');
+      expect(requestBody).toContain('f=json');
+      expect(requestBody).toContain('tolerance=5');
+      expect(requestBody).toContain('layers=visible%3A0%2C1%2C2');
+      expect(requestBody).toContain('geometryType=esriGeometryPoint');
+      expect(requestBody).toContain('mapExtent=-180%2C-90%2C180%2C90');
+      expect(requestBody).toContain('imageDisplay=800%2C600%2C96');
     });
   });
 
@@ -861,16 +866,21 @@ describe('IdentifyFeatures', () => {
         .run();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://example.com/MapServer/identify')
+        expect.stringContaining('https://example.com/MapServer/identify'),
+        expect.any(Object)
       );
 
       const callUrl = mockFetch.mock.calls[0][0] as string;
-      expect(callUrl).toContain('f=json');
-      expect(callUrl).toContain('tolerance=5');
-      expect(callUrl).toContain('layers=visible%3A0%2C1%2C2');
-      expect(callUrl).toContain('geometryType=esriGeometryPoint');
-      expect(callUrl).toContain('mapExtent=-180%2C-90%2C180%2C90');
-      expect(callUrl).toContain('imageDisplay=800%2C600%2C96');
+      const requestOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const requestBody = requestOptions.body as string;
+
+      expect(callUrl).toBe('https://example.com/MapServer/identify');
+      expect(requestBody).toContain('f=json');
+      expect(requestBody).toContain('tolerance=5');
+      expect(requestBody).toContain('layers=visible%3A0%2C1%2C2');
+      expect(requestBody).toContain('geometryType=esriGeometryPoint');
+      expect(requestBody).toContain('mapExtent=-180%2C-90%2C180%2C90');
+      expect(requestBody).toContain('imageDisplay=800%2C600%2C96');
     });
   });
 

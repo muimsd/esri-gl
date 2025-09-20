@@ -167,8 +167,10 @@ export class Service {
 
     try {
       await this.metadata();
-      const metadata = this._serviceMetadata as any;
-      updateAttribution(metadata?.copyrightText || '', 'service', this._map);
+      if (this._serviceMetadata && typeof this._serviceMetadata === 'object') {
+        const metadata = this._serviceMetadata as ServiceMetadata;
+        updateAttribution(metadata?.copyrightText || '', 'service', this._map);
+      }
     } catch (error) {
       console.warn('Could not fetch service attribution:', error);
     }
@@ -361,7 +363,9 @@ export class Service {
     callback: (error?: Error, response?: unknown) => void
   ): (error?: Error, response?: unknown) => void {
     return (error?: Error, response?: unknown) => {
-      if (error && ((error as any).code === 499 || (error as any).code === 498)) {
+      // Check if error has authentication-related status codes
+      const errorWithCode = error as Error & { code?: number };
+      if (error && (errorWithCode.code === 499 || errorWithCode.code === 498)) {
         this._authenticating = true;
         this._requestQueue.push([method, path, params, callback, this]);
 
@@ -371,7 +375,8 @@ export class Service {
         });
 
         // Add authenticate method to error for callback handling
-        (error as any).authenticate = (token: string) => this.authenticate(token);
+        const authError = error as Error & { authenticate?: (token: string) => void };
+        authError.authenticate = (token: string) => this.authenticate(token);
       }
 
       if (error) {
@@ -379,7 +384,7 @@ export class Service {
           url: this.options.url + path,
           params,
           message: error.message,
-          code: (error as any).code,
+          code: errorWithCode.code,
           method,
         });
       } else {

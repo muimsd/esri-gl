@@ -7,7 +7,7 @@ import { DynamicMapService, IdentifyFeatures } from '../../main';
 const IdentifyFeaturesDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const service = useRef<any>(null);
+  const service = useRef<DynamicMapService | null>(null);
   const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2]);
 
   useEffect(() => {
