@@ -422,11 +422,6 @@ const options: FeatureServiceOptions = {
 6. Push to branch: `git push origin feature/my-feature`
 7. Submit a pull request
 
-## Documentation
-
-Complete documentation and interactive examples are available at:
-**[https://frontiersi.github.io/esri-gl/](https://frontiersi.github.io/esri-gl/)**
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
