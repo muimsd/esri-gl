@@ -2,6 +2,477 @@
 
 Perform advanced queries against ArcGIS Feature Services with spatial filters, attribute conditions, and statistical analysis. The Query task provides the most comprehensive feature querying capabilities.
 
+## Interactive Query Demo
+
+Here's a complete example based on our demo implementation, showing how to build an interactive query interface:
+
+```typescript
+import React, { useEffect, useRef, useState } from 'react';
+import { Map, LngLatBounds } from 'maplibre-gl';
+import { DynamicMapService, Query } from 'esri-gl';
+
+interface QueryResults {
+  features?: Array<GeoJSON.Feature>;
+  error?: string;
+}
+
+const QueryDemo = () => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<Map | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [queryResults, setQueryResults] = useState<QueryResults | null>(null);
+  const [isQuerying, setIsQuerying] = useState(false);
+
+  // Query configuration state
+  const [whereClause, setWhereClause] = useState('pop2000 > 1000000');
+  const [outFields, setOutFields] = useState('state_name,pop2000,state_abbr');
+  const [returnGeometry, setReturnGeometry] = useState(true);
+  const [orderBy, setOrderBy] = useState('pop2000 DESC');
+  const [maxResults, setMaxResults] = useState(50);
+
+  useEffect(() => {
+    if (!mapContainer.current) return;
+
+    // Initialize MapLibre GL map
+    map.current = new Map({
+      container: mapContainer.current,
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [-98, 39.5],
+      zoom: 4,
+    });
+
+    map.current.on('load', () => {
+      if (!map.current) return;
+
+      // Add sample dynamic map service for context
+      new DynamicMapService('usa-service', map.current, {
+        url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+      });
+
+      map.current.addLayer({
+        id: 'usa-layer',
+        type: 'raster',
+        source: 'usa-service',
+      });
+
+      setIsLoaded(true);
+    });
+
+    return () => {
+      map.current?.remove();
+    };
+  }, []);
+
+  const executeQuery = async () => {
+    if (!map.current) return;
+
+    setIsQuerying(true);
+    setQueryResults(null);
+
+    try {
+      // Create query task
+      const queryTask = new Query({
+        url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2',
+        where: whereClause || '1=1', // Default to all features if empty
+        outFields: outFields || '*',
+        returnGeometry,
+        orderByFields: orderBy,
+        resultRecordCount: maxResults
+      });
+
+      console.log('Executing query:', {
+        where: whereClause,
+        outFields,
+        returnGeometry,
+        orderBy,
+        maxResults
+      });
+
+      // Execute query
+      const results = await queryTask.run() as GeoJSON.FeatureCollection;
+      console.log('Query results:', results);
+
+      const queryResults: QueryResults = {
+        features: results.features || [],
+      };
+
+      setQueryResults(queryResults);
+
+      // Visualize results on map
+      if (queryResults.features && queryResults.features.length > 0) {
+        // Clear previous results
+        if (map.current.getLayer('query-results')) {
+          map.current.removeLayer('query-results');
+          map.current.removeSource('query-results');
+        }
+
+        // Add results to map if geometry is available
+        if (returnGeometry) {
+          map.current.addSource('query-results', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: queryResults.features,
+            },
+          });
+
+          // Style based on population (assuming pop2000 field exists)
+          map.current.addLayer({
+            id: 'query-results',
+            type: 'fill',
+            source: 'query-results',
+            paint: {
+              'fill-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'pop2000'],
+                0, '#ffffcc',
+                500000, '#41b6c4',
+                2000000, '#2c7fb8',
+                10000000, '#253494'
+              ],
+              'fill-opacity': 0.7,
+              'fill-outline-color': '#ffffff'
+            }
+          });
+
+          // Add labels for state names
+          map.current.addLayer({
+            id: 'query-labels',
+            type: 'symbol',
+            source: 'query-results',
+            layout: {
+              'text-field': ['get', 'state_abbr'],
+              'text-font': ['Open Sans Bold'],
+              'text-size': 12,
+              'text-anchor': 'center'
+            },
+            paint: {
+              'text-color': '#ffffff',
+              'text-halo-color': '#000000',
+              'text-halo-width': 1
+            }
+          });
+
+          // Fit map to results
+          const allCoords: [number, number][] = [];
+          queryResults.features.forEach((feature: GeoJSON.Feature) => {
+            if (feature.geometry?.type === 'Polygon') {
+              const coords = (feature.geometry as GeoJSON.Polygon).coordinates[0];
+              coords.forEach((coord: number[]) => {
+                if (coord.length >= 2) {
+                  allCoords.push([coord[0], coord[1]]);
+                }
+              });
+            }
+          });
+
+          if (allCoords.length > 0) {
+            const bounds = allCoords.reduce((bounds, coord) => {
+              return bounds.extend(coord);
+            }, new LngLatBounds());
+            map.current.fitBounds(bounds, { padding: 50 });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Query failed:', error);
+      setQueryResults({ 
+        error: error instanceof Error ? error.message : 'Query execution failed',
+        features: []
+      });
+    } finally {
+      setIsQuerying(false);
+    }
+  };
+
+  const clearResults = () => {
+    setQueryResults(null);
+    if (map.current) {
+      ['query-results', 'query-labels'].forEach(layerId => {
+        if (map.current.getLayer(layerId)) {
+          map.current.removeLayer(layerId);
+          if (layerId === 'query-results') {
+            map.current.removeSource('query-results');
+          }
+        }
+      });
+    }
+  };
+
+  const presetQueries = [
+    {
+      name: 'High Population States',
+      where: 'pop2000 > 5000000',
+      fields: 'state_name,pop2000,state_abbr',
+      orderBy: 'pop2000 DESC'
+    },
+    {
+      name: 'Western States',
+      where: "sub_region = 'Pacific' OR sub_region = 'Mountain'",
+      fields: 'state_name,sub_region,state_abbr',
+      orderBy: 'state_name ASC'
+    },
+    {
+      name: 'Small States by Area',
+      where: 'shape_area < 100000000000',
+      fields: 'state_name,shape_area,state_abbr',
+      orderBy: 'shape_area ASC'
+    }
+  ];
+
+  const applyPreset = (preset: any) => {
+    setWhereClause(preset.where);
+    setOutFields(preset.fields);
+    setOrderBy(preset.orderBy);
+  };
+
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Query Controls */}
+      <div style={{
+        padding: '20px',
+        backgroundColor: '#f8f9fa',
+        borderBottom: '1px solid #dee2e6'
+      }}>
+        <h3 style={{ margin: '0 0 20px 0' }}>Interactive Query Task Demo</h3>
+        
+        {/* Preset Queries */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+            Quick Presets:
+          </label>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {presetQueries.map((preset, index) => (
+              <button
+                key={index}
+                onClick={() => applyPreset(preset)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
+          {/* WHERE Clause */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              WHERE Clause:
+            </label>
+            <input
+              type="text"
+              value={whereClause}
+              onChange={e => setWhereClause(e.target.value)}
+              placeholder="pop2000 > 1000000"
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ced4da'
+              }}
+            />
+            <small style={{ color: '#6c757d' }}>
+              SQL WHERE condition (e.g., pop2000 > 1000000)
+            </small>
+          </div>
+
+          {/* Output Fields */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Output Fields:
+            </label>
+            <input
+              type="text"
+              value={outFields}
+              onChange={e => setOutFields(e.target.value)}
+              placeholder="state_name,pop2000,state_abbr"
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ced4da'
+              }}
+            />
+            <small style={{ color: '#6c757d' }}>
+              Comma-separated field names (* for all)
+            </small>
+          </div>
+
+          {/* Order By */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Order By:
+            </label>
+            <input
+              type="text"
+              value={orderBy}
+              onChange={e => setOrderBy(e.target.value)}
+              placeholder="pop2000 DESC"
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ced4da'
+              }}
+            />
+            <small style={{ color: '#6c757d' }}>
+              Sort field with ASC/DESC
+            </small>
+          </div>
+
+          {/* Max Results */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Max Results: {maxResults}
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={maxResults}
+              onChange={e => setMaxResults(parseInt(e.target.value))}
+              style={{ width: '100%' }}
+            />
+            <small style={{ color: '#6c757d' }}>
+              Limit number of returned features
+            </small>
+          </div>
+        </div>
+
+        {/* Geometry Toggle */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}>
+            <input
+              type="checkbox"
+              checked={returnGeometry}
+              onChange={e => setReturnGeometry(e.target.checked)}
+            />
+            Return Geometry (enable map visualization)
+          </label>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={executeQuery}
+            disabled={!isLoaded || isQuerying}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: isQuerying ? '#6c757d' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isQuerying ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            {isQuerying ? 'Querying...' : 'Execute Query'}
+          </button>
+
+          <button
+            onClick={clearResults}
+            disabled={!queryResults}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: queryResults ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Clear Results
+          </button>
+        </div>
+
+        {/* Results Display */}
+        {queryResults && (
+          <div style={{
+            marginTop: '20px',
+            padding: '15px',
+            background: 'white',
+            borderRadius: '6px',
+            border: '1px solid #dee2e6',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            {queryResults.error ? (
+              <div style={{ color: '#dc3545' }}>
+                <strong>Error:</strong> {queryResults.error}
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: '15px', fontWeight: 'bold', fontSize: '16px' }}>
+                  📊 Results: {queryResults.features?.length || 0} features found
+                </div>
+                {queryResults.features?.slice(0, 5).map((feature, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: '10px',
+                      padding: '12px',
+                      background: '#f8f9fa',
+                      borderRadius: '4px',
+                      border: '1px solid #e9ecef'
+                    }}
+                  >
+                    <strong style={{ color: '#495057' }}>Feature {index + 1}:</strong>
+                    <div style={{ marginTop: '8px' }}>
+                      {Object.entries(feature.properties || {}).map(([key, value]) => (
+                        <div key={key} style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          marginBottom: '4px',
+                          fontSize: '14px'
+                        }}>
+                          <span style={{ fontWeight: '500', color: '#6c757d' }}>{key}:</span>
+                          <span style={{ color: '#212529', marginLeft: '10px' }}>{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {(queryResults.features?.length || 0) > 5 && (
+                  <div style={{ 
+                    fontStyle: 'italic', 
+                    color: '#6c757d',
+                    textAlign: 'center',
+                    padding: '10px'
+                  }}>
+                    ... and {(queryResults.features?.length || 0) - 5} more features
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Map Container */}
+      <div ref={mapContainer} style={{ flex: 1 }} />
+    </div>
+  );
+};
+
+export default QueryDemo;
+```
+
 ## Constructor
 
 ```typescript

@@ -35,6 +35,16 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
+      type: 'category',
+      label: 'Layers',
+      items: [
+        'layers/overview',
+        'layers/basemap-layer',
+        'layers/dynamic-map-layer',
+        'layers/raster-layer',
+      ],
+    },
+    {
       type: 'category', 
       label: 'API Reference',
       items: [

@@ -64,23 +64,149 @@ For loading complete [Esri Vector Basemap Styles](https://developers.arcgis.com/
 
 ### Basic Implementation
 
-```typescript
-import { Map } from 'maplibre-gl';
-import { VectorBasemapStyle } from 'esri-gl';
+## Complete Example
 
-const map = new Map({
+```typescript
+import { VectorBasemapStyle } from 'esri-gl'
+import maplibregl from 'maplibre-gl'
+
+const map = new maplibregl.Map({
   container: 'map',
-  center: [-95, 37],
-  zoom: 4
-});
+  center: [-118.2437, 34.0522], // Los Angeles
+  zoom: 9
+})
+
+// Initialize with basic style first
+map.setStyle({
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256
+    }
+  },
+  layers: [{
+    id: 'osm',
+    type: 'raster',
+    source: 'osm'
+  }]
+})
+
+// Available style options
+const styleOptions = [
+  { id: 'arcgis/streets', name: 'Streets' },
+  { id: 'arcgis/topographic', name: 'Topographic' },
+  { id: 'arcgis/navigation', name: 'Navigation' },
+  { id: 'arcgis/streets-relief', name: 'Streets Relief' },
+  { id: 'arcgis/dark-gray', name: 'Dark Gray' },
+  { id: 'arcgis/light-gray', name: 'Light Gray' },
+  { id: 'arcgis/oceans', name: 'Oceans' },
+  { id: 'arcgis/imagery', name: 'Imagery' }
+]
+
+// Function to switch styles
+const setStyle = async (styleId: string, apiKey: string): Promise<void> => {
+  try {
+    const vectorStyle = new VectorBasemapStyle(styleId, apiKey)
+    const response = await fetch(vectorStyle.styleUrl)
+    const style = await response.json()
+    
+    map.setStyle(style)
+    console.log(`Loaded style: ${styleId}`)
+  } catch (error) {
+    console.error('Error loading style:', error)
+    alert('Error loading Esri style. Please check your API key.')
+  }
+}
+
+// Usage with API key
+const ESRI_API_KEY = 'your-esri-api-key-here'
 
 map.on('load', () => {
-  // Load Esri Streets basemap
-  const basemap = new VectorBasemapStyle('esri-streets', map, {
-    style: 'arcgis/streets',
-    apiKey: 'your-esri-api-key'
-  });
-});
+  // Set initial style
+  setStyle('arcgis/streets', ESRI_API_KEY)
+  
+  // Create style switcher UI
+  const styleControl = document.createElement('div')
+  styleControl.className = 'maplibre-ctrl maplibre-ctrl-group'
+  styleControl.innerHTML = `
+    <select id="style-selector">
+      ${styleOptions.map(option => 
+        `<option value="${option.id}">${option.name}</option>`
+      ).join('')}
+    </select>
+  `
+  
+  const selector = styleControl.querySelector('#style-selector')
+  selector.addEventListener('change', (e) => {
+    setStyle(e.target.value, ESRI_API_KEY)
+  })
+  
+  // Add control to map
+  map.getContainer().appendChild(styleControl)
+})
+```
+
+## With Language and Worldview
+
+```typescript
+// Localized basemap with specific worldview
+const localizedStyle = new VectorBasemapStyle('arcgis/streets', ESRI_API_KEY, {
+  language: 'de',      // German labels
+  worldview: 'GER'     // German worldview for boundaries
+})
+
+// Fetch and apply the localized style
+fetch(localizedStyle.styleUrl)
+  .then(response => response.json())
+  .then(style => map.setStyle(style))
+  .catch(error => console.error('Failed to load localized style:', error))
+```
+
+## Error Handling
+
+```typescript
+const loadStyleSafely = async (styleId: string, apiKey: string): Promise<boolean> => {
+  try {
+    const vectorStyle = new VectorBasemapStyle(styleId, apiKey)
+    
+    // Check if style URL is accessible
+    const response = await fetch(vectorStyle.styleUrl, { method: 'HEAD' })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    // Load full style
+    const styleResponse = await fetch(vectorStyle.styleUrl)
+    const style = await styleResponse.json()
+    
+    // Validate style structure
+    if (!style.version || !style.sources || !style.layers) {
+      throw new Error('Invalid style format received')
+    }
+    
+    map.setStyle(style)
+    return true
+    
+  } catch (error) {
+    console.error(`Failed to load style ${styleId}:`, error.message)
+    
+    // Fallback to previous style or default
+    return false
+  }
+}
+
+// Usage with fallback
+const applyStyleWithFallback = async (styleId: string): Promise<void> => {
+  const success = await loadStyleSafely(styleId, ESRI_API_KEY)
+  
+  if (!success) {
+    console.warn(`Falling back to default style`)
+    // Apply fallback logic here
+  }
+}
 ```
 
 ### Dark Mode Navigation
