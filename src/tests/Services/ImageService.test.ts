@@ -502,6 +502,338 @@ describe('ImageService', () => {
     });
   });
 
+  describe('Time Support', () => {
+    it('should include time parameter when dates are set using setDate method', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Set date using the method (this is the proper API)
+      const fromDate = new Date('2020-01-01T00:00:00.000Z');
+      const toDate = new Date('2020-12-31T00:00:00.000Z');
+      service.setDate(fromDate, toDate);
+
+      // Access the private getter to test time formatting
+      const timeStr = (service as any)._time;
+      expect(timeStr).toBe(`${fromDate.valueOf()},${toDate.valueOf()}`);
+    });
+
+    it('should handle numeric timestamps for time', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Set date using numeric timestamps
+      service.setDate(1577836800000, 1609459200000);
+
+      const timeStr = (service as any)._time;
+      expect(timeStr).toBe('1577836800000,1609459200000');
+    });
+
+    it('should return false when no to date is set', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const service = new ImageService('test-source', mockMap, options);
+
+      const timeStr = (service as any)._time;
+      expect(timeStr).toBe(false);
+    });
+
+    it('should use setDate method to update time and source', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Set date using the method
+      const fromDate = new Date('2020-01-01T00:00:00.000Z');
+      const toDate = new Date('2020-12-31T00:00:00.000Z');
+      service.setDate(fromDate, toDate);
+
+      expect(service.esriServiceOptions.from).toEqual(fromDate);
+      expect(service.esriServiceOptions.to).toEqual(toDate);
+      expect(mockSource.setTiles).toHaveBeenCalled();
+    });
+
+    it('should include time parameter in tile URL when time is set', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Set the date first
+      const fromDate = new Date('2020-01-01T00:00:00.000Z');
+      const toDate = new Date('2020-12-31T00:00:00.000Z');
+      service.setDate(fromDate, toDate);
+
+      // Get the current tiles to check if time is included
+      const source = (service as any)._source;
+      const expectedTimeParam = `time=${fromDate.valueOf()}%2C${toDate.valueOf()}`;
+      expect(source.tiles[0]).toContain(expectedTimeParam);
+    });
+
+    it('should include time parameter in identify requests', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      // Create service without mock source for identify test
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Set the date first
+      const fromDate = new Date('2020-01-01T00:00:00.000Z');
+      const toDate = new Date('2020-12-31T00:00:00.000Z');
+      
+      // Set the date directly on options to avoid _updateSource call during identify
+      (service as any).esriServiceOptions.from = fromDate;
+      (service as any).esriServiceOptions.to = toDate;
+      
+      await service.identify({ lng: -118.2437, lat: 34.0522 });
+
+      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const expectedTimeParam = `time=${fromDate.valueOf()}%2C${toDate.valueOf()}`;
+      expect(callUrl).toContain(expectedTimeParam);
+    });
+  });
+
+  describe('Service Configuration Methods', () => {
+    it('should update rendering rule and call update source', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+
+      const renderingRule = { rasterFunction: 'Hillshade' };
+      service.setRenderingRule(renderingRule);
+
+      expect(service.esriServiceOptions.renderingRule).toEqual(renderingRule);
+      expect(mockSource.setTiles).toHaveBeenCalled();
+    });
+
+    it('should update mosaic rule and call update source', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+
+      const mosaicRule = { mosaicMethod: 'esriMosaicNorthwest' };
+      service.setMosaicRule(mosaicRule);
+
+      expect(service.esriServiceOptions.mosaicRule).toEqual(mosaicRule);
+      expect(mockSource.setTiles).toHaveBeenCalled();
+    });
+  });
+
+  describe('Attribution Management', () => {
+    it('should set attribution when metadata is already available', async () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const service = new ImageService('test-source', mockMap, options);
+      
+      // Simulate metadata being loaded
+      (service as any)._serviceMetadata = {
+        copyrightText: 'Test Attribution',
+      };
+
+      await service.setAttributionFromService();
+
+      expect(mockUpdateAttribution).toHaveBeenCalledWith(
+        'Test Attribution',
+        'test-source',
+        mockMap
+      );
+    });
+
+    it('should fetch metadata first if not available when setting attribution', async () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      mockGetServiceDetails.mockResolvedValue({
+        copyrightText: 'Fetched Attribution',
+      });
+
+      const service = new ImageService('test-source', mockMap, options);
+
+      await service.setAttributionFromService();
+
+      expect(mockGetServiceDetails).toHaveBeenCalledWith(
+        'https://example.com/ImageServer',
+        undefined
+      );
+      expect(mockUpdateAttribution).toHaveBeenCalledWith(
+        'Fetched Attribution',
+        'test-source',
+        mockMap
+      );
+    });
+  });
+
+  describe('Source Update Path Testing', () => {
+    it('should handle update when source supports setTiles (modern MapboxGL)', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        setTiles: jest.fn(),
+        _options: {},
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      service.update();
+
+      expect(mockSource.setTiles).toHaveBeenCalled();
+      expect(mockSource.tiles[0]).toContain('ImageServer/exportImage');
+    });
+
+    it('should handle update when using legacy sourceCaches (old MapboxGL/MaplibreGL)', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        _options: {},
+      }; // No setTiles method
+
+      const mockSourceCache = {
+        clearTiles: jest.fn(),
+        update: jest.fn(),
+      };
+
+      // Mock the map style for legacy update path
+      (mockMap as any).style = {
+        sourceCaches: {
+          'test-source': mockSourceCache,
+        },
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      service.update();
+
+      expect(mockSourceCache.clearTiles).toHaveBeenCalled();
+      expect(mockSourceCache.update).toHaveBeenCalledWith((mockMap as any).transform);
+    });
+
+    it('should handle update when using _otherSourceCaches fallback', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+      };
+
+      const mockSource = {
+        tiles: ['old-tile-url'],
+        _options: {},
+      }; // No setTiles method
+
+      const mockSourceCache = {
+        clearTiles: jest.fn(),
+        update: jest.fn(),
+      };
+
+      // Mock the map style for _otherSourceCaches fallback
+      (mockMap as any).style = {
+        _otherSourceCaches: {
+          'test-source': mockSourceCache,
+        },
+        sourceCaches: {
+          'test-source': mockSourceCache,
+        },
+      };
+
+      mockMap.getSource.mockReturnValue(mockSource as unknown as any);
+
+      const service = new ImageService('test-source', mockMap, options);
+      service.update();
+
+      expect(mockSourceCache.clearTiles).toHaveBeenCalled();
+      expect(mockSourceCache.update).toHaveBeenCalledWith((mockMap as any).transform);
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle URL with trailing slash', () => {
       mockCleanTrailingSlash.mockReturnValue('https://example.com/ImageServer');

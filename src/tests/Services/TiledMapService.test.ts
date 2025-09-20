@@ -178,4 +178,59 @@ describe('TiledMapService', () => {
       expect(service).toBeDefined();
     });
   });
+
+  describe('Attribution Management', () => {
+    beforeEach(() => {
+      service = new TiledMapService('test-source', mockMap as Map, {
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+        getAttributionFromService: false, // Prevent automatic attribution fetching
+      });
+    });
+
+    it('should set attribution when metadata is already available', async () => {
+      // Mock the updateAttribution function
+      const updateAttribution = jest.fn();
+      const originalModule = await import('@/utils');
+      jest.spyOn(originalModule, 'updateAttribution').mockImplementation(updateAttribution);
+      
+      // Simulate metadata being loaded
+      (service as any)._serviceMetadata = {
+        copyrightText: 'Test Attribution',
+      };
+
+      await service.setAttributionFromService();
+
+      expect(updateAttribution).toHaveBeenCalledWith(
+        'Test Attribution',
+        'test-source',
+        mockMap
+      );
+    });
+
+    it('should fetch metadata first if not available when setting attribution', async () => {
+      // Mock successful metadata response
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            serviceDescription: 'Test Service',
+            copyrightText: 'Fetched Attribution',
+            singleFusedMapCache: true,
+            tileInfo: { rows: 256, cols: 256 },
+          }),
+      } as Response);
+
+      const updateAttribution = jest.fn();
+      const originalModule = await import('@/utils');
+      jest.spyOn(originalModule, 'updateAttribution').mockImplementation(updateAttribution);
+
+      await service.setAttributionFromService();
+
+      expect(updateAttribution).toHaveBeenCalledWith(
+        'Fetched Attribution',
+        'test-source',
+        mockMap
+      );
+    });
+  });
 });
