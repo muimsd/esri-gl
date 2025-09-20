@@ -676,4 +676,224 @@ describe('FeatureService', () => {
       expect(() => service.remove()).not.toThrow();
     });
   });
+
+  describe('Style Management', () => {
+    it('should get style when metadata is already loaded', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      
+      // Simulate metadata being loaded
+      (service as any)._serviceMetadata = {
+        geometryType: 'esriGeometryPoint',
+      };
+
+      const style = await service.getStyle();
+      
+      expect(style).toEqual({
+        type: 'circle',
+        source: 'test-source',
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#3b82f6',
+          'circle-stroke-color': '#1e40af',
+          'circle-stroke-width': 1,
+        },
+      });
+    });
+
+    it('should fetch metadata first if not available when getting style', async () => {
+      // Reset mocks for this test
+      mockFetch.mockReset();
+      
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            geometryType: 'esriGeometryPolygon',
+            copyrightText: 'Test Attribution',
+          }),
+      } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      const style = await service.getStyle();
+
+      expect(style).toEqual({
+        type: 'fill',
+        source: 'test-source',
+        paint: {
+          'fill-color': 'rgba(59, 130, 246, 0.4)',
+          'fill-outline-color': '#1e40af',
+        },
+      });
+    });
+
+    it('should handle style fetch errors', async () => {
+      mockFetch.mockReset();
+      mockFetch.mockRejectedValue(new Error('Service unavailable'));
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      await expect(service.getStyle()).rejects.toThrow('Service unavailable');
+    });
+  });
+
+  describe('Advanced Query Options', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ features: [] }),
+      } as Response);
+    });
+
+    it('should handle query with geometry filter', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      const geometry = {
+        x: -118.2437,
+        y: 34.0522,
+        spatialReference: { wkid: 4326 },
+      };
+
+      await service.queryFeatures({
+        geometry,
+        geometryType: 'esriGeometryPoint',
+        spatialRel: 'esriSpatialRelIntersects',
+        inSR: '4326',
+        outSR: '3857',
+      });
+
+      const callUrl = mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0] as string;
+      expect(callUrl).toContain('geometry=');
+      expect(callUrl).toContain('geometryType=esriGeometryPoint');
+      expect(callUrl).toContain('spatialRel=esriSpatialRelIntersects');
+      expect(callUrl).toContain('inSR=4326');
+      expect(callUrl).toContain('outSR=3857');
+    });
+
+    it('should handle query with ordering and statistics', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      await service.queryFeatures({
+        orderByFields: 'POPULATION DESC',
+        groupByFieldsForStatistics: 'STATE_NAME',
+        outStatistics: [{ statisticType: 'sum', onStatisticField: 'POPULATION' }],
+        having: 'SUM_POPULATION > 1000000',
+        resultOffset: 10,
+        resultRecordCount: 50,
+        token: 'test-token',
+      });
+
+      const callUrl = mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0] as string;
+      expect(callUrl).toContain('orderByFields=POPULATION');
+      expect(callUrl).toContain('DESC');
+      expect(callUrl).toContain('groupByFieldsForStatistics=STATE_NAME');
+      expect(callUrl).toContain('outStatistics=');
+      expect(callUrl).toContain('having=SUM_POPULATION');
+      expect(callUrl).toContain('1000000');
+      expect(callUrl).toContain('resultOffset=10');
+      expect(callUrl).toContain('resultRecordCount=50');
+      expect(callUrl).toContain('token=test-token');
+    });
+
+    it('should handle production environment logging in updateData', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const service = new FeatureService('test-source', mockMap as Map, {
+        ...mockServiceOptions,
+        useVectorTiles: false,
+        useBoundingBox: true,
+      });
+
+      service.updateData();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Updating FeatureService data with new bounding box:'),
+        expect.any(String)
+      );
+
+      process.env.NODE_ENV = originalEnv;
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle production environment error logging in queryFeatures', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetch.mockReset();
+      mockFetch.mockRejectedValue(new Error('Network error'));
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      await expect(service.queryFeatures()).rejects.toThrow('Network error');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error querying features:',
+        expect.any(Error)
+      );
+
+      process.env.NODE_ENV = originalEnv;
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle bounding box updates with debouncing', (done) => {
+      const service = new FeatureService('test-source', mockMap as Map, {
+        ...mockServiceOptions,
+        useVectorTiles: false,
+        useBoundingBox: true,
+      });
+
+      // Enable bounding box updates
+      service.setBoundingBoxFilter(true);
+
+      // Mock the map event handlers
+      const boundingBoxHandler = (mockMap.on as jest.Mock).mock.calls
+        .find(call => call[0] === 'moveend')?.[1];
+
+      expect(boundingBoxHandler).toBeDefined();
+
+      // Call the handler multiple times quickly
+      if (boundingBoxHandler) {
+        boundingBoxHandler();
+        boundingBoxHandler();
+        boundingBoxHandler();
+      }
+
+      // Check that debouncing works (only one update after timeout)
+      setTimeout(() => {
+        expect(mockMap.getSource).toHaveBeenCalled();
+        done();
+      }, 350);
+    });
+
+    it('should handle complex outStatistics arrays', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      await service.queryFeatures({
+        outStatistics: [
+          { statisticType: 'sum', onStatisticField: 'POPULATION' },
+          { statisticType: 'avg', onStatisticField: 'AREA' },
+        ],
+      });
+
+      const callUrl = mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0] as string;
+      expect(callUrl).toContain('outStatistics=');
+      expect(callUrl).toContain('sum');
+      expect(callUrl).toContain('avg');
+    });
+
+    it('should skip outStatistics when empty array', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      await service.queryFeatures({
+        outStatistics: [],
+      });
+
+      const callUrl = mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0] as string;
+      expect(callUrl).not.toContain('outStatistics=');
+    });
+  });
 });
