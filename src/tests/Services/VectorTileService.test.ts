@@ -537,10 +537,10 @@ describe('VectorTileService', () => {
         json: () => Promise.resolve(mockStyleData),
       });
 
-      const options = {
+      const options: VectorTileServiceOptions = {
         url: 'https://example.com/VectorTileServer',
         fetchOptions,
-      } as VectorTileServiceOptions & { fetchOptions: RequestInit };
+      };
 
       const service = new VectorTileService('test-source', mockMap, options);
       await service.getStyle();
