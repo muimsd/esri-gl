@@ -29,6 +29,9 @@ const sidebars: SidebarsConfig = {
       items: [
         'tasks/overview',
         'tasks/identify-features',
+        'tasks/identify-image',
+        'tasks/query', 
+        'tasks/find',
       ],
     },
     {
@@ -39,6 +42,8 @@ const sidebars: SidebarsConfig = {
         'api/tiled-map-service',
         'api/image-service',
         'api/feature-service',
+        'api/vector-tile-service',
+        'api/vector-basemap-style',
       ],
     },
     {
@@ -47,6 +52,9 @@ const sidebars: SidebarsConfig = {
       items: [
         'examples/basic',
         'examples/advanced',
+        'examples/performance',
+        'examples/real-world',
+        'examples/html-viewer',
       ],
     },
   ],

@@ -59,6 +59,27 @@ export class IdentifyImage extends Task {
 
   constructor(options: string | IdentifyImageOptions) {
     super(options);
+
+    // If options is a IdentifyImageOptions object, merge relevant properties into params
+    if (options && typeof options === 'object' && typeof options !== 'string') {
+      const imageOptions = options as IdentifyImageOptions;
+
+      // Merge identify-specific options into params
+      if (imageOptions.geometry !== undefined) this.params.geometry = imageOptions.geometry;
+      if (imageOptions.geometryType !== undefined)
+        this.params.geometryType = imageOptions.geometryType;
+      if (imageOptions.sr !== undefined) this.params.sr = imageOptions.sr;
+      if (imageOptions.mosaic !== undefined) this.params.mosaic = imageOptions.mosaic;
+      if (imageOptions.renderingRules !== undefined)
+        this.params.renderingRules = imageOptions.renderingRules;
+      if (imageOptions.pixelSize !== undefined) this.params.pixelSize = imageOptions.pixelSize;
+      if (imageOptions.returnGeometry !== undefined)
+        this.params.returnGeometry = imageOptions.returnGeometry;
+      if (imageOptions.returnCatalogItems !== undefined)
+        this.params.returnCatalogItems = imageOptions.returnCatalogItems;
+      if (imageOptions.token !== undefined) this.params.token = imageOptions.token;
+      if (imageOptions.f !== undefined) this.params.f = imageOptions.f;
+    }
   }
 
   /**

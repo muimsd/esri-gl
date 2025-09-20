@@ -1,6 +1,6 @@
-import { Task, TaskOptions } from '@/Task';
+import { Task, type TaskOptions } from '@/Tasks/Task';
 import { Service } from '@/Services/Service';
-
+import type { Map } from '@/types';
 export interface IdentifyFeaturesOptions {
   url: string;
   layers?: number[] | number | string;
@@ -138,12 +138,7 @@ export class IdentifyFeatures extends Task {
   /**
    * Set the map extent and image display for the identify operation
    */
-  on(map: {
-    getBounds(): {
-      toArray(): [[number, number], [number, number]];
-    };
-    getCanvas(): { width: number; height: number };
-  }): IdentifyFeatures {
+  on(map: Map): IdentifyFeatures {
     try {
       const bounds = map.getBounds().toArray();
       this.params.mapExtent = [bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1]].join(',');
@@ -204,7 +199,10 @@ export class IdentifyFeatures extends Task {
 
       return this._convertToGeoJSON(response);
     } catch (error) {
-      console.error('IdentifyFeatures error:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('IdentifyFeatures error:', error);
+      }
       throw error;
     }
   }

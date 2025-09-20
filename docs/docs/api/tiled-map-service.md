@@ -1,5 +1,7 @@
 # TiledMapService
 
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+
 For accessing [ArcGIS Tiled Map Services](https://developers.arcgis.com/rest/services-reference/map-service.htm) that provide pre-cached raster tiles.
 
 ## Constructor

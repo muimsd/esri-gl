@@ -5,8 +5,6 @@ on:
     branches:
       - master
       - main
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version_type:
@@ -99,8 +97,8 @@ jobs:
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
 
-      - name: Bump version (if workflow_dispatch and not a tag)
-        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
+      - name: Bump version (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
         run: |
           VERSION_TYPE="${{ github.event.inputs.version_type }}"
           if [[ "$VERSION_TYPE" == "prerelease" ]]; then
@@ -132,15 +130,6 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION="${{ steps.package-version.outputs.version }}"
-            if [[ "$VERSION" == *"-alpha"* ]]; then
-              echo "tag=alpha" >> $GITHUB_OUTPUT
-            elif [[ "$VERSION" == *"-beta"* ]]; then
-              echo "tag=beta" >> $GITHUB_OUTPUT
-            else
-              echo "tag=latest" >> $GITHUB_OUTPUT
-            fi
           elif [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
@@ -151,14 +140,6 @@ jobs:
         run: npm publish --tag ${{ steps.npm-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Git tag (if workflow_dispatch and not already a tag)
-        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          git tag "v${{ steps.package-version.outputs.version }}"
-          git push origin "v${{ steps.package-version.outputs.version }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore original package.json
         if: always()

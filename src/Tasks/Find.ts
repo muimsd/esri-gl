@@ -1,5 +1,5 @@
 import { Task } from './Task';
-import { Service } from '../Services/Service';
+import { Service } from '@/Services/Service';
 
 export interface FindOptions {
   url: string;
@@ -44,17 +44,59 @@ export class Find extends Task {
   protected path = 'find';
 
   protected params: Record<string, unknown> = {
-    sr: 4326,
+    searchText: '', // Required parameter
+    layers: 'all', // Can be 'all' or comma-separated layer IDs
     contains: true,
     returnGeometry: true,
-    returnZ: true,
-    returnM: false,
     f: 'json',
   };
 
   constructor(options: string | FindOptions | Service) {
     super(options);
     this.path = 'find';
+
+    // If options is a FindOptions object, merge relevant properties into params
+    if (
+      options &&
+      typeof options === 'object' &&
+      !('request' in options) &&
+      typeof options !== 'string'
+    ) {
+      const findOptions = options as FindOptions;
+
+      // Merge find-specific options into params
+      if (findOptions.searchText !== undefined) this.params.searchText = findOptions.searchText;
+      if (findOptions.contains !== undefined) this.params.contains = findOptions.contains;
+      if (findOptions.searchFields !== undefined) {
+        this.params.searchFields = Array.isArray(findOptions.searchFields)
+          ? findOptions.searchFields.join(',')
+          : findOptions.searchFields;
+      }
+      if (findOptions.sr !== undefined) this.params.sr = findOptions.sr;
+      if (findOptions.layers !== undefined) {
+        // Convert array to comma-separated string or use as-is if already string
+        if (Array.isArray(findOptions.layers)) {
+          this.params.layers = findOptions.layers.join(',');
+        } else if (typeof findOptions.layers === 'string') {
+          this.params.layers = findOptions.layers;
+        } else {
+          this.params.layers = findOptions.layers.toString();
+        }
+      }
+      if (findOptions.returnGeometry !== undefined)
+        this.params.returnGeometry = findOptions.returnGeometry;
+      if (findOptions.maxAllowableOffset !== undefined)
+        this.params.maxAllowableOffset = findOptions.maxAllowableOffset;
+      if (findOptions.geometryPrecision !== undefined)
+        this.params.geometryPrecision = findOptions.geometryPrecision;
+      if (findOptions.dynamicLayers !== undefined)
+        this.params.dynamicLayers = findOptions.dynamicLayers;
+      if (findOptions.returnZ !== undefined) this.params.returnZ = findOptions.returnZ;
+      if (findOptions.returnM !== undefined) this.params.returnM = findOptions.returnM;
+      if (findOptions.gdbVersion !== undefined) this.params.gdbVersion = findOptions.gdbVersion;
+      if (findOptions.layerDefs !== undefined) this.params.layerDefs = findOptions.layerDefs;
+      if (findOptions.token !== undefined) this.params.token = findOptions.token;
+    }
   }
 
   /**
@@ -126,17 +168,13 @@ export class Find extends Task {
   /**
    * Execute the find operation
    */
-  async run(): Promise<GeoJSON.FeatureCollection> {
+  async run(): Promise<GeoJSON.FeatureCollection<GeoJSON.Geometry | null>> {
+    // Always use JSON format for Find API (GeoJSON might not be supported)
+    this.params.f = 'json';
+
     try {
-      // Try GeoJSON format first if supported
-      this.params.f = 'geojson';
-      const response = await this.request<GeoJSON.FeatureCollection>();
-      return response;
-    } catch (error) {
-      // Fallback to JSON format and convert
-      this.params.f = 'json';
       const response = await this.request<{
-        results: Array<{
+        results?: Array<{
           layerId: number;
           layerName: string;
           foundFieldName: string;
@@ -147,21 +185,31 @@ export class Find extends Task {
       }>();
 
       return this._convertToGeoJSON(response);
+    } catch (error) {
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Find task error:', error);
+      }
+      throw error;
     }
   }
 
-  private _convertToGeoJSON(response: {
-    results: Array<{
-      layerId: number;
-      layerName: string;
-      foundFieldName: string;
-      value: string;
-      attributes: Record<string, unknown>;
-      geometry?: unknown;
-    }>;
-  }): GeoJSON.FeatureCollection {
-    const features: GeoJSON.Feature[] = response.results.map(result => ({
-      type: 'Feature',
+  private _convertToGeoJSON(
+    response: {
+      results?: Array<{
+        layerId: number;
+        layerName: string;
+        foundFieldName: string;
+        value: string;
+        attributes: Record<string, unknown>;
+        geometry?: unknown;
+      }>;
+    } | null
+  ): GeoJSON.FeatureCollection<GeoJSON.Geometry | null> {
+    // Handle cases where response is null or results might be undefined, null, or empty
+    const results = response?.results || [];
+    const features: GeoJSON.Feature<GeoJSON.Geometry | null>[] = results.map(result => ({
+      type: 'Feature' as const,
       properties: {
         ...result.attributes,
         layerId: result.layerId,
@@ -169,13 +217,57 @@ export class Find extends Task {
         foundFieldName: result.foundFieldName,
         value: result.value,
       },
-      geometry: (result.geometry as GeoJSON.Geometry) || null,
+      geometry: this._convertEsriGeometry(result.geometry),
     }));
 
     return {
       type: 'FeatureCollection',
       features,
     };
+  }
+
+  private _convertEsriGeometry(esriGeom: unknown): GeoJSON.Geometry | null {
+    if (!esriGeom || typeof esriGeom !== 'object') return null;
+
+    const geom = esriGeom as Record<string, unknown>;
+
+    // Point geometry
+    if ('x' in geom && 'y' in geom) {
+      return {
+        type: 'Point',
+        coordinates: [geom.x as number, geom.y as number],
+      };
+    }
+
+    // Polygon geometry
+    if ('rings' in geom && Array.isArray(geom.rings)) {
+      return {
+        type: 'Polygon',
+        coordinates: geom.rings as number[][][],
+      };
+    }
+
+    // Polyline geometry
+    if ('paths' in geom && Array.isArray(geom.paths)) {
+      const paths = geom.paths as number[][][];
+
+      if (paths.length === 1) {
+        // Single path = LineString
+        return {
+          type: 'LineString',
+          coordinates: paths[0],
+        };
+      } else {
+        // Multiple paths = MultiLineString
+        return {
+          type: 'MultiLineString',
+          coordinates: paths,
+        };
+      }
+    }
+
+    // Default: return null for unknown geometry types
+    return null;
   }
 }
 

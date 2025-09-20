@@ -1,5 +1,6 @@
-import { Layer, LayerOptions } from './Layer';
+import { Layer, type LayerOptions } from './Layer';
 import { Service } from '../Services/Service';
+import type { Map } from '@/types';
 
 export interface RasterLayerOptions extends LayerOptions {
   service?: Service;
@@ -97,12 +98,12 @@ export class RasterLayer extends Layer {
 
     // Create a raster source that will be updated with image URLs
     const source = {
-      type: 'raster',
+      type: 'raster' as const,
       tiles: [], // Will be populated by _update
       tileSize: 512,
     };
 
-    this._map.addSource(this._sourceId, source);
+    this._map.addSource(this._sourceId, source as unknown as Parameters<Map['addSource']>[1]);
   }
 
   protected _createLayer(): void {
@@ -110,14 +111,14 @@ export class RasterLayer extends Layer {
 
     const layer = {
       id: this._layerId,
-      type: 'raster',
+      type: 'raster' as const,
       source: this._sourceId,
       paint: {
         'raster-opacity': this.options.opacity || 1,
       },
     };
 
-    this._map.addLayer(layer);
+    this._map.addLayer(layer as unknown as Parameters<Map['addLayer']>[0]);
   }
 
   /**
@@ -139,9 +140,9 @@ export class RasterLayer extends Layer {
    * Request export - to be implemented by subclasses
    */
   protected _requestExport(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _bounds: [number, number, number, number]
   ): void {
     // Override in subclasses

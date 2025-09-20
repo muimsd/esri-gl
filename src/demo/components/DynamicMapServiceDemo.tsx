@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
+//@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { DynamicMapService, IdentifyFeatures } from '../../main';
 
 const DynamicMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const service = useRef<any>(null);
+  const service = useRef<DynamicMapService | null>(null);
   const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2]);
 
   useEffect(() => {

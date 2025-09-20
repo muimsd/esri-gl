@@ -1,16 +1,36 @@
 # esri-gl
-A small library to make it easier to use various Esri ArcGIS services in MapLibre GL JS or Mapbox GL JS.
 
-**Note** This library is compatible with both mapbox-gl and maplibre-gl.
+A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. It replicates Esri Leaflet's architecture patterns while being compatible with modern WebGL mapping libraries.
 
-Currently supports
-- Esri Map Services
-  - Dynamic
-  - Tiled
-- Esri Vector Tile Services
-- Esri Vector Basemap Styles
+[![npm version](https://badge.fury.io/js/esri-gl.svg)](https://badge.fury.io/js/esri-gl)
+[![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Installation & Use
+**Note**: This library is compatible with both **MapLibre GL JS** and **Mapbox GL JS**.
+
+## Features
+
+### Supported Services
+
+- **Dynamic Map Services** - Server-rendered raster tiles from ArcGIS Map Services
+- **Tiled Map Services** - Pre-cached tile services for optimal performance  
+- **Image Services** - Analytical raster data with server-side processing
+- **Vector Tile Services** - Client-rendered vector tiles for fast styling
+- **Vector Basemap Styles** - Esri's vector basemap styles with custom styling
+- **Feature Services** - Vector data with smart vector tile detection and GeoJSON fallback
+
+### Advanced Features
+
+- **Smart Vector Tile Detection** - Automatically detects vector tile endpoints with GeoJSON fallback
+- **Dynamic Layer Management** - Add/remove layers dynamically with proper cleanup
+- **Identify Tasks** - Query features and raster data at specific locations
+- **Bounding Box Filtering** - Optimize performance with viewport-based data loading  
+- **Layer Definitions** - Filter data server-side using SQL-like expressions
+- **Time-aware Services** - Support for temporal data visualization
+- **Attribution Management** - Automatic service attribution handling
+- **TypeScript Support** - Full type safety with comprehensive interfaces
+
+## Installation
 
 ### Stable Release
 ```bash
@@ -19,11 +39,11 @@ npm install esri-gl
 
 ### Alpha/Beta Releases
 ```bash
-# Latest alpha release (current: v0.1.0-alpha.0)
+# Latest alpha release (current: v0.1.0-alpha.2)
 npm install esri-gl@alpha
 
 # Specific alpha version
-npm install esri-gl@0.1.0-alpha.0
+npm install esri-gl@0.1.0-alpha.2
 
 # Latest beta release  
 npm install esri-gl@beta
@@ -42,9 +62,372 @@ npm install @muimsd/esri-gl
 ./scripts/github-packages.sh install
 ```
 
-## Usage
-Check out the [docs](https://frontiersi.github.io/esri-gl/)
+## Quick Start
+
+### Basic Usage with MapLibre GL JS
+
+```typescript
+import { Map } from 'maplibre-gl';
+import { DynamicMapService, VectorTileService, FeatureService } from 'esri-gl';
+
+const map = new Map({
+  container: 'map',
+  style: 'https://demotiles.maplibre.org/style.json',
+  center: [-95, 37],
+  zoom: 4
+});
+
+map.on('load', () => {
+  // Add a dynamic map service
+  const dynamicService = new DynamicMapService('census-source', map, {
+    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer'
+  });
+
+  map.addLayer({
+    id: 'census-layer',
+    type: 'raster',
+    source: 'census-source'
+  });
+
+  // Add a feature service with smart vector tile detection
+  const featureService = new FeatureService('parcels-source', map, {
+    url: 'https://services.arcgis.com/.../FeatureServer/0',
+    useVectorTiles: true, // Automatically detects and falls back to GeoJSON if needed
+    useBoundingBox: true, // Optimize with viewport filtering
+    where: "STATUS = 'Active'", // Server-side filtering
+    outFields: '*'
+  });
+
+  map.addLayer({
+    id: 'parcels-layer',
+    type: 'fill',
+    source: 'parcels-source',
+    paint: {
+      'fill-color': '#007cbf',
+      'fill-opacity': 0.5
+    }
+  });
+});
+```
+
+### Using with Mapbox GL JS
+
+```typescript
+import mapboxgl from 'mapbox-gl';
+import { VectorBasemapStyle, ImageService } from 'esri-gl';
+
+mapboxgl.accessToken = 'your-mapbox-token';
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  center: [-95, 37],
+  zoom: 4
+});
+
+map.on('load', () => {
+  // Add Esri vector basemap style
+  const basemapService = new VectorBasemapStyle('basemap-source', map, {
+    style: 'arcgis/streets'
+  });
+
+  // Add image service for analytical raster data
+  const imageService = new ImageService('elevation-source', map, {
+    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/ImageServer',
+    renderingRule: {
+      rasterFunction: 'Hillshade'
+    }
+  });
+
+  map.addLayer({
+    id: 'elevation-layer',
+    type: 'raster',
+    source: 'elevation-source'
+  });
+});
+```
+
+## Service Classes
+
+### DynamicMapService
+Server-rendered raster tiles from ArcGIS Map Services.
+
+```typescript
+const service = new DynamicMapService('source-id', map, {
+  url: 'https://example.com/arcgis/rest/services/MyService/MapServer',
+  layers: [0, 1, 2], // Specific layers to display
+  layerDefs: {
+    0: "POP2000 > 100000", // Filter layer 0
+    1: "STATE_NAME = 'California'" // Filter layer 1
+  },
+  transparent: true,
+  format: 'png32'
+});
+```
+
+### TiledMapService  
+Pre-cached tile services for optimal performance.
+
+```typescript
+const service = new TiledMapService('source-id', map, {
+  url: 'https://example.com/arcgis/rest/services/MyTiledService/MapServer'
+});
+```
+
+### FeatureService
+Vector data with intelligent vector tile detection and automatic GeoJSON fallback.
+
+```typescript
+const service = new FeatureService('source-id', map, {
+  url: 'https://example.com/arcgis/rest/services/MyService/FeatureServer/0',
+  useVectorTiles: true, // Smart detection with fallback
+  useBoundingBox: true, // Viewport-based loading
+  where: '1=1',
+  outFields: '*',
+  maxRecordCount: 2000
+});
+```
+
+### VectorTileService
+Client-rendered vector tiles for fast styling and interaction.
+
+```typescript
+const service = new VectorTileService('source-id', map, {
+  url: 'https://example.com/arcgis/rest/services/MyService/VectorTileServer'
+});
+```
+
+### ImageService
+Analytical raster data with server-side processing capabilities.
+
+```typescript
+const service = new ImageService('source-id', map, {
+  url: 'https://example.com/arcgis/rest/services/MyImageService/ImageServer',
+  renderingRule: {
+    rasterFunction: 'Stretch',
+    rasterFunctionArguments: {
+      StretchType: 6,
+      NumberOfStandardDeviations: 2
+    }
+  },
+  mosaicRule: {
+    mosaicMethod: 'esriMosaicLockRaster',
+    lockRasterIds: [1, 2, 3]
+  }
+});
+```
+
+### VectorBasemapStyle
+Esri's vector basemap styles with customization options.
+
+```typescript
+const service = new VectorBasemapStyle('source-id', map, {
+  style: 'arcgis/streets', // or 'arcgis/navigation', 'arcgis/topographic', etc.
+  language: 'en',
+  worldview: 'USA'
+});
+```
+
+## Task-Based Operations
+
+Modeled after Esri Leaflet's chainable task pattern for querying and identifying features.
+
+### IdentifyFeatures
+Query vector features at specific locations.
+
+```typescript
+import { IdentifyFeatures } from 'esri-gl';
+
+const identifyService = new IdentifyFeatures({
+  url: 'https://example.com/arcgis/rest/services/MyService/MapServer'
+});
+
+// Identify features at a point
+const results = await identifyService
+  .at({ lng: -95, lat: 37 })
+  .tolerance(5)
+  .layers('all')
+  .returnGeometry(true)
+  .run(map);
+
+console.log('Identified features:', results);
+```
+
+### IdentifyImage
+Query raster values from image services.
+
+```typescript
+import { identifyImage } from 'esri-gl';
+
+const results = await identifyImage({
+  url: 'https://example.com/arcgis/rest/services/Elevation/ImageServer'
+}).at({ lng: -120, lat: 40 });
+
+console.log('Elevation value:', results.value);
+```
+
+### Query
+Advanced feature querying with spatial and attribute filters.
+
+```typescript
+import { query } from 'esri-gl';
+
+const results = await query({
+  url: 'https://example.com/arcgis/rest/services/MyService/FeatureServer/0'
+})
+.where("STATE_NAME = 'California'")
+.intersects({
+  type: 'Point',
+  coordinates: [-118, 34]
+})
+.run();
+```
+
+## Advanced Features
+
+### Dynamic Layer Management
+
+```typescript
+// Add layers dynamically
+const service = new DynamicMapService('census-source', map, {
+  url: 'https://example.com/MapServer'
+});
+
+// Update visible layers
+service.setLayers([0, 2, 5]);
+
+// Update layer definitions
+service.setLayerDefs({
+  0: "POP2000 > 50000",
+  2: "STATE_NAME IN ('California', 'Nevada')"
+});
+
+// Clean up
+service.remove();
+```
+
+### Smart Vector Tile Detection
+
+The `FeatureService` automatically detects vector tile availability:
+
+```typescript
+const service = new FeatureService('smart-source', map, {
+  url: 'https://example.com/FeatureServer/0',
+  useVectorTiles: true // Will automatically:
+  // 1. Check for VectorTileServer endpoint
+  // 2. Test various URL patterns
+  // 3. Fall back to GeoJSON if vector tiles unavailable
+  // 4. Log the decision process to console
+});
+```
+
+### Performance Optimization
+
+```typescript
+const service = new FeatureService('optimized-source', map, {
+  url: 'https://example.com/FeatureServer/0',
+  useBoundingBox: true, // Only load features in current viewport
+  maxRecordCount: 1000, // Limit records per request
+  where: 'STATUS = "Active"', // Server-side filtering
+  outFields: ['OBJECTID', 'NAME', 'STATUS'] // Limit fields
+});
+```
+
+## Development
+
+### Build System
+- **Library Build**: Rollup (UMD + ESM outputs)
+- **Demo Development**: Vite dev server  
+- **Documentation**: Webpack build system
+
+### Development Commands
+
+```bash
+# Start demo development server
+npm run dev
+
+# Build library (both UMD and ESM)
+npm run build
+
+# Watch mode for library development  
+npm run build:watch
+
+# Type checking
+npm run type-check
+
+# Linting and formatting
+npm run lint
+npm run format
+
+# Run tests
+npm run test
+npm run test:watch
+npm run test:coverage
+
+# Build documentation
+npm run build-docs
+npm run dev:docs
+```
+
+### Project Structure
+
+```
+src/
+├── Services/           # Core service classes
+│   ├── DynamicMapService.ts
+│   ├── FeatureService.ts
+│   ├── ImageService.ts
+│   ├── TiledMapService.ts
+│   ├── VectorTileService.ts
+│   └── VectorBasemapStyle.ts
+├── Tasks/             # Task-based operations
+│   ├── IdentifyFeatures.ts
+│   ├── IdentifyImage.ts
+│   └── Query.ts
+├── demo/              # Demo React components
+└── types.ts           # TypeScript interfaces
+```
+
+## Browser Support
+
+- **Modern Browsers**: Chrome, Firefox, Safari, Edge (ES2018+)
+- **MapLibre GL JS**: v2.0+ (recommended), v1.15+
+- **Mapbox GL JS**: v2.0+ (recommended), v1.13+
+
+## TypeScript Support
+
+esri-gl is written in TypeScript and provides full type definitions:
+
+```typescript
+import type { 
+  DynamicMapServiceOptions,
+  FeatureServiceOptions,
+  IdentifyResult,
+  EsriGeoJSONFeatureCollection 
+} from 'esri-gl';
+
+const options: FeatureServiceOptions = {
+  url: 'https://example.com/FeatureServer/0',
+  useVectorTiles: true,
+  where: '1=1'
+};
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make changes and add tests
+4. Run validation: `npm run validate`
+5. Commit changes: `git commit -m 'Add new feature'`
+6. Push to branch: `git push origin feature/my-feature`
+7. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
-- Esri-Leaflet was one of the first open-source projects I used and contributed to. It's still a fantastic piece of work that I refered to for inspiration (and stealing some words for documentation).
-- Mapbox-gl is an incredible front-end mapping library.
+
+- **Esri Leaflet** - Inspiration for API design and architectural patterns
+- **MapLibre GL JS** & **Mapbox GL JS** - Incredible WebGL mapping libraries
+- **Esri ArcGIS Platform** - Comprehensive GIS services and APIs

@@ -12,12 +12,28 @@ type VTLStyleLayer = {
 };
 
 const VectorTileServiceDemo: React.FC = () => {
+  // Add spinner animation styles
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const service = useRef<VectorTileService | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [layerAdded, setLayerAdded] = useState(false);
+  const [layerLoading, setLayerLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -46,7 +62,7 @@ const VectorTileServiceDemo: React.FC = () => {
         center: [-118.805, 34.027], // starting location [longitude, latitude]
       });
 
-      map.current.on('load', () => {
+      map.current.on('load', async () => {
         try {
           // Example Vector Tile Service URL
           const serviceUrl =
@@ -57,6 +73,9 @@ const VectorTileServiceDemo: React.FC = () => {
           });
 
           setLoading(false);
+
+          // Automatically add the vector tile layer when the map loads
+          await addVectorTileLayer();
         } catch (err) {
           setError('Failed to load Vector Tile Service: ' + (err as Error).message);
           setLoading(false);
@@ -75,8 +94,10 @@ const VectorTileServiceDemo: React.FC = () => {
     };
   }, []);
 
-  const addLayer = async (): Promise<void> => {
-    if (service.current && map.current && !layerAdded) {
+  // Function to add vector tile layer - used both automatically and manually
+  const addVectorTileLayer = async (): Promise<void> => {
+    if (service.current && map.current && !layerAdded && !layerLoading) {
+      setLayerLoading(true);
       try {
         const style = await service.current.getStyle();
         console.log('Fetched style:', style);
@@ -123,8 +144,14 @@ const VectorTileServiceDemo: React.FC = () => {
           },
         });
         setLayerAdded(true);
+      } finally {
+        setLayerLoading(false);
       }
     }
+  };
+
+  const addLayer = async (): Promise<void> => {
+    await addVectorTileLayer();
   };
 
   const removeLayer = (): void => {
@@ -167,26 +194,26 @@ const VectorTileServiceDemo: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <button
               onClick={addLayer}
-              disabled={layerAdded || loading || !!error}
+              disabled={layerAdded || loading || layerLoading || !!error}
               style={{
                 padding: '4px 8px',
                 border: '1px solid #ccc',
                 borderRadius: 4,
-                background: layerAdded ? '#ccc' : '#fff',
-                cursor: layerAdded || loading ? 'not-allowed' : 'pointer',
+                background: layerAdded || layerLoading ? '#ccc' : '#fff',
+                cursor: layerAdded || loading || layerLoading ? 'not-allowed' : 'pointer',
               }}
             >
-              Add Layer
+              {layerLoading ? 'Adding Layer...' : layerAdded ? 'Layer Added' : 'Add Layer'}
             </button>
             <button
               onClick={removeLayer}
-              disabled={!layerAdded || loading || !!error}
+              disabled={!layerAdded || loading || layerLoading || !!error}
               style={{
                 padding: '4px 8px',
                 border: '1px solid #ccc',
                 borderRadius: 4,
                 background: !layerAdded ? '#ccc' : '#fff',
-                cursor: !layerAdded || loading ? 'not-allowed' : 'pointer',
+                cursor: !layerAdded || loading || layerLoading ? 'not-allowed' : 'pointer',
               }}
             >
               Remove Layer
@@ -198,6 +225,38 @@ const VectorTileServiceDemo: React.FC = () => {
       {loading && (
         <div className="loading" style={{}}>
           Loading Vector Tile Service...
+        </div>
+      )}
+
+      {layerLoading && (
+        <div
+          className="layer-loading"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '10px 20px',
+            borderRadius: 4,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              border: '2px solid #ccc',
+              borderTop: '2px solid #088',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          Adding Vector Tile Layer...
         </div>
       )}
 
@@ -217,7 +276,8 @@ const VectorTileServiceDemo: React.FC = () => {
         >
           <h3 style={{ margin: '0 0 6px 0' }}>Vector Tile Service</h3>
           <p style={{ margin: 0 }}>
-            Vector tiles from ArcGIS Server for scalable, interactive mapping with dynamic styling.
+            Vector tiles from ArcGIS Server load automatically on map initialization for scalable,
+            interactive mapping with dynamic styling.
           </p>
           <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
             https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer

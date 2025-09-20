@@ -1,9 +1,18 @@
 import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
-import { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
+import type { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   fetchOptions?: RequestInit;
   useVectorTiles?: boolean;
+  useBoundingBox?: boolean; // Enable screen bounding box filtering
+}
+
+interface StyleData {
+  type: string;
+  source?: string;
+  'source-layer'?: string;
+  layout?: Record<string, unknown>;
+  paint?: Record<string, unknown>;
 }
 
 export class FeatureService {
@@ -11,6 +20,8 @@ export class FeatureService {
   private _map: Map;
   private _defaultEsriOptions: Partial<FeatureServiceOptions>;
   private _serviceMetadata: ServiceMetadata | null = null;
+  private _defaultStyleData: StyleData | null = null;
+  private _boundingBoxUpdateHandler: (() => void) | null = null;
 
   public vectorSrcOptions?: VectorSourceOptions;
   public esriServiceOptions: FeatureServiceExtendedOptions;
@@ -49,6 +60,11 @@ export class FeatureService {
       this.esriServiceOptions.useVectorTiles = true;
     }
 
+    // Default to bounding box filtering for better performance
+    if (this.esriServiceOptions.useBoundingBox === undefined) {
+      this.esriServiceOptions.useBoundingBox = true;
+    }
+
     this._createSource();
   }
 
@@ -60,17 +76,31 @@ export class FeatureService {
         this.esriServiceOptions.fetchOptions
       );
 
-      // Update attribution if available in service metadata
-      if (this._serviceMetadata?.copyrightText) {
-        updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map);
+      // Check if vector tiles should be used (default behavior)
+      // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log(
+          'FeatureService: useVectorTiles setting:',
+          this.esriServiceOptions.useVectorTiles
+        );
+      }
+      const vectorTileSupport = await this._checkVectorTileSupport();
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
       }
 
-      // Check if vector tiles should be used (default behavior)
-      const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
+      const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
+      }
 
       if (useVectorTiles) {
         // Create vector tile source
         const tileUrl = this._buildTileUrl();
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Using vector tiles for FeatureService:', tileUrl);
+        }
 
         // Add vector source to map
         this._map.addSource(this._sourceId, {
@@ -80,23 +110,100 @@ export class FeatureService {
           ...this.vectorSrcOptions,
         });
       } else {
-        // Fallback to GeoJSON (legacy behavior)
+        // Fallback to GeoJSON (most common for FeatureServers)
         const queryUrl = this._buildQueryUrl();
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Using GeoJSON for FeatureService:', queryUrl);
+        }
 
         this._map.addSource(this._sourceId, {
           type: 'geojson',
           data: queryUrl,
         });
       }
+
+      // Update attribution after source is added if available in service metadata
+      if (this._serviceMetadata?.copyrightText) {
+        updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map);
+      }
+
+      // Set up bounding box update listeners if using GeoJSON and bounding box filtering
+      if (!useVectorTiles && this.esriServiceOptions.useBoundingBox) {
+        this._setupBoundingBoxUpdates();
+      }
     } catch (error) {
-      console.error('Error creating FeatureService source:', error);
-      throw error;
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Error creating FeatureService source:', error);
+      }
+      // Don't rethrow - service should handle errors gracefully
+      // The source just won't be created and the service will be in a degraded state
+    }
+  }
+
+  private async _checkVectorTileSupport(): Promise<boolean> {
+    try {
+      // Try to check if a VectorTileServer endpoint exists
+      const vectorTileUrl = this.esriServiceOptions.url.replace(
+        '/FeatureServer/',
+        '/VectorTileServer/'
+      );
+
+      // Only check if the URL actually changed (meaning it was a FeatureServer URL)
+      if (vectorTileUrl === this.esriServiceOptions.url) {
+        const isTestEnvironment =
+          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
+        }
+        return false;
+      }
+
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
+      }
+      const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && !data.error) {
+          if (!isTestEnvironment) {
+            console.log('FeatureService: Vector tile endpoint found and working:', vectorTileUrl);
+            console.log('FeatureService: Vector tile service data:', data);
+          }
+          return true;
+        } else {
+          if (!isTestEnvironment) {
+            console.log('FeatureService: Vector tile endpoint returned error:', data?.error);
+          }
+          return false;
+        }
+      } else {
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Vector tile endpoint returned HTTP', response.status);
+        }
+        return false;
+      }
+    } catch (error) {
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Vector tile check failed, falling back to GeoJSON:', error);
+      }
+      return false;
     }
   }
 
   private _buildTileUrl(): string {
     const baseUrl = this.esriServiceOptions.url;
-    return `${baseUrl}/VectorTileServer/tile/{z}/{y}/{x}.pbf`;
+    // Check if this is a FeatureServer that supports vector tiles
+    // Most FeatureServers don't have VectorTileServer endpoints
+    // We'll use a different approach for FeatureServers with vector tile capability
+
+    // Try to construct vector tile URL from FeatureServer URL
+    // Some services have both FeatureServer and VectorTileServer endpoints
+    const vectorTileUrl = baseUrl.replace('/FeatureServer/', '/VectorTileServer/');
+    return `${vectorTileUrl}/tile/{z}/{y}/{x}.pbf`;
   }
 
   private _buildQueryUrl(): string {
@@ -114,8 +221,26 @@ export class FeatureService {
     params.append('f', options.f || 'geojson');
     params.append('returnGeometry', (options.returnGeometry !== false).toString());
 
-    // Only include geometry-related params when geometry is present
-    if (options.geometry) {
+    // Add bounding box geometry if enabled and map is available
+    if (options.useBoundingBox !== false && this._map) {
+      const bounds = this._map.getBounds();
+      if (bounds) {
+        const geometry = {
+          xmin: bounds.getWest(),
+          ymin: bounds.getSouth(),
+          xmax: bounds.getEast(),
+          ymax: bounds.getNorth(),
+          spatialReference: { wkid: 4326 },
+        };
+        params.append('geometry', JSON.stringify(geometry));
+        params.append('geometryType', 'esriGeometryEnvelope');
+        params.append('spatialRel', 'esriSpatialRelIntersects');
+        params.append('inSR', '4326');
+      }
+    }
+
+    // Only include geometry-related params when geometry is present (and not bounding box)
+    if (options.geometry && options.useBoundingBox === false) {
       params.append('geometry', JSON.stringify(options.geometry));
       if (options.geometryType) params.append('geometryType', options.geometryType);
       if (options.spatialRel) params.append('spatialRel', options.spatialRel);
@@ -148,13 +273,144 @@ export class FeatureService {
     return this._serviceMetadata;
   }
 
-  updateData(): void {
-    // Vector tile sources don't need dynamic data updates like GeoJSON
-    // The tiles are fetched automatically based on the tile URL
-    // For filtering, we would need to recreate the source or use layer filtering
-    console.warn(
-      'updateData() is not applicable for vector tile sources. Use layer filtering instead.'
+  get defaultStyle(): StyleData {
+    if (this._defaultStyleData) return this._defaultStyleData;
+
+    // Generate default style based on geometry type from service metadata
+    const geometryType = String(this._serviceMetadata?.geometryType || 'esriGeometryPoint');
+    const isVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
+
+    // For vector tiles, we need to include source-layer
+    const baseStyle: Partial<StyleData> = {
+      source: this._sourceId,
+    };
+
+    if (isVectorTiles && this._serviceMetadata?.name) {
+      baseStyle['source-layer'] = String(this._serviceMetadata.name);
+    }
+
+    if (geometryType.includes('Point')) {
+      return {
+        type: 'circle',
+        ...baseStyle,
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#3b82f6',
+          'circle-stroke-color': '#1e40af',
+          'circle-stroke-width': 1,
+        },
+      };
+    } else if (geometryType.includes('Polyline')) {
+      return {
+        type: 'line',
+        ...baseStyle,
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 2,
+        },
+      };
+    } else if (geometryType.includes('Polygon')) {
+      return {
+        type: 'fill',
+        ...baseStyle,
+        paint: {
+          'fill-color': 'rgba(59, 130, 246, 0.4)',
+          'fill-outline-color': '#1e40af',
+        },
+      };
+    }
+
+    // Default to circle for unknown geometry types
+    return {
+      type: 'circle',
+      ...baseStyle,
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#3b82f6',
+        'circle-stroke-color': '#1e40af',
+        'circle-stroke-width': 1,
+      },
+    };
+  }
+
+  getStyle(): Promise<StyleData> {
+    return new Promise((resolve, reject) => {
+      if (this._serviceMetadata) {
+        resolve(this.defaultStyle);
+      } else {
+        // Wait for service metadata to be loaded
+        this._getServiceMetadata()
+          .then(() => resolve(this.defaultStyle))
+          .catch(error => reject(error));
+      }
+    });
+  }
+
+  private async _getServiceMetadata(): Promise<void> {
+    if (this._serviceMetadata) return;
+
+    this._serviceMetadata = await getServiceDetails(
+      this.esriServiceOptions.url,
+      this.esriServiceOptions.fetchOptions
     );
+  }
+
+  updateData(): void {
+    // For GeoJSON sources with bounding box filtering, update the data URL
+    if (
+      this.esriServiceOptions.useVectorTiles === false &&
+      this.esriServiceOptions.useBoundingBox
+    ) {
+      const source = this._map.getSource(this._sourceId);
+      if (source && 'setData' in source && typeof source.setData === 'function') {
+        const newQueryUrl = this._buildQueryUrl();
+        const isTestEnvironment =
+          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+        if (!isTestEnvironment) {
+          console.log('Updating FeatureService data with new bounding box:', newQueryUrl);
+        }
+        // @ts-ignore - GeoJSON source setData method not in generic Source type
+        source.setData(newQueryUrl);
+      }
+    } else {
+      // Vector tile sources don't need dynamic data updates like GeoJSON
+      // The tiles are fetched automatically based on the tile URL
+      // For filtering, we would need to recreate the source or use layer filtering
+      console.warn(
+        'updateData() is only applicable for GeoJSON sources with bounding box filtering.'
+      );
+    }
+  }
+
+  private _setupBoundingBoxUpdates(): void {
+    if (this._boundingBoxUpdateHandler) {
+      // Remove existing handler
+      this._map.off('moveend', this._boundingBoxUpdateHandler);
+      this._map.off('zoomend', this._boundingBoxUpdateHandler);
+    }
+
+    // Debounced update function to prevent excessive API calls
+    let updateTimeout: NodeJS.Timeout | null = null;
+    this._boundingBoxUpdateHandler = () => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+      updateTimeout = setTimeout(() => {
+        this.updateData();
+      }, 300); // 300ms debounce
+    };
+
+    // Listen for map movement and zoom changes
+    this._map.on('moveend', this._boundingBoxUpdateHandler);
+    this._map.on('zoomend', this._boundingBoxUpdateHandler);
+  }
+
+  private _removeBoundingBoxUpdates(): void {
+    if (this._boundingBoxUpdateHandler) {
+      this._map.off('moveend', this._boundingBoxUpdateHandler);
+      this._map.off('zoomend', this._boundingBoxUpdateHandler);
+      this._boundingBoxUpdateHandler = null;
+    }
   }
 
   updateSource(): void {
@@ -194,9 +450,20 @@ export class FeatureService {
     this.updateSource();
   }
 
+  setBoundingBoxFilter(enabled: boolean): void {
+    this.esriServiceOptions.useBoundingBox = enabled;
+    if (enabled && this.esriServiceOptions.useVectorTiles === false) {
+      this._setupBoundingBoxUpdates();
+    } else {
+      this._removeBoundingBoxUpdates();
+    }
+    this.updateSource();
+  }
+
   // Note: maxRecordCount is a server capability; not settable via query params
 
   remove(): void {
+    this._removeBoundingBoxUpdates();
     if (this._map.getSource(this._sourceId)) {
       this._map.removeSource(this._sourceId);
     }
@@ -215,7 +482,10 @@ export class FeatureService {
       }
       return await response.json();
     } catch (error) {
-      console.error('Error querying features:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Error querying features:', error);
+      }
       throw error;
     }
   }

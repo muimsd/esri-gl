@@ -1,11 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails } from '@/utils';
-import {
-  Map,
-  VectorTileServiceOptions,
-  VectorSourceOptions,
-  ServiceMetadata,
-  SourceSpecification,
-} from '@/types';
+import type { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
   useDefaultStyle?: boolean;
@@ -81,7 +75,7 @@ export class VectorTileService {
   }
 
   private _createSource(): void {
-    this._map.addSource(this._sourceId, this._source as unknown as SourceSpecification);
+    this._map.addSource(this._sourceId, this._source as unknown as Parameters<Map['addSource']>[1]);
   }
 
   private _mapToLocalSource(style: StyleData): StyleData {
