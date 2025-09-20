@@ -21,6 +21,11 @@ const sidebars: SidebarsConfig = {
       label: 'Services',
       items: [
         'services/overview',
+        'services/dynamic-map-service',
+        'services/tiled-map-service',
+        'services/image-service',
+        'services/vector-tile-service',
+        'services/vector-basemap-style',
       ],
     },
     {
@@ -32,16 +37,6 @@ const sidebars: SidebarsConfig = {
         'tasks/identify-image',
         'tasks/query', 
         'tasks/find',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Layers',
-      items: [
-        'layers/overview',
-        'layers/basemap-layer',
-        'layers/dynamic-map-layer',
-        'layers/raster-layer',
       ],
     },
     {
