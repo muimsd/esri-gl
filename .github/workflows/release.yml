@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - alpha
+          - beta
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci (lockfile present)"
+            npm ci
+          else
+            echo "No package-lock.json found. Falling back to npm install"
+            npm install
+          fi
+
+      - name: Run validation
+        run: npm run validate
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Determine release type and tag
+        id: release-info
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            # Extract version from tag
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            
+            # Determine if it's a prerelease
+            if [[ "$VERSION" == *"alpha"* || "$VERSION" == *"beta"* || "$VERSION" == *"rc"* ]]; then
+              echo "prerelease=true" >> $GITHUB_OUTPUT
+              echo "npm_tag=alpha" >> $GITHUB_OUTPUT
+            else
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+              echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Manual dispatch
+            RELEASE_TYPE="${{ github.event.inputs.version_type }}"
+            if [[ "$RELEASE_TYPE" == "alpha" ]]; then
+              npm version prerelease --preid=alpha --no-git-tag-version
+              echo "prerelease=true" >> $GITHUB_OUTPUT
+              echo "npm_tag=alpha" >> $GITHUB_OUTPUT
+            elif [[ "$RELEASE_TYPE" == "beta" ]]; then
+              npm version prerelease --preid=beta --no-git-tag-version
+              echo "prerelease=true" >> $GITHUB_OUTPUT  
+              echo "npm_tag=beta" >> $GITHUB_OUTPUT
+            else
+              npm version $RELEASE_TYPE --no-git-tag-version
+              echo "prerelease=false" >> $GITHUB_OUTPUT
+              echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            fi
+            
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            
+            # Create and push tag for manual releases
+            git add package.json
+            git commit -m "chore: bump version to $VERSION"
+            git tag "v$VERSION"
+            git push origin HEAD --tags
+          fi
+
+      - name: Build package
+        run: npm run build:prod
+
+      - name: Publish to NPM
+        run: npm publish --tag ${{ steps.release-info.outputs.npm_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract release notes
+        id: extract-notes
+        run: |
+          VERSION=${{ steps.release-info.outputs.version }}
+          
+          # Extract release notes from CHANGES.md
+          if [ -f CHANGES.md ]; then
+            # Get content between current version and next version/end of file
+            NOTES=$(awk "/^### v?${VERSION//./\\.}/"',/^### v?[0-9]/{if(!/^### v?'"${VERSION//./\\.}"'/)exit}1' CHANGES.md | tail -n +2)
+            
+            # If no specific notes found, create default ones
+            if [ -z "$NOTES" ]; then
+              NOTES="Release $VERSION
+
+Changes since last release:
+- See commit history for detailed changes
+- Updated dependencies and bug fixes"
+            fi
+          else
+            NOTES="Release $VERSION
+
+No changelog found. See commit history for changes."
+          fi
+          
+          # Save to file for multiline output
+          echo "$NOTES" > release_notes.md
+          echo "Release notes saved to release_notes.md"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.release-info.outputs.version }}
+          release_name: Release v${{ steps.release-info.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ steps.release-info.outputs.prerelease }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-v${{ steps.release-info.outputs.version }}
+          path: |
+            dist/
+            package.json
+            README.md
+            LICENSE
+          retention-days: 90

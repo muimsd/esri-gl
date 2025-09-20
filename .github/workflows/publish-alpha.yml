@@ -85,3 +85,39 @@ jobs:
         run: npm publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release (Alpha)
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          release_name: Alpha Release v${{ steps.package-version.outputs.version }}
+          body: |
+            🚀 **Alpha Release v${{ steps.package-version.outputs.version }}**
+            
+            This is an alpha pre-release version. Use with caution in production.
+            
+            ## Installation
+            ```bash
+            npm install esri-gl@alpha
+            ```
+            
+            ## What's Changed
+            - Latest development changes from alpha branch
+            - See commit history for detailed changes
+            
+            **Note**: This release may contain breaking changes or experimental features.
+          draft: false
+          prerelease: true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-build-artifacts-v${{ steps.package-version.outputs.version }}
+          path: |
+            dist/
+            package.json  
+            README.md
+            LICENSE
+          retention-days: 30
