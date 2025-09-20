@@ -87,7 +87,7 @@ const FeatureServiceDemo: React.FC = () => {
         } catch (error) {
           console.error('Error adding layer with style:', error);
           setLoadingMessage('Adding fallback layer...');
-          
+
           // Fallback to basic circle layer
           map.current.addLayer({
             id: layerId,
@@ -184,7 +184,7 @@ const FeatureServiceDemo: React.FC = () => {
         details.
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
-      
+
       {/* Loading Overlay */}
       {isLoading && (
         <div
@@ -224,7 +224,7 @@ const FeatureServiceDemo: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {/* CSS Animation for Spinner */}
       <style>{`
         @keyframes spin {

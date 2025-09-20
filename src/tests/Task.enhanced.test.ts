@@ -305,7 +305,9 @@ describe('Task', () => {
       await task.request();
 
       // We expect the proxy URL to prefix the request URL
-      expect(mockFetch).toHaveBeenCalledWith('https://proxy.example.com/https://example.com/MapServer/test?');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://proxy.example.com/https://example.com/MapServer/test?'
+      );
     });
 
     it('should handle path without leading slash', async () => {
