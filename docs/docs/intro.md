@@ -2,14 +2,14 @@
 sidebar_position: 1
 ---
 
-# esri-gl Documentation
+# Documentation
 
 <iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS, replicating Esri Leaflet's architecture patterns.
 
 :::info Current Version
-**v0.9.0-alpha.3** - Features major improvements including consolidated TypeScript declarations, 92.94% test coverage, and streamlined build system.
+**v0.9.0** - Features major improvements including consolidated TypeScript declarations, 92.94% test coverage, and streamlined build system.
 :::
 
 ## Quick Start
