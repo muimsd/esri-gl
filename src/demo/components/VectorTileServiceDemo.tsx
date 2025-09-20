@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-//@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { VectorTileService } from '../../main';
 
