@@ -1,8 +1,9 @@
-import { IdentifyFeatures, IdentifyFeaturesOptions, IdentifyResult, IdentifyResponse, GeometryInput } from '@/IdentifyFeatures';
+import { IdentifyFeatures } from '@/IdentifyFeatures';
+import type { IdentifyFeaturesOptions, GeometryInput } from '@/IdentifyFeatures';
 
 // Mock utils
 jest.mock('@/utils', () => ({
-  cleanTrailingSlash: jest.fn((url: string) => url.replace(/\/$/, ''))
+  cleanTrailingSlash: jest.fn((url: string) => url.replace(/\/$/, '')),
 }));
 
 describe('IdentifyFeatures', () => {
@@ -21,9 +22,9 @@ describe('IdentifyFeatures', () => {
   describe('constructor', () => {
     it('should create IdentifyFeatures instance with required options', () => {
       const options: IdentifyFeaturesOptions = {
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       };
-      
+
       const service = new IdentifyFeatures(options);
       expect(service).toBeInstanceOf(IdentifyFeatures);
     });
@@ -36,17 +37,17 @@ describe('IdentifyFeatures', () => {
 
     it('should clean trailing slash from URL', () => {
       const service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer/'
+        url: 'https://example.com/MapServer/',
       });
-      
+
       expect(service['_baseUrl']).toBe('https://example.com/MapServer');
     });
 
     it('should set default options', () => {
       const service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       });
-      
+
       expect(service['_defaultOptions'].layers).toBe('all');
       expect(service['_defaultOptions'].tolerance).toBe(3);
       expect(service['_defaultOptions'].returnGeometry).toBe(false);
@@ -58,11 +59,11 @@ describe('IdentifyFeatures', () => {
         url: 'https://example.com/MapServer',
         tolerance: 5,
         returnGeometry: true,
-        layers: [0, 1]
+        layers: [0, 1],
       };
-      
+
       const service = new IdentifyFeatures(options);
-      
+
       expect(service['_defaultOptions'].tolerance).toBe(5);
       expect(service['_defaultOptions'].returnGeometry).toBe(true);
       expect(service['_defaultOptions'].layers).toEqual([0, 1]);
@@ -74,22 +75,23 @@ describe('IdentifyFeatures', () => {
 
     beforeEach(() => {
       service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       });
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          results: [
-            {
-              layerId: 0,
-              layerName: 'Test Layer',
-              value: 'Test Value',
-              displayFieldName: 'NAME',
-              attributes: { NAME: 'Test Feature' }
-            }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            results: [
+              {
+                layerId: 0,
+                layerName: 'Test Layer',
+                value: 'Test Value',
+                displayFieldName: 'NAME',
+                attributes: { NAME: 'Test Feature' },
+              },
+            ],
+          }),
       } as Response);
     });
 
@@ -99,21 +101,21 @@ describe('IdentifyFeatures', () => {
 
       expect(result.results).toHaveLength(1);
       expect(result.results[0].layerName).toBe('Test Layer');
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/identify?'),
-        undefined
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/identify?'), undefined);
     });
 
     it('should extract map extent and display info when map is provided', async () => {
       const mockMap = {
         getBounds: jest.fn().mockReturnValue({
-          toArray: jest.fn().mockReturnValue([[-100, 35], [-90, 45]])
+          toArray: jest.fn().mockReturnValue([
+            [-100, 35],
+            [-90, 45],
+          ]),
         }),
         getCanvas: jest.fn().mockReturnValue({
           width: 800,
-          height: 600
-        })
+          height: 600,
+        }),
       };
 
       const point = { lng: -95, lat: 40 };
@@ -128,7 +130,7 @@ describe('IdentifyFeatures', () => {
     it('should handle map without bounds or canvas gracefully', async () => {
       const mockMap = {
         getBounds: jest.fn().mockReturnValue(null),
-        getCanvas: jest.fn().mockReturnValue(null)
+        getCanvas: jest.fn().mockReturnValue(null),
       };
 
       const point = { lng: -95, lat: 40 };
@@ -143,7 +145,7 @@ describe('IdentifyFeatures', () => {
         getBounds: jest.fn().mockImplementation(() => {
           throw new Error('Bounds error');
         }),
-        getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 })
+        getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
       };
 
       const point = { lng: -95, lat: 40 };
@@ -162,7 +164,7 @@ describe('IdentifyFeatures', () => {
 
     beforeEach(() => {
       service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       });
     });
 
@@ -174,25 +176,25 @@ describe('IdentifyFeatures', () => {
             layerName: 'Test Layer',
             value: 'Test Value',
             displayFieldName: 'NAME',
-            attributes: { NAME: 'Test Feature' }
-          }
-        ]
+            attributes: { NAME: 'Test Feature' },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const geometry: GeometryInput = {
         x: -95,
         y: 40,
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       };
 
       const result = await service.identify({
         geometry,
-        geometryType: 'esriGeometryPoint'
+        geometryType: 'esriGeometryPoint',
       });
 
       expect(result.results).toHaveLength(1);
@@ -202,7 +204,7 @@ describe('IdentifyFeatures', () => {
     it('should handle HTTP errors', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
       } as Response);
 
       const geometry: GeometryInput = { x: -95, y: 40 };
@@ -211,38 +213,34 @@ describe('IdentifyFeatures', () => {
     });
 
     it('should handle network errors', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       const geometry: GeometryInput = { x: -95, y: 40 };
 
       await expect(service.identify({ geometry })).rejects.toThrow('Network error');
-      expect(consoleSpy).toHaveBeenCalledWith('IdentifyFeatures error:', expect.any(Error));
-      consoleSpy.mockRestore();
     });
 
     it('should use custom fetchOptions', async () => {
       const customOptions: IdentifyFeaturesOptions = {
         url: 'https://example.com/MapServer',
         fetchOptions: {
-          headers: { 'Authorization': 'Bearer token' }
-        }
+          headers: { Authorization: 'Bearer token' },
+        },
       };
-      
+
       service = new IdentifyFeatures(customOptions);
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ results: [] })
+        json: () => Promise.resolve({ results: [] }),
       } as Response);
 
       const geometry: GeometryInput = { x: -95, y: 40 };
       await service.identify({ geometry });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/identify?'),
-        { headers: { 'Authorization': 'Bearer token' } }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/identify?'), {
+        headers: { Authorization: 'Bearer token' },
+      });
     });
   });
 
@@ -251,7 +249,7 @@ describe('IdentifyFeatures', () => {
 
     beforeEach(() => {
       service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       });
     });
 
@@ -323,14 +321,14 @@ describe('IdentifyFeatures', () => {
       service = new IdentifyFeatures({
         url: 'https://example.com/MapServer',
         tolerance: 5,
-        returnGeometry: true
+        returnGeometry: true,
       });
     });
 
     it('should build basic parameters', () => {
       const options = {
         geometry: { x: -95, y: 40 },
-        geometryType: 'esriGeometryPoint'
+        geometryType: 'esriGeometryPoint',
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -345,7 +343,7 @@ describe('IdentifyFeatures', () => {
     it('should handle layers parameter as array', () => {
       const options = {
         geometry: { x: -95, y: 40 },
-        layers: [0, 1, 2]
+        layers: [0, 1, 2],
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -355,7 +353,7 @@ describe('IdentifyFeatures', () => {
     it('should handle layers parameter as number', () => {
       const options = {
         geometry: { x: -95, y: 40 },
-        layers: 5
+        layers: 5,
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -364,7 +362,7 @@ describe('IdentifyFeatures', () => {
 
     it('should handle layers parameter as "all"', () => {
       const options = {
-        geometry: { x: -95, y: 40 }
+        geometry: { x: -95, y: 40 },
       };
 
       // Set default layers to "all"
@@ -376,7 +374,7 @@ describe('IdentifyFeatures', () => {
     it('should add mapExtent when provided', () => {
       const options = {
         geometry: { x: -95, y: 40 },
-        mapExtent: [-100, 35, -90, 45] as [number, number, number, number]
+        mapExtent: [-100, 35, -90, 45] as [number, number, number, number],
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -386,7 +384,7 @@ describe('IdentifyFeatures', () => {
     it('should add imageDisplay when provided', () => {
       const options = {
         geometry: { x: -95, y: 40 },
-        imageDisplay: [800, 600, 96] as [number, number, number]
+        imageDisplay: [800, 600, 96] as [number, number, number],
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -397,7 +395,7 @@ describe('IdentifyFeatures', () => {
       service.setLayerDefs({ '0': 'STATE_NAME=California' });
 
       const options = {
-        geometry: { x: -95, y: 40 }
+        geometry: { x: -95, y: 40 },
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -410,7 +408,7 @@ describe('IdentifyFeatures', () => {
       service.setTime(from, to);
 
       const options = {
-        geometry: { x: -95, y: 40 }
+        geometry: { x: -95, y: 40 },
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -423,7 +421,7 @@ describe('IdentifyFeatures', () => {
       service.setTime(from, to);
 
       const options = {
-        geometry: { x: -95, y: 40 }
+        geometry: { x: -95, y: 40 },
       };
 
       const params = service['_buildIdentifyParams'](options);
@@ -435,17 +433,19 @@ describe('IdentifyFeatures', () => {
         url: 'https://example.com/MapServer',
         maxAllowableOffset: 10,
         geometryPrecision: 3,
-        dynamicLayers: [{ id: 0, source: { type: 'mapLayer', mapLayerId: 0 } }]
+        dynamicLayers: [{ id: 0, source: { type: 'mapLayer', mapLayerId: 0 } }],
       });
 
       const options = {
-        geometry: { x: -95, y: 40 }
+        geometry: { x: -95, y: 40 },
       };
 
       const params = service['_buildIdentifyParams'](options);
       expect(params.get('maxAllowableOffset')).toBe('10');
       expect(params.get('geometryPrecision')).toBe('3');
-      expect(params.get('dynamicLayers')).toBe(JSON.stringify([{ id: 0, source: { type: 'mapLayer', mapLayerId: 0 } }]));
+      expect(params.get('dynamicLayers')).toBe(
+        JSON.stringify([{ id: 0, source: { type: 'mapLayer', mapLayerId: 0 } }])
+      );
     });
   });
 
@@ -454,7 +454,7 @@ describe('IdentifyFeatures', () => {
 
     beforeEach(() => {
       service = new IdentifyFeatures({
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       });
     });
 
@@ -468,15 +468,15 @@ describe('IdentifyFeatures', () => {
             displayFieldName: 'NAME',
             attributes: { NAME: 'Feature 1' },
             geometry: { type: 'Point', coordinates: [-95, 40] },
-            geometryType: 'esriGeometryPoint'
+            geometryType: 'esriGeometryPoint',
           },
           {
             layerId: 1,
             layerName: 'Another Layer',
-            attributes: { ID: 123 }
+            attributes: { ID: 123 },
             // Missing some optional fields
-          }
-        ]
+          },
+        ],
       };
 
       const result = service['_processResponse'](mockData);

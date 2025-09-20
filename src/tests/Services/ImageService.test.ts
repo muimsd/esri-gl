@@ -21,7 +21,7 @@ describe('ImageService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockMap = {
       addSource: jest.fn(),
       removeSource: jest.fn(),
@@ -41,13 +41,16 @@ describe('ImageService', () => {
     mockUpdateAttribution.mockImplementation(() => {});
 
     // Mock canvas and bounds for identify method
-    (mockMap.getCanvas as jest.Mock).mockReturnValue({ 
-      width: 800, 
-      height: 600 
+    (mockMap.getCanvas as jest.Mock).mockReturnValue({
+      width: 800,
+      height: 600,
     } as unknown as HTMLCanvasElement);
-    
+
     (mockMap.getBounds as jest.Mock).mockReturnValue({
-      toArray: () => [[-118.5, 34.0], [-118.0, 34.5]]
+      toArray: () => [
+        [-118.5, 34.0],
+        [-118.0, 34.5],
+      ],
     } as unknown);
   });
 
@@ -108,7 +111,7 @@ describe('ImageService', () => {
       const options: ImageServiceOptions = {
         url: 'https://example.com/ImageServer',
       };
-      
+
       const rasterOptions: RasterSourceOptions = {
         tileSize: 512,
         attribution: 'Custom Attribution',
@@ -116,10 +119,13 @@ describe('ImageService', () => {
 
       new ImageService('test-source', mockMap, options, rasterOptions);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        tileSize: 512,
-        attribution: 'Custom Attribution',
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          tileSize: 512,
+          attribution: 'Custom Attribution',
+        })
+      );
     });
 
     it('should call getServiceDetails by default for attribution', () => {
@@ -155,7 +161,9 @@ describe('ImageService', () => {
 
       const expectedSource = {
         type: 'raster',
-        tiles: ['https://example.com/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&format=jpgpng&size=256%2C256&f=image'],
+        tiles: [
+          'https://example.com/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&format=jpgpng&size=256%2C256&f=image',
+        ],
         tileSize: 256,
       };
 
@@ -166,17 +174,20 @@ describe('ImageService', () => {
       const options: ImageServiceOptions = {
         url: 'https://example.com/ImageServer',
       };
-      
+
       const rasterOptions: RasterSourceOptions = {
         tileSize: 512,
       };
 
       new ImageService('test-source', mockMap, options, rasterOptions);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        tileSize: 512,
-        tiles: expect.arrayContaining([expect.stringContaining('size=512%2C512')]),
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          tileSize: 512,
+          tiles: expect.arrayContaining([expect.stringContaining('size=512%2C512')]),
+        })
+      );
     });
 
     it('should include mosaic rule when provided', () => {
@@ -192,9 +203,14 @@ describe('ImageService', () => {
 
       new ImageService('test-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        tiles: expect.arrayContaining([expect.stringContaining('mosaicRule=' + encodeURIComponent(JSON.stringify(mosaicRule)))]),
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          tiles: expect.arrayContaining([
+            expect.stringContaining('mosaicRule=' + encodeURIComponent(JSON.stringify(mosaicRule))),
+          ]),
+        })
+      );
     });
 
     it('should include rendering rule when provided', () => {
@@ -210,9 +226,16 @@ describe('ImageService', () => {
 
       new ImageService('test-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        tiles: expect.arrayContaining([expect.stringContaining('renderingRule=' + encodeURIComponent(JSON.stringify(renderingRule)))]),
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          tiles: expect.arrayContaining([
+            expect.stringContaining(
+              'renderingRule=' + encodeURIComponent(JSON.stringify(renderingRule))
+            ),
+          ]),
+        })
+      );
     });
   });
 
@@ -266,7 +289,7 @@ describe('ImageService', () => {
       };
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // First call
       const metadata1 = await service.getMetadata();
       // Second call
@@ -287,10 +310,12 @@ describe('ImageService', () => {
 
     it('should make identify request with correct parameters', async () => {
       const mockResponse = {
-        results: [{
-          value: '123.45',
-          attributes: { 'Pixel Value': 123.45 }
-        }]
+        results: [
+          {
+            value: '123.45',
+            attributes: { 'Pixel Value': 123.45 },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
@@ -305,7 +330,7 @@ describe('ImageService', () => {
 
       const service = new ImageService('test-source', mockMap, options);
       const point = { lng: -118.2437, lat: 34.0522 };
-      
+
       const result = await service.identify(point);
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -318,12 +343,16 @@ describe('ImageService', () => {
       expect(callUrl).toContain('geometryType=esriGeometryPoint');
       expect(callUrl).toContain('returnGeometry=false');
       expect(callUrl).toContain('f=json');
-      expect(callUrl).toContain(`geometry=${encodeURIComponent(JSON.stringify({
-        x: point.lng,
-        y: point.lat,
-        spatialReference: { wkid: 4326 }
-      }))}`);
-      
+      expect(callUrl).toContain(
+        `geometry=${encodeURIComponent(
+          JSON.stringify({
+            x: point.lng,
+            y: point.lat,
+            spatialReference: { wkid: 4326 },
+          })
+        )}`
+      );
+
       expect(result).toEqual(mockResponse);
     });
 
@@ -339,7 +368,7 @@ describe('ImageService', () => {
       };
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       await service.identify({ lng: -118.2437, lat: 34.0522 }, true);
 
       const callUrl = mockFetch.mock.calls[0][0] as string;
@@ -356,9 +385,9 @@ describe('ImageService', () => {
 
       const service = new ImageService('test-source', mockMap, options);
 
-      await expect(
-        service.identify({ lng: -118.2437, lat: 34.0522 })
-      ).rejects.toThrow('Network error');
+      await expect(service.identify({ lng: -118.2437, lat: 34.0522 })).rejects.toThrow(
+        'Network error'
+      );
     });
   });
 
@@ -401,14 +430,14 @@ describe('ImageService', () => {
           'test-source': {
             clearTiles: jest.fn(),
             update: jest.fn(),
-          }
-        }
+          },
+        },
       };
 
       mockMap.getSource.mockReturnValue(mockSource as unknown as any);
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Should not throw error
       expect(() => service.update()).not.toThrow();
     });
@@ -437,10 +466,13 @@ describe('ImageService', () => {
 
       new ImageService('nlcd-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('nlcd-source', expect.objectContaining({
-        type: 'raster',
-        tiles: expect.arrayContaining([expect.stringContaining('format=png')])
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'nlcd-source',
+        expect.objectContaining({
+          type: 'raster',
+          tiles: expect.arrayContaining([expect.stringContaining('format=png')]),
+        })
+      );
     });
 
     it('should support elevation service with rendering rules', () => {
@@ -448,8 +480,8 @@ describe('ImageService', () => {
         rasterFunction: 'Stretch',
         arguments: {
           StretchType: 0,
-          Statistics: [[0, 255, 128, 50]]
-        }
+          Statistics: [[0, 255, 128, 50]],
+        },
       };
 
       const options: ImageServiceOptions = {
@@ -461,11 +493,12 @@ describe('ImageService', () => {
 
       new ImageService('elevation-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('elevation-source', expect.objectContaining({
-        tiles: expect.arrayContaining([
-          expect.stringMatching(/renderingRule=.*Stretch/)
-        ])
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'elevation-source',
+        expect.objectContaining({
+          tiles: expect.arrayContaining([expect.stringMatching(/renderingRule=.*Stretch/)]),
+        })
+      );
     });
   });
 
@@ -496,7 +529,7 @@ describe('ImageService', () => {
       };
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       await service.identify({ lng: -180, lat: 85 });
 
       const callUrl = mockFetch.mock.calls[0][0] as string;

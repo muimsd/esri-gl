@@ -19,7 +19,10 @@ function getInternal(identify: IdentifyFeatures): IdentifyFeaturesInternal {
 // Mock map interface for testing
 const mockMap = {
   getBounds: jest.fn(() => ({
-    toArray: jest.fn(() => [[-180, -90], [180, 90]]),
+    toArray: jest.fn(() => [
+      [-180, -90],
+      [180, 90],
+    ]),
     getWest: jest.fn(() => -180),
     getEast: jest.fn(() => 180),
   })),
@@ -48,7 +51,7 @@ describe('IdentifyFeatures', () => {
         tolerance: 5,
         returnGeometry: false,
       };
-      
+
       const identify = new IdentifyFeatures(options);
       expect(identify).toBeInstanceOf(IdentifyFeatures);
       expect(getInternal(identify).options.url).toBe(options.url);
@@ -57,7 +60,7 @@ describe('IdentifyFeatures', () => {
     it('should create instance with Service object', () => {
       // Create a mock service instance that properly implements the interface
       const mockService = new Service({ url: 'https://example.com/MapServer' });
-      
+
       const identify = new IdentifyFeatures(mockService);
       expect(identify).toBeInstanceOf(IdentifyFeatures);
       expect(getInternal(identify).options.url).toBe('https://example.com/MapServer');
@@ -66,7 +69,7 @@ describe('IdentifyFeatures', () => {
     it('should have default parameters', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       const params = getInternal(identify).params;
-      
+
       expect(params.sr).toBe(4326);
       expect(params.layers).toBe('all');
       expect(params.tolerance).toBe(3);
@@ -85,10 +88,10 @@ describe('IdentifyFeatures', () => {
     it('should set point location with lng/lat object', () => {
       const point = { lng: -95.7, lat: 37.1 };
       const result = identify.at(point);
-      
+
       expect(result).toBe(identify); // chainable
       expect(getInternal(identify).params.geometryType).toBe('esriGeometryPoint');
-      
+
       const geometry = JSON.parse(getInternal(identify).params.geometry as string);
       expect(geometry.x).toBe(point.lng);
       expect(geometry.y).toBe(point.lat);
@@ -98,9 +101,9 @@ describe('IdentifyFeatures', () => {
     it('should set point location with coordinate array', () => {
       const point: [number, number] = [-95.7, 37.1];
       const result = identify.at(point);
-      
+
       expect(result).toBe(identify);
-      
+
       const geometry = JSON.parse(getInternal(identify).params.geometry as string);
       expect(geometry.x).toBe(point[0]);
       expect(geometry.y).toBe(point[1]);
@@ -109,7 +112,7 @@ describe('IdentifyFeatures', () => {
 
     it('should set layers parameter with number', () => {
       const result = identify.layers(5);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.layers).toBe(5);
     });
@@ -117,7 +120,7 @@ describe('IdentifyFeatures', () => {
     it('should set layers parameter with array', () => {
       const layerArray = [0, 1, 2];
       const result = identify.layers(layerArray);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.layers).toEqual(layerArray);
     });
@@ -125,35 +128,35 @@ describe('IdentifyFeatures', () => {
     it('should set layers parameter with string', () => {
       const layerString = 'visible:0,1,2';
       const result = identify.layers(layerString);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.layers).toBe(layerString);
     });
 
     it('should set tolerance', () => {
       const result = identify.tolerance(10);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.tolerance).toBe(10);
     });
 
     it('should set returnGeometry', () => {
       const result = identify.returnGeometry(false);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.returnGeometry).toBe(false);
     });
 
     it('should set geometry precision', () => {
       const result = identify.precision(5);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.geometryPrecision).toBe(5);
     });
 
     it('should set map extent and image display with on() method', () => {
       const result = identify.on(mockMap);
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.mapExtent).toBe('-180,-90,180,90');
       expect(getInternal(identify).params.imageDisplay).toBe('800,600,96');
@@ -163,14 +166,16 @@ describe('IdentifyFeatures', () => {
 
     it('should handle map getBounds error gracefully', () => {
       const errorMap = {
-        getBounds: jest.fn(() => { throw new Error('Bounds error'); }),
+        getBounds: jest.fn(() => {
+          throw new Error('Bounds error');
+        }),
         getCanvas: jest.fn(() => ({ width: 800, height: 600 })),
       } as unknown as Map;
 
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       const result = identify.on(errorMap);
-      
+
       expect(result).toBe(identify);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Could not extract map extent and display info:',
@@ -181,17 +186,19 @@ describe('IdentifyFeatures', () => {
 
     it('should set single layer definition', () => {
       const result = identify.layerDef(0, "STATE_NAME='California'");
-      
+
       expect(result).toBe(identify);
       expect(getInternal(identify).params.layerDefs).toBe("0:STATE_NAME='California'");
     });
 
     it('should append multiple layer definitions', () => {
       identify.layerDef(0, "STATE_NAME='California'");
-      const result = identify.layerDef(1, "POP2000>100000");
-      
+      const result = identify.layerDef(1, 'POP2000>100000');
+
       expect(result).toBe(identify);
-      expect(getInternal(identify).params.layerDefs).toBe("0:STATE_NAME='California';1:POP2000>100000");
+      expect(getInternal(identify).params.layerDefs).toBe(
+        "0:STATE_NAME='California';1:POP2000>100000"
+      );
     });
 
     it('should set maxAllowableOffset with simplify method', () => {
@@ -204,7 +211,7 @@ describe('IdentifyFeatures', () => {
       };
 
       const result = identify.simplify(simplifyMap, 2);
-      
+
       expect(result).toBe(identify);
       // mapWidth = 10, factor = 2, mapSize.x = 1000
       // maxAllowableOffset = (10 / 1000) * 2 = 0.02
@@ -215,7 +222,7 @@ describe('IdentifyFeatures', () => {
   describe('Method Chaining Integration', () => {
     it('should chain multiple methods together', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       const result = identify
         .at({ lng: -95.7, lat: 37.1 })
         .layers([0, 1, 2])
@@ -223,10 +230,10 @@ describe('IdentifyFeatures', () => {
         .returnGeometry(true)
         .precision(3)
         .on(mockMap)
-        .layerDef(0, "POP2000>50000");
+        .layerDef(0, 'POP2000>50000');
 
       expect(result).toBe(identify);
-      
+
       const params = getInternal(identify).params;
       expect(params.tolerance).toBe(5);
       expect(params.layers).toEqual([0, 1, 2]);
@@ -260,8 +267,8 @@ describe('IdentifyFeatures', () => {
             geometry: {
               x: -122.4194,
               y: 37.7749,
-              spatialReference: { wkid: 4326 }
-            }
+              spatialReference: { wkid: 4326 },
+            },
           },
           {
             layerId: 1,
@@ -272,9 +279,9 @@ describe('IdentifyFeatures', () => {
               COUNTY_NAME: 'San Francisco County',
               STATE_NAME: 'California',
             },
-            geometry: null
-          }
-        ]
+            geometry: null,
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
@@ -282,9 +289,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(2);
@@ -325,9 +330,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(0);
@@ -341,9 +344,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(0);
@@ -352,17 +353,9 @@ describe('IdentifyFeatures', () => {
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-      await expect(
-        identify.at({ lng: -122.4194, lat: 37.7749 }).run()
-      ).rejects.toThrow('Network error');
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'IdentifyFeatures error:',
-        expect.any(Error)
+      await expect(identify.at({ lng: -122.4194, lat: 37.7749 }).run()).rejects.toThrow(
+        'Network error'
       );
-      consoleErrorSpy.mockRestore();
     });
 
     it('should handle HTTP errors', async () => {
@@ -372,17 +365,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve({ error: 'Service not found' }),
       } as Response);
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-      await expect(
-        identify.at({ lng: -122.4194, lat: 37.7749 }).run()
-      ).rejects.toThrow();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'IdentifyFeatures error:',
-        expect.any(Error)
-      );
-      consoleErrorSpy.mockRestore();
+      await expect(identify.at({ lng: -122.4194, lat: 37.7749 }).run()).rejects.toThrow();
     });
 
     it('should make request with correct parameters', async () => {
@@ -417,7 +400,7 @@ describe('IdentifyFeatures', () => {
   describe('Parameter Building', () => {
     it('should build complex parameter combinations correctly', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       identify
         .at([-95.7129, 37.0902])
         .layers([0, 1, 2])
@@ -425,10 +408,10 @@ describe('IdentifyFeatures', () => {
         .returnGeometry(false)
         .precision(2)
         .layerDef(0, "STATE_NAME='Texas'")
-        .layerDef(1, "POP2000>100000");
+        .layerDef(1, 'POP2000>100000');
 
       const params = getInternal(identify).params;
-      
+
       expect(params.layers).toEqual([0, 1, 2]);
       expect(params.tolerance).toBe(10);
       expect(params.returnGeometry).toBe(false);
@@ -438,7 +421,7 @@ describe('IdentifyFeatures', () => {
       expect(JSON.parse(params.geometry as string)).toEqual({
         x: -95.7129,
         y: 37.0902,
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       });
     });
   });
@@ -446,22 +429,24 @@ describe('IdentifyFeatures', () => {
   describe('Real-world Usage Patterns', () => {
     it('should support demo component usage pattern', async () => {
       const mockResponse = {
-        results: [{
-          layerId: 0,
-          layerName: 'Cities',
-          value: 'Los Angeles',
-          displayFieldName: 'CITY_NAME',
-          attributes: {
-            CITY_NAME: 'Los Angeles',
-            STATE_NAME: 'California',
-            POP2000: 3694820
+        results: [
+          {
+            layerId: 0,
+            layerName: 'Cities',
+            value: 'Los Angeles',
+            displayFieldName: 'CITY_NAME',
+            attributes: {
+              CITY_NAME: 'Los Angeles',
+              STATE_NAME: 'California',
+              POP2000: 3694820,
+            },
+            geometry: {
+              x: -118.2437,
+              y: 34.0522,
+              spatialReference: { wkid: 4326 },
+            },
           },
-          geometry: {
-            x: -118.2437,
-            y: 34.0522,
-            spatialReference: { wkid: 4326 }
-          }
-        }]
+        ],
       };
 
       mockFetch.mockResolvedValue({
@@ -471,7 +456,7 @@ describe('IdentifyFeatures', () => {
 
       const url = 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer';
       const identify = new IdentifyFeatures(url);
-      
+
       // Simulate demo usage pattern
       const fc = await identify
         .at({ lng: -118.2437, lat: 34.0522 })
@@ -488,10 +473,10 @@ describe('IdentifyFeatures', () => {
   describe('Edge Cases', () => {
     it('should handle point at coordinate boundaries', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       // Test extreme coordinates
       identify.at({ lng: -180, lat: 85 });
-      
+
       const geometry = JSON.parse(getInternal(identify).params.geometry as string);
       expect(geometry.x).toBe(-180);
       expect(geometry.y).toBe(85);
@@ -500,22 +485,24 @@ describe('IdentifyFeatures', () => {
     it('should handle zero tolerance', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.tolerance(0);
-      
+
       expect(getInternal(identify).params.tolerance).toBe(0);
     });
 
     it('should handle empty layer array', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.layers([]);
-      
+
       expect(getInternal(identify).params.layers).toEqual([]);
     });
 
     it('should handle complex layer definition strings', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.layerDef(0, "STATE_NAME='New York' AND POP2000>500000");
-      
-      expect(getInternal(identify).params.layerDefs).toBe("0:STATE_NAME='New York' AND POP2000>500000");
+
+      expect(getInternal(identify).params.layerDefs).toBe(
+        "0:STATE_NAME='New York' AND POP2000>500000"
+      );
     });
   });
 });
@@ -529,7 +516,9 @@ describe('IdentifyFeatures', () => {
     it('should create instance with URL string', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       expect(identify).toBeInstanceOf(IdentifyFeatures);
-      expect((identify as unknown as { options: { url: string } }).options.url).toBe('https://example.com/MapServer');
+      expect((identify as unknown as { options: { url: string } }).options.url).toBe(
+        'https://example.com/MapServer'
+      );
     });
 
     it('should create instance with options object', () => {
@@ -538,7 +527,7 @@ describe('IdentifyFeatures', () => {
         tolerance: 5,
         returnGeometry: false,
       };
-      
+
       const identify = new IdentifyFeatures(options);
       expect(identify).toBeInstanceOf(IdentifyFeatures);
       expect((identify as unknown as { options: { url: string } }).options.url).toBe(options.url);
@@ -546,18 +535,20 @@ describe('IdentifyFeatures', () => {
 
     it('should create instance with Service object', () => {
       const mockService = {
-        url: 'https://example.com/MapServer'
+        url: 'https://example.com/MapServer',
       } as IdentifyFeaturesOptions;
-      
+
       const identify = new IdentifyFeatures(mockService);
       expect(identify).toBeInstanceOf(IdentifyFeatures);
-      expect((identify as unknown as { options: { url: string } }).options.url).toBe('https://example.com/MapServer');
+      expect((identify as unknown as { options: { url: string } }).options.url).toBe(
+        'https://example.com/MapServer'
+      );
     });
 
     it('should have default parameters', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       const params = (identify as unknown as { params: Record<string, unknown> }).params;
-      
+
       expect(params.sr).toBe(4326);
       expect(params.layers).toBe('all');
       expect(params.tolerance).toBe(3);
@@ -576,10 +567,10 @@ describe('IdentifyFeatures', () => {
     it('should set point location with lng/lat object', () => {
       const point = { lng: -95.7, lat: 37.1 };
       const result = identify.at(point);
-      
+
       expect(result).toBe(identify); // chainable
       expect((identify as any).params.geometryType).toBe('esriGeometryPoint');
-      
+
       const geometry = JSON.parse((identify as any).params.geometry);
       expect(geometry.x).toBe(point.lng);
       expect(geometry.y).toBe(point.lat);
@@ -589,9 +580,9 @@ describe('IdentifyFeatures', () => {
     it('should set point location with coordinate array', () => {
       const point: [number, number] = [-95.7, 37.1];
       const result = identify.at(point);
-      
+
       expect(result).toBe(identify);
-      
+
       const geometry = JSON.parse((identify as any).params.geometry);
       expect(geometry.x).toBe(point[0]);
       expect(geometry.y).toBe(point[1]);
@@ -600,7 +591,7 @@ describe('IdentifyFeatures', () => {
 
     it('should set layers parameter with number', () => {
       const result = identify.layers(5);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.layers).toBe(5);
     });
@@ -608,7 +599,7 @@ describe('IdentifyFeatures', () => {
     it('should set layers parameter with array', () => {
       const layerArray = [0, 1, 2];
       const result = identify.layers(layerArray);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.layers).toEqual(layerArray);
     });
@@ -616,35 +607,35 @@ describe('IdentifyFeatures', () => {
     it('should set layers parameter with string', () => {
       const layerString = 'visible:0,1,2';
       const result = identify.layers(layerString);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.layers).toBe(layerString);
     });
 
     it('should set tolerance', () => {
       const result = identify.tolerance(10);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.tolerance).toBe(10);
     });
 
     it('should set returnGeometry', () => {
       const result = identify.returnGeometry(false);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.returnGeometry).toBe(false);
     });
 
     it('should set geometry precision', () => {
       const result = identify.precision(5);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.geometryPrecision).toBe(5);
     });
 
     it('should set map extent and image display with on() method', () => {
       const result = identify.on(mockMap as Map);
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.mapExtent).toBe('-180,-90,180,90');
       expect((identify as any).params.imageDisplay).toBe('800,600,96');
@@ -654,14 +645,16 @@ describe('IdentifyFeatures', () => {
 
     it('should handle map getBounds error gracefully', () => {
       const errorMap = {
-        getBounds: jest.fn(() => { throw new Error('Bounds error'); }),
+        getBounds: jest.fn(() => {
+          throw new Error('Bounds error');
+        }),
         getCanvas: jest.fn(() => ({ width: 800, height: 600 })),
       } as unknown as Map;
 
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       const result = identify.on(errorMap as Map);
-      
+
       expect(result).toBe(identify);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Could not extract map extent and display info:',
@@ -672,15 +665,15 @@ describe('IdentifyFeatures', () => {
 
     it('should set single layer definition', () => {
       const result = identify.layerDef(0, "STATE_NAME='California'");
-      
+
       expect(result).toBe(identify);
       expect((identify as any).params.layerDefs).toBe("0:STATE_NAME='California'");
     });
 
     it('should append multiple layer definitions', () => {
       identify.layerDef(0, "STATE_NAME='California'");
-      const result = identify.layerDef(1, "POP2000>100000");
-      
+      const result = identify.layerDef(1, 'POP2000>100000');
+
       expect(result).toBe(identify);
       expect((identify as any).params.layerDefs).toBe("0:STATE_NAME='California';1:POP2000>100000");
     });
@@ -695,7 +688,7 @@ describe('IdentifyFeatures', () => {
       };
 
       const result = identify.simplify(simplifyMap, 2);
-      
+
       expect(result).toBe(identify);
       // mapWidth = 10, factor = 2, mapSize.x = 1000
       // maxAllowableOffset = (10 / 1000) * 2 = 0.02
@@ -706,7 +699,7 @@ describe('IdentifyFeatures', () => {
   describe('Method Chaining Integration', () => {
     it('should chain multiple methods together', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       const result = identify
         .at({ lng: -95.7, lat: 37.1 })
         .layers([0, 1, 2])
@@ -714,10 +707,10 @@ describe('IdentifyFeatures', () => {
         .returnGeometry(true)
         .precision(3)
         .on(mockMap as Map)
-        .layerDef(0, "POP2000>50000");
+        .layerDef(0, 'POP2000>50000');
 
       expect(result).toBe(identify);
-      
+
       const params = (identify as any).params;
       expect(params.tolerance).toBe(5);
       expect(params.layers).toEqual([0, 1, 2]);
@@ -751,8 +744,8 @@ describe('IdentifyFeatures', () => {
             geometry: {
               x: -122.4194,
               y: 37.7749,
-              spatialReference: { wkid: 4326 }
-            }
+              spatialReference: { wkid: 4326 },
+            },
           },
           {
             layerId: 1,
@@ -763,9 +756,9 @@ describe('IdentifyFeatures', () => {
               COUNTY_NAME: 'San Francisco County',
               STATE_NAME: 'California',
             },
-            geometry: null
-          }
-        ]
+            geometry: null,
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
@@ -773,9 +766,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(2);
@@ -816,9 +807,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(0);
@@ -832,9 +821,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const result = await identify
-        .at({ lng: -122.4194, lat: 37.7749 })
-        .run();
+      const result = await identify.at({ lng: -122.4194, lat: 37.7749 }).run();
 
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(0);
@@ -843,17 +830,9 @@ describe('IdentifyFeatures', () => {
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-      await expect(
-        identify.at({ lng: -122.4194, lat: 37.7749 }).run()
-      ).rejects.toThrow('Network error');
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'IdentifyFeatures error:',
-        expect.any(Error)
+      await expect(identify.at({ lng: -122.4194, lat: 37.7749 }).run()).rejects.toThrow(
+        'Network error'
       );
-      consoleErrorSpy.mockRestore();
     });
 
     it('should handle HTTP errors', async () => {
@@ -863,17 +842,7 @@ describe('IdentifyFeatures', () => {
         json: () => Promise.resolve({ error: 'Service not found' }),
       } as Response);
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-      await expect(
-        identify.at({ lng: -122.4194, lat: 37.7749 }).run()
-      ).rejects.toThrow();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'IdentifyFeatures error:',
-        expect.any(Error)
-      );
-      consoleErrorSpy.mockRestore();
+      await expect(identify.at({ lng: -122.4194, lat: 37.7749 }).run()).rejects.toThrow();
     });
 
     it('should make request with correct parameters', async () => {
@@ -908,7 +877,7 @@ describe('IdentifyFeatures', () => {
   describe('Parameter Building', () => {
     it('should build complex parameter combinations correctly', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       identify
         .at([-95.7129, 37.0902])
         .layers([0, 1, 2])
@@ -916,10 +885,10 @@ describe('IdentifyFeatures', () => {
         .returnGeometry(false)
         .precision(2)
         .layerDef(0, "STATE_NAME='Texas'")
-        .layerDef(1, "POP2000>100000");
+        .layerDef(1, 'POP2000>100000');
 
       const params = (identify as any).params;
-      
+
       expect(params.layers).toEqual([0, 1, 2]);
       expect(params.tolerance).toBe(10);
       expect(params.returnGeometry).toBe(false);
@@ -929,7 +898,7 @@ describe('IdentifyFeatures', () => {
       expect(JSON.parse(params.geometry)).toEqual({
         x: -95.7129,
         y: 37.0902,
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       });
     });
   });
@@ -937,22 +906,24 @@ describe('IdentifyFeatures', () => {
   describe('Real-world Usage Patterns', () => {
     it('should support demo component usage pattern', async () => {
       const mockResponse = {
-        results: [{
-          layerId: 0,
-          layerName: 'Cities',
-          value: 'Los Angeles',
-          displayFieldName: 'CITY_NAME',
-          attributes: {
-            CITY_NAME: 'Los Angeles',
-            STATE_NAME: 'California',
-            POP2000: 3694820
+        results: [
+          {
+            layerId: 0,
+            layerName: 'Cities',
+            value: 'Los Angeles',
+            displayFieldName: 'CITY_NAME',
+            attributes: {
+              CITY_NAME: 'Los Angeles',
+              STATE_NAME: 'California',
+              POP2000: 3694820,
+            },
+            geometry: {
+              x: -118.2437,
+              y: 34.0522,
+              spatialReference: { wkid: 4326 },
+            },
           },
-          geometry: {
-            x: -118.2437,
-            y: 34.0522,
-            spatialReference: { wkid: 4326 }
-          }
-        }]
+        ],
       };
 
       mockFetch.mockResolvedValue({
@@ -962,7 +933,7 @@ describe('IdentifyFeatures', () => {
 
       const url = 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer';
       const identify = new IdentifyFeatures(url);
-      
+
       // Simulate demo usage pattern
       const fc = await identify
         .at({ lng: -118.2437, lat: 34.0522 })
@@ -979,10 +950,10 @@ describe('IdentifyFeatures', () => {
   describe('Edge Cases', () => {
     it('should handle point at coordinate boundaries', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
-      
+
       // Test extreme coordinates
       identify.at({ lng: -180, lat: 85 });
-      
+
       const geometry = JSON.parse((identify as any).params.geometry);
       expect(geometry.x).toBe(-180);
       expect(geometry.y).toBe(85);
@@ -991,21 +962,21 @@ describe('IdentifyFeatures', () => {
     it('should handle zero tolerance', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.tolerance(0);
-      
+
       expect((identify as any).params.tolerance).toBe(0);
     });
 
     it('should handle empty layer array', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.layers([]);
-      
+
       expect((identify as any).params.layers).toEqual([]);
     });
 
     it('should handle complex layer definition strings', () => {
       const identify = new IdentifyFeatures('https://example.com/MapServer');
       identify.layerDef(0, "STATE_NAME='New York' AND POP2000>500000");
-      
+
       expect((identify as any).params.layerDefs).toBe("0:STATE_NAME='New York' AND POP2000>500000");
     });
   });

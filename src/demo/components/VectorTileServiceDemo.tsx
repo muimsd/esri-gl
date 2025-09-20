@@ -74,7 +74,7 @@ const VectorTileServiceDemo: React.FC = () => {
           });
 
           setLoading(false);
-          
+
           // Automatically add the vector tile layer when the map loads
           await addVectorTileLayer();
         } catch (err) {
@@ -277,7 +277,8 @@ const VectorTileServiceDemo: React.FC = () => {
         >
           <h3 style={{ margin: '0 0 6px 0' }}>Vector Tile Service</h3>
           <p style={{ margin: 0 }}>
-            Vector tiles from ArcGIS Server load automatically on map initialization for scalable, interactive mapping with dynamic styling.
+            Vector tiles from ArcGIS Server load automatically on map initialization for scalable,
+            interactive mapping with dynamic styling.
           </p>
           <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
             https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer

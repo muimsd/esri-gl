@@ -54,17 +54,22 @@ export class Find extends Task {
   constructor(options: string | FindOptions | Service) {
     super(options);
     this.path = 'find';
-    
+
     // If options is a FindOptions object, merge relevant properties into params
-    if (options && typeof options === 'object' && !('request' in options) && typeof options !== 'string') {
+    if (
+      options &&
+      typeof options === 'object' &&
+      !('request' in options) &&
+      typeof options !== 'string'
+    ) {
       const findOptions = options as FindOptions;
-      
+
       // Merge find-specific options into params
       if (findOptions.searchText !== undefined) this.params.searchText = findOptions.searchText;
       if (findOptions.contains !== undefined) this.params.contains = findOptions.contains;
       if (findOptions.searchFields !== undefined) {
-        this.params.searchFields = Array.isArray(findOptions.searchFields) 
-          ? findOptions.searchFields.join(',') 
+        this.params.searchFields = Array.isArray(findOptions.searchFields)
+          ? findOptions.searchFields.join(',')
           : findOptions.searchFields;
       }
       if (findOptions.sr !== undefined) this.params.sr = findOptions.sr;
@@ -78,10 +83,14 @@ export class Find extends Task {
           this.params.layers = findOptions.layers.toString();
         }
       }
-      if (findOptions.returnGeometry !== undefined) this.params.returnGeometry = findOptions.returnGeometry;
-      if (findOptions.maxAllowableOffset !== undefined) this.params.maxAllowableOffset = findOptions.maxAllowableOffset;
-      if (findOptions.geometryPrecision !== undefined) this.params.geometryPrecision = findOptions.geometryPrecision;
-      if (findOptions.dynamicLayers !== undefined) this.params.dynamicLayers = findOptions.dynamicLayers;
+      if (findOptions.returnGeometry !== undefined)
+        this.params.returnGeometry = findOptions.returnGeometry;
+      if (findOptions.maxAllowableOffset !== undefined)
+        this.params.maxAllowableOffset = findOptions.maxAllowableOffset;
+      if (findOptions.geometryPrecision !== undefined)
+        this.params.geometryPrecision = findOptions.geometryPrecision;
+      if (findOptions.dynamicLayers !== undefined)
+        this.params.dynamicLayers = findOptions.dynamicLayers;
       if (findOptions.returnZ !== undefined) this.params.returnZ = findOptions.returnZ;
       if (findOptions.returnM !== undefined) this.params.returnM = findOptions.returnM;
       if (findOptions.gdbVersion !== undefined) this.params.gdbVersion = findOptions.gdbVersion;
@@ -162,7 +171,7 @@ export class Find extends Task {
   async run(): Promise<GeoJSON.FeatureCollection> {
     // Always use JSON format for Find API (GeoJSON might not be supported)
     this.params.f = 'json';
-    
+
     try {
       const response = await this.request<{
         results?: Array<{
@@ -177,21 +186,26 @@ export class Find extends Task {
 
       return this._convertToGeoJSON(response);
     } catch (error) {
-      console.error('Find task error:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Find task error:', error);
+      }
       throw error;
     }
   }
 
-  private _convertToGeoJSON(response: {
-    results?: Array<{
-      layerId: number;
-      layerName: string;
-      foundFieldName: string;
-      value: string;
-      attributes: Record<string, unknown>;
-      geometry?: unknown;
-    }>;
-  } | null): GeoJSON.FeatureCollection {
+  private _convertToGeoJSON(
+    response: {
+      results?: Array<{
+        layerId: number;
+        layerName: string;
+        foundFieldName: string;
+        value: string;
+        attributes: Record<string, unknown>;
+        geometry?: unknown;
+      }>;
+    } | null
+  ): GeoJSON.FeatureCollection {
     // Handle cases where response is null or results might be undefined, null, or empty
     const results = response?.results || [];
     const features: GeoJSON.Feature[] = results.map(result => ({
@@ -221,7 +235,7 @@ export class Find extends Task {
     if ('x' in geom && 'y' in geom) {
       return {
         type: 'Point',
-        coordinates: [geom.x as number, geom.y as number]
+        coordinates: [geom.x as number, geom.y as number],
       };
     }
 
@@ -229,7 +243,7 @@ export class Find extends Task {
     if ('rings' in geom && Array.isArray(geom.rings)) {
       return {
         type: 'Polygon',
-        coordinates: geom.rings as number[][][]
+        coordinates: geom.rings as number[][][],
       };
     }
 
@@ -237,7 +251,7 @@ export class Find extends Task {
     if ('paths' in geom && Array.isArray(geom.paths)) {
       return {
         type: 'LineString',
-        coordinates: geom.paths[0] as number[][]
+        coordinates: geom.paths[0] as number[][],
       };
     }
 

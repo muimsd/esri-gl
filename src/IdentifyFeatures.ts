@@ -131,7 +131,10 @@ export class IdentifyFeatures {
       const data = await response.json();
       return this._processResponse(data);
     } catch (error) {
-      console.error('IdentifyFeatures error:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('IdentifyFeatures error:', error);
+      }
       throw error;
     }
   }

@@ -24,6 +24,11 @@ export default {
     '^@/types$': '<rootDir>/src/types.ts',
     '^@/(.*)$': '<rootDir>/src/$1'
   },
+  setupFilesAfterEnv: [],
+  testEnvironment: 'jsdom',
+  globals: {
+    'process.env.NODE_ENV': 'test'
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

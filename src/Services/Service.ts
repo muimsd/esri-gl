@@ -119,7 +119,10 @@ export class Service {
       this._serviceMetadata = response as ServiceMetadata;
       return this._serviceMetadata;
     } catch (error) {
-      console.error('Error fetching service metadata:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Error fetching service metadata:', error);
+      }
       throw error;
     }
   }

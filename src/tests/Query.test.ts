@@ -1,4 +1,5 @@
-import { Query, query, QueryOptions, QueryGeometry, Bounds } from '@/Query';
+import { Query, query } from '@/Query';
+import type { QueryOptions, QueryGeometry, Bounds } from '@/Query';
 
 // Mock the Task base class
 jest.mock('@/Task');
@@ -18,7 +19,7 @@ describe('Query', () => {
       const options: QueryOptions = {
         url: 'https://example.com/FeatureServer/0',
         where: 'STATE_NAME=California',
-        returnGeometry: true
+        returnGeometry: true,
       };
       const queryTask = new Query(options);
       expect(queryTask).toBeInstanceOf(Query);
@@ -30,12 +31,12 @@ describe('Query', () => {
     const testGeometry: QueryGeometry = {
       x: -120,
       y: 35,
-      spatialReference: { wkid: 4326 }
+      spatialReference: { wkid: 4326 },
     };
 
     beforeEach(() => {
       queryTask = new Query('https://example.com/FeatureServer/0');
-      jest.spyOn(queryTask, '_setGeometryParams' as any).mockImplementation((geom) => {
+      jest.spyOn(queryTask, '_setGeometryParams' as any).mockImplementation(geom => {
         (queryTask as any).params.geometry = geom;
         (queryTask as any).params.geometryType = 'esriGeometryPoint';
         (queryTask as any).params.inSR = 4326;
@@ -77,6 +78,27 @@ describe('Query', () => {
       expect((queryTask as any).params.units).toBe('esriSRUnit_Meter');
       expect((queryTask as any).params.distance).toBe(1000);
       expect((queryTask as any).params.inSR).toBe(4326);
+    });
+
+    it('should set touches spatial relationship', () => {
+      const result = queryTask.touches(testGeometry);
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.spatialRel).toBe('esriSpatialRelTouches');
+    });
+
+    it('should set overlaps spatial relationship', () => {
+      const result = queryTask.overlaps(testGeometry);
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.spatialRel).toBe('esriSpatialRelOverlaps');
+    });
+
+    it('should set bboxIntersects spatial relationship', () => {
+      const result = queryTask.bboxIntersects(testGeometry);
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.spatialRel).toBe('esriSpatialRelEnvelopeIntersects');
     });
   });
 
@@ -166,7 +188,7 @@ describe('Query', () => {
         expect(result.geometry).toEqual({
           x: -120,
           y: 35,
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         });
         expect(result.geometryType).toBe('esriGeometryPoint');
       });
@@ -174,7 +196,7 @@ describe('Query', () => {
       it('should handle Bounds-like object', () => {
         const bounds: Bounds = {
           _southWest: { lat: 32, lng: -125 },
-          _northEast: { lat: 42, lng: -114 }
+          _northEast: { lat: 42, lng: -114 },
         };
 
         const result = (queryTask as any)._setGeometry(bounds);
@@ -184,7 +206,7 @@ describe('Query', () => {
           ymin: 32,
           xmax: -114,
           ymax: 42,
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         });
         expect(result.geometryType).toBe('esriGeometryEnvelope');
       });
@@ -218,7 +240,7 @@ describe('Query', () => {
     it('should create Query instance with options', () => {
       const options: QueryOptions = {
         url: 'https://example.com/FeatureServer/0',
-        where: 'STATE_NAME=California'
+        where: 'STATE_NAME=California',
       };
       const queryTask = query(options);
       expect(queryTask).toBeInstanceOf(Query);
@@ -228,7 +250,7 @@ describe('Query', () => {
   describe('default parameters', () => {
     it('should have correct default parameters', () => {
       const queryTask = new Query('https://example.com/FeatureServer/0');
-      
+
       expect((queryTask as any).params.returnGeometry).toBe(true);
       expect((queryTask as any).params.where).toBe('1=1');
       expect((queryTask as any).params.outSR).toBe(4326);
@@ -237,10 +259,201 @@ describe('Query', () => {
     });
   });
 
+  describe('execution methods', () => {
+    let queryTask: Query;
+
+    beforeEach(() => {
+      queryTask = new Query('https://example.com/FeatureServer/0');
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue({});
+      jest.spyOn(queryTask, '_cleanParams' as any).mockImplementation(() => {});
+    });
+
+    it('should execute run() and return GeoJSON', async () => {
+      const mockGeoJSON = { type: 'FeatureCollection', features: [] };
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue(mockGeoJSON);
+
+      const result = await queryTask.run();
+
+      expect(result).toBe(mockGeoJSON);
+      expect((queryTask as any)._cleanParams).toHaveBeenCalled();
+      expect((queryTask as any).params.f).toBe('geojson');
+    });
+
+    it('should fallback to JSON format if GeoJSON fails', async () => {
+      const mockJsonResponse = {
+        features: [
+          {
+            attributes: { name: 'test' },
+            geometry: { type: 'Point', coordinates: [0, 0] },
+          },
+        ],
+      };
+
+      jest
+        .spyOn(queryTask, 'request' as any)
+        .mockRejectedValueOnce(new Error('GeoJSON not supported'))
+        .mockResolvedValueOnce(mockJsonResponse);
+
+      jest.spyOn(queryTask, '_convertToGeoJSON' as any).mockReturnValue({
+        type: 'FeatureCollection',
+        features: [],
+      });
+
+      await queryTask.run();
+
+      expect((queryTask as any).params.f).toBe('json');
+      expect((queryTask as any)._convertToGeoJSON).toHaveBeenCalledWith(mockJsonResponse);
+    });
+
+    it('should execute count() and return number', async () => {
+      const mockResponse = { count: 42 };
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue(mockResponse);
+
+      const result = await queryTask.count();
+
+      expect(result).toBe(42);
+      expect((queryTask as any).params.returnCountOnly).toBe(true);
+    });
+
+    it('should execute ids() and return array of IDs', async () => {
+      const mockResponse = { objectIds: [1, 2, 3, 4] };
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue(mockResponse);
+
+      const result = await queryTask.ids();
+
+      expect(result).toEqual([1, 2, 3, 4]);
+      expect((queryTask as any).params.returnIdsOnly).toBe(true);
+    });
+
+    it('should execute bounds() and return bounds object', async () => {
+      const mockResponse = {
+        extent: {
+          xmin: -120,
+          ymin: 35,
+          xmax: -119,
+          ymax: 36,
+        },
+      };
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue(mockResponse);
+
+      const result = await queryTask.bounds();
+
+      expect(result).toEqual({
+        _southWest: { lat: 35, lng: -120 },
+        _northEast: { lat: 36, lng: -119 },
+      });
+      expect((queryTask as any).params.returnExtentOnly).toBe(true);
+    });
+
+    it('should throw error if bounds() returns invalid extent', async () => {
+      const mockResponse = { extent: null };
+      jest.spyOn(queryTask, 'request' as any).mockResolvedValue(mockResponse);
+
+      await expect(queryTask.bounds()).rejects.toThrow('Invalid bounds returned');
+    });
+
+    it('should execute pixelSize() method', () => {
+      const result = queryTask.pixelSize({ x: 100, y: 100 });
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.pixelSize).toEqual([100, 100]);
+    });
+
+    it('should execute orderBy() method', () => {
+      const result = queryTask.orderBy('name', 'DESC');
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.orderByFields).toBe('name DESC');
+    });
+
+    it('should execute orderBy() with default ASC order', () => {
+      const result = queryTask.orderBy('name');
+
+      expect(result).toBe(queryTask);
+      expect((queryTask as any).params.orderByFields).toBe('name ASC');
+    });
+  });
+
+  describe('private methods', () => {
+    let queryTask: Query;
+
+    beforeEach(() => {
+      queryTask = new Query('https://example.com/FeatureServer/0');
+    });
+
+    it('should _setGeometry return default for null geometry', () => {
+      const result = (queryTask as any)._setGeometry(null);
+
+      expect(result).toEqual({
+        geometry: null,
+        geometryType: 'esriGeometryPoint',
+      });
+    });
+
+    it('should _setGeometry return default for unknown geometry', () => {
+      const unknownGeometry = { someProperty: 'value' };
+      const result = (queryTask as any)._setGeometry(unknownGeometry);
+
+      expect(result).toEqual({
+        geometry: unknownGeometry,
+        geometryType: 'esriGeometryPoint',
+      });
+    });
+
+    it('should _convertToGeoJSON convert Esri JSON to GeoJSON', () => {
+      const esriResponse = {
+        features: [
+          {
+            attributes: { name: 'Test Feature', id: 1 },
+            geometry: { type: 'Point', coordinates: [-120, 35] },
+          },
+          {
+            attributes: { name: 'Test Feature 2', id: 2 },
+            geometry: null,
+          },
+        ],
+      };
+
+      const result = (queryTask as any)._convertToGeoJSON(esriResponse);
+
+      expect(result).toEqual({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: { name: 'Test Feature', id: 1 },
+            geometry: { type: 'Point', coordinates: [-120, 35] },
+          },
+          {
+            type: 'Feature',
+            properties: { name: 'Test Feature 2', id: 2 },
+            geometry: null,
+          },
+        ],
+      });
+    });
+
+    it('should _cleanParams delete specified parameters', () => {
+      (queryTask as any).params = {
+        returnIdsOnly: true,
+        returnExtentOnly: true,
+        returnCountOnly: true,
+        returnDistinctValues: true,
+        otherParam: 'should remain',
+      };
+
+      (queryTask as any)._cleanParams();
+
+      expect((queryTask as any).params).toEqual({
+        otherParam: 'should remain',
+      });
+    });
+  });
+
   describe('setters configuration', () => {
     it('should have correct setters mapping', () => {
       const queryTask = new Query('https://example.com/FeatureServer/0');
-      
+
       expect((queryTask as any).setters).toEqual({
         offset: 'resultOffset',
         limit: 'resultRecordCount',

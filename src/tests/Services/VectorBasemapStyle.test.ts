@@ -70,7 +70,7 @@ describe('VectorBasemapStyle', () => {
 
     it('should update styleUrl when style name changes', () => {
       const service = new VectorBasemapStyle('ArcGIS:Streets', 'test-api-key');
-      
+
       const originalUrl = service.styleUrl;
       service.setStyle('ArcGIS:Navigation');
       const updatedUrl = service.styleUrl;
@@ -84,14 +84,14 @@ describe('VectorBasemapStyle', () => {
   describe('Service Methods', () => {
     it('should have update method that does nothing', () => {
       const service = new VectorBasemapStyle('ArcGIS:Streets', 'test-api-key');
-      
+
       // Should not throw error
       expect(() => service.update()).not.toThrow();
     });
 
     it('should have remove method that does nothing', () => {
       const service = new VectorBasemapStyle('ArcGIS:Streets', 'test-api-key');
-      
+
       // Should not throw error
       expect(() => service.remove()).not.toThrow();
     });
@@ -101,12 +101,12 @@ describe('VectorBasemapStyle', () => {
     it('should support standard Esri basemap styles', () => {
       const styles = [
         'ArcGIS:Streets',
-        'ArcGIS:TopographicBase', 
+        'ArcGIS:TopographicBase',
         'ArcGIS:Imagery',
         'ArcGIS:DarkGray',
         'ArcGIS:LightGray',
         'ArcGIS:Navigation',
-        'ArcGIS:StreetsNight'
+        'ArcGIS:StreetsNight',
       ];
 
       styles.forEach(styleName => {

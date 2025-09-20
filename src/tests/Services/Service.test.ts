@@ -7,31 +7,31 @@ class TestableService extends Service {
   get testOptions() {
     return this.options;
   }
-  
+
   get testServiceMetadata() {
     return this._serviceMetadata;
   }
-  
+
   set testServiceMetadata(metadata) {
     this._serviceMetadata = metadata;
   }
-  
+
   get testMap() {
     return this._map;
   }
-  
+
   set testMap(map) {
     this._map = map;
   }
-  
+
   get testAuthenticating() {
     return this._authenticating;
   }
-  
+
   set testAuthenticating(auth: boolean) {
     this._authenticating = auth;
   }
-  
+
   get testRequestQueue() {
     return this._requestQueue;
   }
@@ -63,7 +63,7 @@ const createMockMap = (): Partial<Map> => ({
     getSouth: () => -90,
   }),
   project: jest.fn().mockReturnValue({ x: 100, y: 100 }),
-  unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 })
+  unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 }),
 });
 
 describe('Service', () => {
@@ -80,7 +80,9 @@ describe('Service', () => {
     });
 
     it('should throw error if URL is not provided', () => {
-      expect(() => new TestableService({} as ServiceOptions)).toThrow('A url must be supplied as part of the service options.');
+      expect(() => new TestableService({} as ServiceOptions)).toThrow(
+        'A url must be supplied as part of the service options.'
+      );
     });
 
     it('should set default options', () => {
@@ -98,7 +100,7 @@ describe('Service', () => {
         useCors: false,
         timeout: 5000,
         token: 'test-token',
-        getAttributionFromService: false
+        getAttributionFromService: false,
       });
 
       expect(service.testOptions.proxy).toBe(true);
@@ -121,7 +123,7 @@ describe('Service', () => {
       service = new TestableService({ url: 'https://example.com/test' });
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ success: true })
+        json: async () => ({ success: true }),
       } as Response);
     });
 
@@ -129,15 +131,14 @@ describe('Service', () => {
       it('should make GET request with no parameters', async () => {
         await service.get('/layers');
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          'https://example.com/test/layers?'
-        );
+        expect(mockFetch).toHaveBeenCalledWith('https://example.com/test/layers?');
       });
 
       it('should make GET request with parameters', async () => {
         await service.get('/layers', { f: 'json', where: "STATE_NAME='California'" });
 
-        const expectedUrl = 'https://example.com/test/layers?f=json&where=STATE_NAME%3D%27California%27';
+        const expectedUrl =
+          'https://example.com/test/layers?f=json&where=STATE_NAME%3D%27California%27';
         expect(mockFetch).toHaveBeenCalledWith(expectedUrl);
       });
 
@@ -149,13 +150,15 @@ describe('Service', () => {
       });
 
       it('should handle object parameters', async () => {
-        await service.get('/query', { 
+        await service.get('/query', {
           geometry: { xmin: -180, ymin: -90, xmax: 180, ymax: 90 },
-          f: 'json'
+          f: 'json',
         });
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('geometry=%7B%22xmin%22%3A-180%2C%22ymin%22%3A-90%2C%22xmax%22%3A180%2C%22ymax%22%3A90%7D')
+          expect.stringContaining(
+            'geometry=%7B%22xmin%22%3A-180%2C%22ymin%22%3A-90%2C%22xmax%22%3A180%2C%22ymax%22%3A90%7D'
+          )
         );
       });
 
@@ -163,30 +166,26 @@ describe('Service', () => {
         service.testOptions.token = 'test-token';
         await service.get('/layers', { f: 'json' });
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('token=test-token')
-        );
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('token=test-token'));
       });
 
       it('should include request parameters', async () => {
         service.testOptions.requestParams = { customParam: 'customValue' };
         await service.get('/layers', { f: 'json' });
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('customParam=customValue')
-        );
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('customParam=customValue'));
       });
     });
 
     describe('post()', () => {
       it('should make POST request with FormData', async () => {
-        await service.post('/query', { where: "1=1", f: 'json' });
+        await service.post('/query', { where: '1=1', f: 'json' });
 
         expect(mockFetch).toHaveBeenCalledWith(
           'https://example.com/test/query',
           expect.objectContaining({
             method: 'POST',
-            body: expect.any(FormData)
+            body: expect.any(FormData),
           })
         );
       });
@@ -214,15 +213,13 @@ describe('Service', () => {
       it('should make GET request with correct parameters', async () => {
         const fetchSpy = jest.spyOn(global, 'fetch');
         await service.request('/layers', { f: 'json' });
-        
-        expect(fetchSpy).toHaveBeenCalledWith(
-          'https://example.com/test/layers?f=json'
-        );
+
+        expect(fetchSpy).toHaveBeenCalledWith('https://example.com/test/layers?f=json');
       });
     });
 
     describe('requestWithCallback()', () => {
-      it('should handle callback-style requests', (done) => {
+      it('should handle callback-style requests', done => {
         service.requestWithCallback('GET', '/layers', { f: 'json' }, (error, response) => {
           expect(error).toBeUndefined();
           expect(response).toEqual({ success: true });
@@ -235,9 +232,9 @@ describe('Service', () => {
         expect(result).toEqual({ success: true });
       });
 
-      it('should handle callback with error', (done) => {
+      it('should handle callback with error', done => {
         mockFetch.mockRejectedValue(new Error('Network error'));
-        
+
         service.requestWithCallback('GET', '/layers', { f: 'json' }, (error, response) => {
           expect(error).toBeInstanceOf(Error);
           expect(error?.message).toBe('Network error');
@@ -258,7 +255,7 @@ describe('Service', () => {
     it('should handle HTTP error responses', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
       } as Response);
 
       await expect(service.get('/nonexistent')).rejects.toThrow('HTTP error! status: 404');
@@ -272,7 +269,9 @@ describe('Service', () => {
     it('should handle invalid JSON responses', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => { throw new Error('Invalid JSON'); }
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
       } as unknown as Response);
 
       await expect(service.get('/layers')).rejects.toThrow('Invalid JSON');
@@ -290,12 +289,12 @@ describe('Service', () => {
       const mockMetadata = {
         name: 'Test Service',
         description: 'A test service',
-        copyrightText: 'Test Copyright'
+        copyrightText: 'Test Copyright',
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => mockMetadata
+        json: async () => mockMetadata,
       } as Response);
 
       const metadata = await service.metadata();
@@ -307,7 +306,7 @@ describe('Service', () => {
       const mockMetadata = { name: 'Test Service' };
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => mockMetadata
+        json: async () => mockMetadata,
       } as Response);
 
       const metadata1 = await service.metadata();
@@ -339,25 +338,25 @@ describe('Service', () => {
     it('should queue requests during authentication', () => {
       // Simulate authentication process
       service.testAuthenticating = true;
-      
+
       const callback = jest.fn();
       service.requestWithCallback('GET', '/secure', { f: 'json' }, callback);
-      
+
       expect(service.testRequestQueue).toHaveLength(1);
       expect(callback).not.toHaveBeenCalled();
-      
+
       // Complete authentication - this should process the queue
       service.authenticate('new-token');
       expect(service.testRequestQueue).toHaveLength(0);
     });
 
-    it('should add authenticate method to authentication errors', (done) => {
+    it('should add authenticate method to authentication errors', done => {
       const authError = new Error('Authentication required');
       (authError as Error & { code: number }).code = 498;
 
       mockFetch.mockRejectedValueOnce(authError);
 
-      service.requestWithCallback('GET', '/secure', { f: 'json' }, (error) => {
+      service.requestWithCallback('GET', '/secure', { f: 'json' }, error => {
         expect(error).toBeDefined();
         const errorWithAuth = error as Error & { authenticate?: (token: string) => void };
         expect(errorWithAuth.authenticate).toBeDefined();
@@ -407,7 +406,7 @@ describe('Service', () => {
       const mockMetadata = { copyrightText: 'Fetched Attribution' };
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => mockMetadata
+        json: async () => mockMetadata,
       } as Response);
 
       await service.setAttributionFromService();
@@ -433,8 +432,11 @@ describe('Service', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       await service.setAttributionFromService();
-      expect(consoleSpy).toHaveBeenCalledWith('Could not fetch service attribution:', expect.any(Error));
-      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Could not fetch service attribution:',
+        expect.any(Error)
+      );
+
       consoleSpy.mockRestore();
     });
   });
@@ -463,7 +465,7 @@ describe('Service', () => {
         service.fire('requeststart', {
           url: 'https://example.com/test',
           params: {},
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(callback1).toHaveBeenCalledTimes(1);
@@ -482,7 +484,7 @@ describe('Service', () => {
         service.fire('requeststart', {
           url: 'https://example.com/test',
           params: {},
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(callback1).not.toHaveBeenCalled();
@@ -497,11 +499,11 @@ describe('Service', () => {
     describe('fire()', () => {
       it('should fire event with data', () => {
         service.on('requeststart', callback1);
-        
+
         const eventData = {
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         };
 
         const result = service.fire('requeststart', eventData);
@@ -514,7 +516,7 @@ describe('Service', () => {
           service.fire('requeststart', {
             url: 'https://example.com/test',
             params: {},
-            method: 'GET'
+            method: 'GET',
           });
         }).not.toThrow();
       });
@@ -524,7 +526,7 @@ describe('Service', () => {
       beforeEach(() => {
         mockFetch.mockResolvedValue({
           ok: true,
-          json: async () => ({ success: true })
+          json: async () => ({ success: true }),
         } as Response);
       });
 
@@ -540,13 +542,13 @@ describe('Service', () => {
         expect(startCallback).toHaveBeenCalledWith({
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(endCallback).toHaveBeenCalledWith({
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         });
       });
 
@@ -560,7 +562,7 @@ describe('Service', () => {
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
           response: { success: true },
-          method: 'GET'
+          method: 'GET',
         });
       });
 
@@ -581,7 +583,7 @@ describe('Service', () => {
           params: {},
           message: 'Network error',
           code: undefined,
-          method: 'GET'
+          method: 'GET',
         });
       });
     });
@@ -611,7 +613,7 @@ describe('Service', () => {
         service.fire('requeststart', {
           url: 'https://example.com/test',
           params: {},
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(callback1).toHaveBeenCalledTimes(1);
@@ -630,7 +632,7 @@ describe('Service', () => {
         service.fire('requeststart', {
           url: 'https://example.com/test',
           params: {},
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(callback1).not.toHaveBeenCalled();
@@ -645,11 +647,11 @@ describe('Service', () => {
     describe('fire()', () => {
       it('should fire event with data', () => {
         service.on('requeststart', callback1);
-        
+
         const eventData = {
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         };
 
         const result = service.fire('requeststart', eventData);
@@ -662,7 +664,7 @@ describe('Service', () => {
           service.fire('requeststart', {
             url: 'https://example.com/test',
             params: {},
-            method: 'GET'
+            method: 'GET',
           });
         }).not.toThrow();
       });
@@ -672,7 +674,7 @@ describe('Service', () => {
       beforeEach(() => {
         mockFetch.mockResolvedValue({
           ok: true,
-          json: async () => ({ success: true })
+          json: async () => ({ success: true }),
         } as Response);
       });
 
@@ -688,13 +690,13 @@ describe('Service', () => {
         expect(startCallback).toHaveBeenCalledWith({
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         });
 
         expect(endCallback).toHaveBeenCalledWith({
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
-          method: 'GET'
+          method: 'GET',
         });
       });
 
@@ -708,7 +710,7 @@ describe('Service', () => {
           url: 'https://example.com/test/layers',
           params: { f: 'json' },
           response: { success: true },
-          method: 'GET'
+          method: 'GET',
         });
       });
 
@@ -729,7 +731,7 @@ describe('Service', () => {
           params: {},
           message: 'Network error',
           code: undefined,
-          method: 'GET'
+          method: 'GET',
         });
       });
     });
@@ -742,7 +744,7 @@ describe('Service', () => {
       service = new TestableService({ url: 'https://example.com/test' });
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ success: true })
+        json: async () => ({ success: true }),
       } as Response);
     });
 
@@ -751,7 +753,7 @@ describe('Service', () => {
         where: '1=1',
         geometry: undefined,
         outFields: null,
-        f: 'json'
+        f: 'json',
       });
 
       const calledUrl = mockFetch.mock.calls[0][0] as string;
@@ -765,7 +767,7 @@ describe('Service', () => {
       await service.get('/query', {
         maxRecordCount: 0,
         returnGeometry: false,
-        f: 'json'
+        f: 'json',
       });
 
       const calledUrl = mockFetch.mock.calls[0][0] as string;

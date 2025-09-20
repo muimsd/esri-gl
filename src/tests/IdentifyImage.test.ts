@@ -1,4 +1,5 @@
-import { IdentifyImage, identifyImage, IdentifyImageOptions } from '@/IdentifyImage';
+import { IdentifyImage, identifyImage } from '@/IdentifyImage';
+import type { IdentifyImageOptions } from '@/IdentifyImage';
 
 // Mock the Task base class
 jest.mock('@/Task');
@@ -18,7 +19,7 @@ describe('IdentifyImage', () => {
       const options: IdentifyImageOptions = {
         url: 'https://example.com/ImageServer',
         returnGeometry: true,
-        returnCatalogItems: true
+        returnCatalogItems: true,
       };
       const identifyImg = new IdentifyImage(options);
       expect(identifyImg).toBeInstanceOf(IdentifyImage);
@@ -41,7 +42,7 @@ describe('IdentifyImage', () => {
         expect(JSON.parse((identifyImg as any).params.geometry as string)).toEqual({
           x: -120,
           y: 35,
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         });
         expect((identifyImg as any).params.geometryType).toBe('esriGeometryPoint');
         expect((identifyImg as any).params.sr).toBe(4326);
@@ -55,7 +56,7 @@ describe('IdentifyImage', () => {
         expect(JSON.parse((identifyImg as any).params.geometry as string)).toEqual({
           x: -120,
           y: 35,
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         });
       });
     });
@@ -63,8 +64,11 @@ describe('IdentifyImage', () => {
     describe('geometry method', () => {
       it('should set custom geometry with default type', () => {
         const customGeometry = {
-          xmin: -121, ymin: 34, xmax: -119, ymax: 36,
-          spatialReference: { wkid: 4326 }
+          xmin: -121,
+          ymin: 34,
+          xmax: -119,
+          ymax: 36,
+          spatialReference: { wkid: 4326 },
         };
 
         const result = identifyImg.geometry(customGeometry);
@@ -76,8 +80,11 @@ describe('IdentifyImage', () => {
 
       it('should set custom geometry with specified type', () => {
         const customGeometry = {
-          xmin: -121, ymin: 34, xmax: -119, ymax: 36,
-          spatialReference: { wkid: 4326 }
+          xmin: -121,
+          ymin: 34,
+          xmax: -119,
+          ymax: 36,
+          spatialReference: { wkid: 4326 },
         };
 
         const result = identifyImg.geometry(customGeometry, 'esriGeometryEnvelope');
@@ -141,7 +148,7 @@ describe('IdentifyImage', () => {
       it('should set mosaic rule', () => {
         const rule = {
           mosaicMethod: 'esriMosaicLockRaster',
-          lockRasterIds: [1, 2, 3]
+          lockRasterIds: [1, 2, 3],
         };
 
         const result = identifyImg.mosaicRule(rule);
@@ -158,8 +165,8 @@ describe('IdentifyImage', () => {
           rasterFunctionArguments: {
             StretchType: 0,
             MinPercent: 2,
-            MaxPercent: 98
-          }
+            MaxPercent: 98,
+          },
         };
 
         const result = identifyImg.renderingRule(rule);
@@ -179,7 +186,7 @@ describe('IdentifyImage', () => {
     it('should create IdentifyImage instance with options', () => {
       const options: IdentifyImageOptions = {
         url: 'https://example.com/ImageServer',
-        returnGeometry: true
+        returnGeometry: true,
       };
       const identifyImg = identifyImage(options);
       expect(identifyImg).toBeInstanceOf(IdentifyImage);
@@ -189,7 +196,7 @@ describe('IdentifyImage', () => {
   describe('default parameters', () => {
     it('should have correct default parameters', () => {
       const identifyImg = new IdentifyImage('https://example.com/ImageServer');
-      
+
       expect((identifyImg as any).params.sr).toBe(4326);
       expect((identifyImg as any).params.returnGeometry).toBe(false);
       expect((identifyImg as any).params.returnCatalogItems).toBe(false);
@@ -200,7 +207,7 @@ describe('IdentifyImage', () => {
   describe('setters configuration', () => {
     it('should have correct setters mapping', () => {
       const identifyImg = new IdentifyImage('https://example.com/ImageServer');
-      
+
       expect((identifyImg as any).setters).toEqual({
         returnCatalogItems: 'returnCatalogItems',
         returnGeometry: 'returnGeometry',
@@ -212,6 +219,164 @@ describe('IdentifyImage', () => {
     it('should have correct path', () => {
       const identifyImg = new IdentifyImage('https://example.com/ImageServer');
       expect((identifyImg as any).path).toBe('identify');
+    });
+  });
+
+  describe('execution methods', () => {
+    let identifyImg: IdentifyImage;
+
+    beforeEach(() => {
+      identifyImg = new IdentifyImage('https://example.com/ImageServer');
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('run method', () => {
+      it('should execute and return results with results array', async () => {
+        const mockResponse = {
+          results: [
+            { value: '123.45', attributes: { band: 1 } },
+            { value: '678.90', attributes: { band: 2 } },
+          ],
+          location: {
+            x: -120,
+            y: 35,
+            spatialReference: { wkid: 4326 },
+          },
+        };
+
+        jest.spyOn(identifyImg as any, 'request').mockResolvedValue(mockResponse);
+
+        const result = await identifyImg.run();
+
+        expect(result).toEqual({
+          results: mockResponse.results,
+          location: mockResponse.location,
+        });
+      });
+
+      it('should normalize response with simple value', async () => {
+        const mockResponse = {
+          value: '42.0',
+          properties: { elevation: 100, slope: 15 },
+          location: {
+            x: -120,
+            y: 35,
+            spatialReference: { wkid: 4326 },
+          },
+        };
+
+        jest.spyOn(identifyImg as any, 'request').mockResolvedValue(mockResponse);
+
+        const result = await identifyImg.run();
+
+        expect(result).toEqual({
+          results: [
+            {
+              value: '42.0',
+              attributes: { elevation: 100, slope: 15 },
+            },
+          ],
+          location: mockResponse.location,
+        });
+      });
+
+      it('should normalize response with values array', async () => {
+        const mockResponse = {
+          values: ['123.45', '678.90'],
+          properties: { band1: 'red', band2: 'green' },
+          location: {
+            x: -120,
+            y: 35,
+            spatialReference: { wkid: 4326 },
+          },
+        };
+
+        jest.spyOn(identifyImg as any, 'request').mockResolvedValue(mockResponse);
+
+        const result = await identifyImg.run();
+
+        expect(result).toEqual({
+          results: [
+            {
+              value: '123.45',
+              attributes: { band1: 'red', band2: 'green' },
+            },
+          ],
+          location: mockResponse.location,
+        });
+      });
+
+      it('should handle response with empty results', async () => {
+        const mockResponse = {
+          location: {
+            x: -120,
+            y: 35,
+            spatialReference: { wkid: 4326 },
+          },
+        };
+
+        jest.spyOn(identifyImg as any, 'request').mockResolvedValue(mockResponse);
+
+        const result = await identifyImg.run();
+
+        expect(result).toEqual({
+          results: [],
+          location: mockResponse.location,
+        });
+      });
+    });
+
+    describe('getPixelValues method', () => {
+      it('should return array of numeric values', async () => {
+        const mockRunResponse = {
+          results: [
+            { value: '123.45', attributes: {} },
+            { value: '678.90', attributes: {} },
+            { value: 'NoData', attributes: {} },
+          ],
+          location: { x: -120, y: 35, spatialReference: { wkid: 4326 } },
+        };
+
+        jest.spyOn(identifyImg, 'run').mockResolvedValue(mockRunResponse);
+
+        const result = await identifyImg.getPixelValues();
+
+        expect(result).toEqual([123.45, 678.9, 'NoData']);
+      });
+
+      it('should return null for undefined values', async () => {
+        const mockRunResponse = {
+          results: [{ attributes: {} }, { value: '42.0', attributes: {} }],
+          location: { x: -120, y: 35, spatialReference: { wkid: 4326 } },
+        };
+
+        jest.spyOn(identifyImg, 'run').mockResolvedValue(mockRunResponse);
+
+        const result = await identifyImg.getPixelValues();
+
+        expect(result).toEqual([null, 42.0]);
+      });
+    });
+
+    describe('getPixelData method', () => {
+      it('should return detailed pixel information', async () => {
+        const mockRunResponse = {
+          results: [
+            { value: '123.45', attributes: { band: 1, quality: 'good' } },
+            { value: '678.90', attributes: { band: 2, quality: 'excellent' } },
+          ],
+          location: { x: -120, y: 35, spatialReference: { wkid: 4326 } },
+        };
+
+        jest.spyOn(identifyImg, 'run').mockResolvedValue(mockRunResponse);
+
+        const result = await identifyImg.getPixelData();
+
+        expect(result).toEqual(mockRunResponse.results);
+      });
     });
   });
 });

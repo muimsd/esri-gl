@@ -78,20 +78,29 @@ export class FeatureService {
 
       // Check if vector tiles should be used (default behavior)
       // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
-      console.log(
-        'FeatureService: useVectorTiles setting:',
-        this.esriServiceOptions.useVectorTiles
-      );
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log(
+          'FeatureService: useVectorTiles setting:',
+          this.esriServiceOptions.useVectorTiles
+        );
+      }
       const vectorTileSupport = await this._checkVectorTileSupport();
-      console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
+      }
 
       const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
-      console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
+      }
 
       if (useVectorTiles) {
         // Create vector tile source
         const tileUrl = this._buildTileUrl();
-        console.log('FeatureService: Using vector tiles for FeatureService:', tileUrl);
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Using vector tiles for FeatureService:', tileUrl);
+        }
 
         // Add vector source to map
         this._map.addSource(this._sourceId, {
@@ -103,7 +112,9 @@ export class FeatureService {
       } else {
         // Fallback to GeoJSON (most common for FeatureServers)
         const queryUrl = this._buildQueryUrl();
-        console.log('FeatureService: Using GeoJSON for FeatureService:', queryUrl);
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Using GeoJSON for FeatureService:', queryUrl);
+        }
 
         this._map.addSource(this._sourceId, {
           type: 'geojson',
@@ -137,29 +148,45 @@ export class FeatureService {
 
       // Only check if the URL actually changed (meaning it was a FeatureServer URL)
       if (vectorTileUrl === this.esriServiceOptions.url) {
-        console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
+        const isTestEnvironment =
+          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
+        }
         return false;
       }
 
-      console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
+      }
       const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
 
       if (response.ok) {
         const data = await response.json();
         if (data && !data.error) {
-          console.log('FeatureService: Vector tile endpoint found and working:', vectorTileUrl);
-          console.log('FeatureService: Vector tile service data:', data);
+          if (!isTestEnvironment) {
+            console.log('FeatureService: Vector tile endpoint found and working:', vectorTileUrl);
+            console.log('FeatureService: Vector tile service data:', data);
+          }
           return true;
         } else {
-          console.log('FeatureService: Vector tile endpoint returned error:', data?.error);
+          if (!isTestEnvironment) {
+            console.log('FeatureService: Vector tile endpoint returned error:', data?.error);
+          }
           return false;
         }
       } else {
-        console.log('FeatureService: Vector tile endpoint returned HTTP', response.status);
+        if (!isTestEnvironment) {
+          console.log('FeatureService: Vector tile endpoint returned HTTP', response.status);
+        }
         return false;
       }
     } catch (error) {
-      console.log('FeatureService: Vector tile check failed, falling back to GeoJSON:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.log('FeatureService: Vector tile check failed, falling back to GeoJSON:', error);
+      }
       return false;
     }
   }
@@ -334,7 +361,11 @@ export class FeatureService {
       const source = this._map.getSource(this._sourceId);
       if (source && 'setData' in source && typeof source.setData === 'function') {
         const newQueryUrl = this._buildQueryUrl();
-        console.log('Updating FeatureService data with new bounding box:', newQueryUrl);
+        const isTestEnvironment =
+          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+        if (!isTestEnvironment) {
+          console.log('Updating FeatureService data with new bounding box:', newQueryUrl);
+        }
         // @ts-ignore - GeoJSON source setData method not in generic Source type
         source.setData(newQueryUrl);
       }
@@ -448,7 +479,10 @@ export class FeatureService {
       }
       return await response.json();
     } catch (error) {
-      console.error('Error querying features:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Error querying features:', error);
+      }
       throw error;
     }
   }

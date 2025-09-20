@@ -23,66 +23,80 @@ describe('TiledMapService', () => {
   beforeEach(() => {
     mockMap = createMockMap();
     jest.clearAllMocks();
-    
+
     // Default successful metadata response
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        serviceDescription: 'Test Tiled Service',
-        copyrightText: 'Test Copyright',
-        tileInfo: {
-          cols: 256,
-          rows: 256,
-          format: 'PNG'
-        },
-        spatialReference: { wkid: 3857 }
-      })
+      json: () =>
+        Promise.resolve({
+          serviceDescription: 'Test Tiled Service',
+          copyrightText: 'Test Copyright',
+          tileInfo: {
+            cols: 256,
+            rows: 256,
+            format: 'PNG',
+          },
+          spatialReference: { wkid: 3857 },
+        }),
     } as Response);
   });
 
   describe('Constructor', () => {
     it('should create service with basic options', () => {
       service = new TiledMapService('test-source', mockMap as Map, {
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
       });
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'raster',
-        tiles: expect.arrayContaining([expect.stringContaining('tile')]),
-        tileSize: 256
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'raster',
+          tiles: expect.arrayContaining([expect.stringContaining('tile')]),
+          tileSize: 256,
+        })
+      );
     });
 
     it('should handle custom tile size', () => {
-      service = new TiledMapService('test-source', mockMap as Map, {
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
-      }, {
-        tileSize: 512
-      });
+      service = new TiledMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+        },
+        {
+          tileSize: 512,
+        }
+      );
 
       const addSourceCall = (mockMap.addSource as jest.Mock).mock.calls[0];
       const sourceOptions = addSourceCall[1];
-      
+
       expect(sourceOptions.tileSize).toBe(512);
     });
 
     it('should handle attribution option', () => {
-      service = new TiledMapService('test-source', mockMap as Map, {
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
-      }, {
-        attribution: 'Custom Attribution'
-      });
+      service = new TiledMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+        },
+        {
+          attribution: 'Custom Attribution',
+        }
+      );
 
       const addSourceCall = (mockMap.addSource as jest.Mock).mock.calls[0];
       const sourceOptions = addSourceCall[1];
-      
+
       expect(sourceOptions.attribution).toBe('Custom Attribution');
     });
 
     it('should fetch service metadata when getAttributionFromService is true', async () => {
       service = new TiledMapService('test-source', mockMap as Map, {
         url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
-        getAttributionFromService: true
+        getAttributionFromService: true,
       });
 
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -103,20 +117,22 @@ describe('TiledMapService', () => {
   describe('Service Properties', () => {
     it('should have correct source configuration', () => {
       service = new TiledMapService('test-source', mockMap as Map, {
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
       });
 
       // Verify service was created with correct properties
-      expect(service.esriServiceOptions).toEqual(expect.objectContaining({
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
-      }));
+      expect(service.esriServiceOptions).toEqual(
+        expect.objectContaining({
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+        })
+      );
     });
   });
 
   describe('Update and Remove', () => {
     beforeEach(() => {
       service = new TiledMapService('test-source', mockMap as Map, {
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer'
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
       });
     });
 
@@ -137,11 +153,11 @@ describe('TiledMapService', () => {
 
       service = new TiledMapService('test-source', mockMap as Map, {
         url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
-        getAttributionFromService: true
+        getAttributionFromService: true,
       });
 
       await new Promise(resolve => setTimeout(resolve, 0));
-      
+
       expect(service).toBeDefined();
     });
 
@@ -149,16 +165,16 @@ describe('TiledMapService', () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
-        json: () => Promise.resolve({ error: 'Service not found' })
+        json: () => Promise.resolve({ error: 'Service not found' }),
       } as Response);
 
       service = new TiledMapService('test-source', mockMap as Map, {
         url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
-        getAttributionFromService: true
+        getAttributionFromService: true,
       });
 
       await new Promise(resolve => setTimeout(resolve, 0));
-      
+
       expect(service).toBeDefined();
     });
   });

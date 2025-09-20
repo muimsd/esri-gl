@@ -12,7 +12,7 @@ describe('Find Task', () => {
   describe('Constructor', () => {
     it('should create Find with URL string', () => {
       const find = new Find('https://example.com/MapServer');
-      
+
       expect(find).toBeDefined();
     });
 
@@ -23,9 +23,9 @@ describe('Find Task', () => {
         searchFields: 'STATE_NAME',
         contains: true,
         layers: [0, 1, 2],
-        returnGeometry: true
+        returnGeometry: true,
       });
-      
+
       expect(find).toBeDefined();
     });
   });
@@ -39,7 +39,7 @@ describe('Find Task', () => {
 
     it('should set search text', () => {
       const result = find.text('California');
-      
+
       expect(result).toBe(find); // Should return this for chaining
     });
 
@@ -64,12 +64,8 @@ describe('Find Task', () => {
     });
 
     it('should allow method chaining', () => {
-      const result = find
-        .text('CA')
-        .fields('STATE_ABBR')
-        .layers([2])
-        .contains(true);
-        
+      const result = find.text('CA').fields('STATE_ABBR').layers([2]).contains(true);
+
       expect(result).toBe(find);
     });
   });
@@ -90,17 +86,25 @@ describe('Find Task', () => {
             foundFieldName: 'STATE_ABBR',
             value: 'CA',
             attributes: { OBJECTID: 1, STATE_NAME: 'California', STATE_ABBR: 'CA' },
-            geometry: { 
-              rings: [[[-124, 32], [-114, 32], [-114, 42], [-124, 42], [-124, 32]]],
-              spatialReference: { wkid: 4326 }
-            }
-          }
-        ]
+            geometry: {
+              rings: [
+                [
+                  [-124, 32],
+                  [-114, 32],
+                  [-114, 42],
+                  [-124, 42],
+                  [-124, 32],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await find.text('CA').fields('STATE_ABBR').run();
@@ -110,8 +114,8 @@ describe('Find Task', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Content-Type': 'application/x-www-form-urlencoded'
-          })
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }),
         })
       );
 
@@ -126,7 +130,7 @@ describe('Find Task', () => {
     it('should handle empty results', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ results: [] })
+        json: () => Promise.resolve({ results: [] }),
       } as Response);
 
       const result = await find.text('NONEXISTENT').run();
@@ -145,7 +149,7 @@ describe('Find Task', () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 400,
-        statusText: 'Bad Request'
+        statusText: 'Bad Request',
       } as Response);
 
       await expect(find.text('CA').run()).rejects.toThrow();
@@ -160,15 +164,11 @@ describe('Find Task', () => {
     });
 
     it('should build correct find parameters', async () => {
-      find
-        .text('California')
-        .fields(['STATE_NAME', 'CITY_NAME'])
-        .layers([0, 1, 2])
-        .contains(true);
+      find.text('California').fields(['STATE_NAME', 'CITY_NAME']).layers([0, 1, 2]).contains(true);
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ results: [] })
+        json: () => Promise.resolve({ results: [] }),
       } as Response);
 
       await find.run();
@@ -189,7 +189,7 @@ describe('Find Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ results: [] })
+        json: () => Promise.resolve({ results: [] }),
       } as Response);
 
       await find.run();
@@ -206,7 +206,7 @@ describe('Find Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ results: [] })
+        json: () => Promise.resolve({ results: [] }),
       } as Response);
 
       await find.run();
@@ -234,20 +234,20 @@ describe('Find Task', () => {
             layerName: 'Cities',
             foundFieldName: 'CITY_NAME',
             value: 'Los Angeles',
-            attributes: { 
-              OBJECTID: 1, 
-              CITY_NAME: 'Los Angeles', 
+            attributes: {
+              OBJECTID: 1,
+              CITY_NAME: 'Los Angeles',
               STATE: 'CA',
-              POPULATION: 4000000
+              POPULATION: 4000000,
             },
-            geometry: { x: -118.2437, y: 34.0522, spatialReference: { wkid: 4326 } }
-          }
-        ]
+            geometry: { x: -118.2437, y: 34.0522, spatialReference: { wkid: 4326 } },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await find.text('Los Angeles').run();
@@ -262,12 +262,12 @@ describe('Find Task', () => {
           layerId: 0,
           layerName: 'Cities',
           foundFieldName: 'CITY_NAME',
-          value: 'Los Angeles'
+          value: 'Los Angeles',
         }),
         geometry: {
           type: 'Point',
-          coordinates: [-118.2437, 34.0522]
-        }
+          coordinates: [-118.2437, 34.0522],
+        },
       });
     });
 
@@ -279,15 +279,15 @@ describe('Find Task', () => {
             layerName: 'Data Table',
             foundFieldName: 'NAME',
             value: 'Test Value',
-            attributes: { OBJECTID: 1, NAME: 'Test Value' }
+            attributes: { OBJECTID: 1, NAME: 'Test Value' },
             // No geometry property
-          }
-        ]
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await find.text('Test Value').run();
@@ -298,9 +298,9 @@ describe('Find Task', () => {
           OBJECTID: 1,
           NAME: 'Test Value',
           layerId: 0,
-          layerName: 'Data Table'
+          layerName: 'Data Table',
         }),
-        geometry: null
+        geometry: null,
       });
     });
 
@@ -314,23 +314,39 @@ describe('Find Task', () => {
             value: 'California',
             attributes: { OBJECTID: 1, STATE_NAME: 'California' },
             geometry: {
-              rings: [[[-124, 32], [-114, 32], [-114, 42], [-124, 42], [-124, 32]]],
-              spatialReference: { wkid: 4326 }
-            }
-          }
-        ]
+              rings: [
+                [
+                  [-124, 32],
+                  [-114, 32],
+                  [-114, 42],
+                  [-124, 42],
+                  [-124, 32],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await find.text('California').run();
 
       expect(result.features[0].geometry).toEqual({
         type: 'Polygon',
-        coordinates: [[[-124, 32], [-114, 32], [-114, 42], [-124, 42], [-124, 32]]]
+        coordinates: [
+          [
+            [-124, 32],
+            [-114, 32],
+            [-114, 42],
+            [-124, 42],
+            [-124, 32],
+          ],
+        ],
       });
     });
   });
@@ -345,7 +361,7 @@ describe('Find Task', () => {
     it('should handle undefined results array', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({}) // No results property
+        json: () => Promise.resolve({}), // No results property
       } as Response);
 
       const result = await find.text('test').run();
@@ -357,7 +373,7 @@ describe('Find Task', () => {
     it('should handle malformed response', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(null)
+        json: () => Promise.resolve(null),
       } as Response);
 
       const result = await find.text('test').run();
@@ -369,7 +385,7 @@ describe('Find Task', () => {
     it('should handle JSON parse error', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+        json: () => Promise.reject(new Error('Invalid JSON')),
       } as Response);
 
       await expect(find.text('test').run()).rejects.toThrow('Invalid JSON');

@@ -10,7 +10,7 @@ const createMockMap = (): Partial<Map> => ({
     setUrl: jest.fn(),
     setData: jest.fn(),
     tiles: ['https://example.com/{z}/{x}/{y}.png'],
-    _options: {}
+    _options: {},
   }),
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
@@ -22,11 +22,14 @@ const createMockMap = (): Partial<Map> => ({
   fire: jest.fn(),
   getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
   getBounds: jest.fn().mockReturnValue({
-    toArray: () => [[-180, -90], [180, 90]],
+    toArray: () => [
+      [-180, -90],
+      [180, 90],
+    ],
     getWest: () => -180,
     getSouth: () => -90,
     getEast: () => 180,
-    getNorth: () => 90
+    getNorth: () => 90,
   }),
   project: jest.fn(),
   unproject: jest.fn(),
@@ -38,7 +41,7 @@ const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 describe('FeatureService', () => {
   let mockMap: Partial<Map>;
-  
+
   const flush = () => new Promise(resolve => setTimeout(resolve, 0));
   const mockServiceOptions: FeatureServiceOptions = {
     url: 'https://example.com/arcgis/rest/services/TestService/FeatureServer/0',
@@ -50,7 +53,7 @@ describe('FeatureService', () => {
   beforeEach(() => {
     mockMap = createMockMap();
     jest.clearAllMocks();
-    
+
     // Default successful metadata response
     mockFetch.mockResolvedValue({
       ok: true,
@@ -58,7 +61,7 @@ describe('FeatureService', () => {
         copyrightText: 'Test Attribution',
         name: 'Test Service',
         geometryType: 'esriGeometryPoint',
-      })
+      }),
     } as unknown as Response);
   });
 
@@ -122,18 +125,20 @@ describe('FeatureService', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            copyrightText: 'Test Attribution',
-            name: 'Test Service',
-            geometryType: 'esriGeometryPoint',
-          })
+          json: () =>
+            Promise.resolve({
+              copyrightText: 'Test Attribution',
+              name: 'Test Service',
+              geometryType: 'esriGeometryPoint',
+            }),
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            name: 'Vector Tile Service',
-            tiles: ['https://example.com/{z}/{y}/{x}.pbf']
-          })
+          json: () =>
+            Promise.resolve({
+              name: 'Vector Tile Service',
+              tiles: ['https://example.com/{z}/{y}/{x}.pbf'],
+            }),
         } as Response);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
@@ -151,29 +156,33 @@ describe('FeatureService', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            copyrightText: 'Test Attribution',
-            name: 'Test Service',
-            geometryType: 'esriGeometryPoint',
-          })
+          json: () =>
+            Promise.resolve({
+              copyrightText: 'Test Attribution',
+              name: 'Test Service',
+              geometryType: 'esriGeometryPoint',
+            }),
         } as Response)
         .mockResolvedValueOnce({
           ok: false,
-          status: 404
+          status: 404,
         } as Response);
 
       new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await flush();
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'geojson'
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'geojson',
+        })
+      );
     });
 
     it('should handle non-FeatureServer URLs', async () => {
       const options = {
         ...mockServiceOptions,
-        url: 'https://example.com/arcgis/rest/services/TestService/MapServer/0'
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer/0',
       };
 
       new FeatureService('test-source', mockMap as Map, options);
@@ -190,24 +199,28 @@ describe('FeatureService', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            copyrightText: 'Test Attribution',
-            name: 'Test Service',
-            geometryType: 'esriGeometryPoint',
-          })
+          json: () =>
+            Promise.resolve({
+              copyrightText: 'Test Attribution',
+              name: 'Test Service',
+              geometryType: 'esriGeometryPoint',
+            }),
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({ name: 'Vector Tile Service' })
+          json: () => Promise.resolve({ name: 'Vector Tile Service' }),
         } as Response);
 
       new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await flush();
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'vector',
-        tiles: expect.arrayContaining([expect.stringContaining('.pbf')])
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'vector',
+          tiles: expect.arrayContaining([expect.stringContaining('.pbf')]),
+        })
+      );
     });
 
     it('should create GeoJSON source when vector tiles are not supported', async () => {
@@ -215,28 +228,32 @@ describe('FeatureService', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            copyrightText: 'Test Attribution',
-            name: 'Test Service',
-            geometryType: 'esriGeometryPoint',
-          })
+          json: () =>
+            Promise.resolve({
+              copyrightText: 'Test Attribution',
+              name: 'Test Service',
+              geometryType: 'esriGeometryPoint',
+            }),
         } as Response)
         .mockResolvedValueOnce({
-          ok: false
+          ok: false,
         } as Response);
 
       new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await flush();
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'geojson',
-        data: expect.stringContaining('/query')
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'geojson',
+          data: expect.stringContaining('/query'),
+        })
+      );
     });
 
     it('should include bounding box in GeoJSON query when enabled', async () => {
       const options = { ...mockServiceOptions, useVectorTiles: false, useBoundingBox: true };
-      
+
       // Mock metadata response first
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -244,13 +261,13 @@ describe('FeatureService', () => {
           copyrightText: 'Test Attribution',
           name: 'Test Service',
           geometryType: 'esriGeometryPoint',
-        })
+        }),
       } as unknown as Response);
 
       // Mock vector tile check failure (404) to force GeoJSON mode
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 404
+        status: 404,
       } as Response);
 
       new FeatureService('test-source', mockMap as Map, options);
@@ -260,7 +277,7 @@ describe('FeatureService', () => {
       const addSourceCall = (mockMap.addSource as jest.Mock).mock.calls[0];
       expect(addSourceCall).toBeDefined();
       expect(addSourceCall[0]).toBe('test-source');
-      
+
       const sourceConfig = addSourceCall[1];
       expect(sourceConfig.type).toBe('geojson');
       expect(sourceConfig.data).toContain('geometry=');
@@ -272,11 +289,12 @@ describe('FeatureService', () => {
     it('should generate point style for point geometry', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service',
-          geometryType: 'esriGeometryPoint',
-        })
+        json: () =>
+          Promise.resolve({
+            copyrightText: 'Test Attribution',
+            name: 'Test Service',
+            geometryType: 'esriGeometryPoint',
+          }),
       } as Response);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
@@ -290,11 +308,12 @@ describe('FeatureService', () => {
     it('should generate line style for polyline geometry', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service',
-          geometryType: 'esriGeometryPolyline',
-        })
+        json: () =>
+          Promise.resolve({
+            copyrightText: 'Test Attribution',
+            name: 'Test Service',
+            geometryType: 'esriGeometryPolyline',
+          }),
       } as Response);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
@@ -308,11 +327,12 @@ describe('FeatureService', () => {
     it('should generate fill style for polygon geometry', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service',
-          geometryType: 'esriGeometryPolygon',
-        })
+        json: () =>
+          Promise.resolve({
+            copyrightText: 'Test Attribution',
+            name: 'Test Service',
+            geometryType: 'esriGeometryPolygon',
+          }),
       } as Response);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
@@ -326,11 +346,12 @@ describe('FeatureService', () => {
     it('should default to circle style for unknown geometry', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service',
-          geometryType: 'esriGeometryUnknown',
-        })
+        json: () =>
+          Promise.resolve({
+            copyrightText: 'Test Attribution',
+            name: 'Test Service',
+            geometryType: 'esriGeometryUnknown',
+          }),
       } as Response);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
@@ -415,7 +436,7 @@ describe('FeatureService', () => {
 
       // First set geometry
       service.setGeometry({ x: -95, y: 40 }, 'esriGeometryPoint');
-      
+
       // Then clear it
       service.clearGeometry();
 
@@ -464,14 +485,14 @@ describe('FeatureService', () => {
     it('should warn when updateData is called for vector tile sources', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
       const options = { ...mockServiceOptions, useVectorTiles: true };
-      
+
       const service = new FeatureService('test-source', mockMap as Map, options);
       service.updateData();
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('only applicable for GeoJSON sources')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -479,39 +500,36 @@ describe('FeatureService', () => {
   describe('Feature Querying', () => {
     it('should query features with default options', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       const mockFeatureCollection = {
         type: 'FeatureCollection',
         features: [
           {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [-95, 40] },
-            properties: { name: 'Test Feature' }
-          }
-        ]
+            properties: { name: 'Test Feature' },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockFeatureCollection)
+        json: () => Promise.resolve(mockFeatureCollection),
       } as Response);
 
       const result = await service.queryFeatures();
 
       expect(result).toEqual(mockFeatureCollection);
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/query'),
-        undefined
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/query'), undefined);
     });
 
     it('should query features with custom options', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       const customOptions = { where: 'POP2000 > 100000', outFields: 'NAME,POP2000' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await service.queryFeatures(customOptions);
@@ -524,7 +542,7 @@ describe('FeatureService', () => {
 
     it('should handle query errors', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(service.queryFeatures()).rejects.toThrow('Network error');
@@ -532,10 +550,10 @@ describe('FeatureService', () => {
 
     it('should handle HTTP errors in queries', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
       } as Response);
 
       await expect(service.queryFeatures()).rejects.toThrow('HTTP error! status: 500');
@@ -545,7 +563,7 @@ describe('FeatureService', () => {
   describe('Error Handling', () => {
     it('should handle source creation errors', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       // Mock metadata fetch failure (first call fails)
       mockFetch.mockRejectedValueOnce(new Error('Service metadata fetch failed'));
 
@@ -556,12 +574,12 @@ describe('FeatureService', () => {
 
       // Wait for async source creation to complete and catch the error
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         'Error creating FeatureService source:',
         expect.any(Error)
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -570,10 +588,11 @@ describe('FeatureService', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            copyrightText: 'Test Attribution',
-            name: 'Test Service',
-          })
+          json: () =>
+            Promise.resolve({
+              copyrightText: 'Test Attribution',
+              name: 'Test Service',
+            }),
         } as Response)
         .mockRejectedValueOnce(new Error('Vector tile endpoint error'));
 
@@ -590,10 +609,12 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await flush();
 
-      expect(service.serviceMetadata).toEqual(expect.objectContaining({
-        copyrightText: 'Test Attribution',
-        name: 'Test Service'
-      }));
+      expect(service.serviceMetadata).toEqual(
+        expect.objectContaining({
+          copyrightText: 'Test Attribution',
+          name: 'Test Service',
+        })
+      );
     });
 
     it('should provide source getter', () => {
@@ -601,13 +622,13 @@ describe('FeatureService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       expect(service._source).toBe(mockSource);
     });
 
     it('should provide URL getter', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       const url = service._url;
       expect(url).toContain('/query');
       expect(url).toContain('where='); // Should contain some where clause
@@ -651,7 +672,7 @@ describe('FeatureService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(null);
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       expect(() => service.remove()).not.toThrow();
     });
   });

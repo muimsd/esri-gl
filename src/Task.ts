@@ -120,7 +120,10 @@ export class Task {
       }
       return await response.json();
     } catch (error) {
-      console.error('Task request error:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Task request error:', error);
+      }
       throw error;
     }
   }

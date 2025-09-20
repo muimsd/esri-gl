@@ -10,7 +10,17 @@ import QueryDemo from './components/QueryDemo';
 import FindDemo from './components/FindDemo';
 import IdentifyImageDemo from './components/IdentifyImageDemo';
 
-type TabType = 'dynamic' | 'tiled' | 'features' | 'image' | 'vector' | 'basemap' | 'identify' | 'query' | 'find' | 'identify-image';
+type TabType =
+  | 'dynamic'
+  | 'tiled'
+  | 'features'
+  | 'image'
+  | 'vector'
+  | 'basemap'
+  | 'identify'
+  | 'query'
+  | 'find'
+  | 'identify-image';
 
 const App: React.FC = () => {
   const TAB_KEY = 'esri-gl:activeTab';

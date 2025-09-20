@@ -1,4 +1,5 @@
-import { Layer, LayerOptions } from './Layer';
+import { Layer, type LayerOptions } from './Layer';
+import type { Map } from '@/types';
 
 export interface BasemapLayerOptions extends LayerOptions {
   key?: string;
@@ -123,12 +124,12 @@ export class BasemapLayer extends Layer {
     }
 
     const source = {
-      type: 'vector',
+      type: 'vector' as const,
       url: url,
       attribution: this.options.attribution,
     };
 
-    this._map.addSource(this._sourceId, source);
+    this._map.addSource(this._sourceId, source as unknown as Parameters<Map['addSource']>[1]);
   }
 
   protected _createLayer(): void {
@@ -138,14 +139,14 @@ export class BasemapLayer extends Layer {
     // This is a simplified version - in practice you'd fetch the full style JSON
     const layer = {
       id: this._layerId,
-      type: 'background',
+      type: 'background' as const,
       source: this._sourceId,
       paint: {
         'background-opacity': this.options.opacity || 1,
       },
     };
 
-    this._map.addLayer(layer);
+    this._map.addLayer(layer as unknown as Parameters<Map['addLayer']>[0]);
   }
 
   /**

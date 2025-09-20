@@ -199,7 +199,10 @@ export class IdentifyFeatures extends Task {
 
       return this._convertToGeoJSON(response);
     } catch (error) {
-      console.error('IdentifyFeatures error:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('IdentifyFeatures error:', error);
+      }
       throw error;
     }
   }

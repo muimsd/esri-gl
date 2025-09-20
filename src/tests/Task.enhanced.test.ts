@@ -2,7 +2,7 @@ import { Task, TaskOptions } from '@/Task';
 
 // Mock utils
 jest.mock('@/utils', () => ({
-  cleanTrailingSlash: jest.fn((url: string) => url.replace(/\/$/, ''))
+  cleanTrailingSlash: jest.fn((url: string) => url.replace(/\/$/, '')),
 }));
 
 // Create testable Task subclass
@@ -12,9 +12,9 @@ class TestableTask extends Task {
     this.path = 'test';
     this.setters = {
       testSetter: 'testParam',
-      anotherSetter: 'anotherParam'
+      anotherSetter: 'anotherParam',
     };
-    
+
     // Regenerate setters after setting them
     if (this.setters) {
       for (const setter in this.setters) {
@@ -38,7 +38,7 @@ describe('Task', () => {
   describe('constructor', () => {
     it('should create Task instance with string URL', () => {
       const task = new Task('https://example.com/MapServer/');
-      
+
       expect(task).toBeInstanceOf(Task);
       expect((task as any).options.url).toBe('https://example.com/MapServer');
     });
@@ -48,43 +48,43 @@ describe('Task', () => {
         url: 'https://example.com/MapServer/',
         token: 'test-token',
         proxy: true,
-        useCors: true
+        useCors: true,
       };
-      
+
       const task = new Task(options);
-      
+
       expect(task).toBeInstanceOf(Task);
       expect((task as any).options).toEqual({
         url: 'https://example.com/MapServer',
         token: 'test-token',
         proxy: true,
-        useCors: true
+        useCors: true,
       });
     });
 
     it('should handle options without URL', () => {
       const options: TaskOptions = {
         token: 'test-token',
-        proxy: true
+        proxy: true,
       };
-      
+
       const task = new Task(options);
-      
+
       expect((task as any).options).toEqual({
         token: 'test-token',
-        proxy: true
+        proxy: true,
       });
     });
 
     it('should initialize params if not set', () => {
       const task = new Task('https://example.com/MapServer');
-      
+
       expect((task as any).params).toEqual({});
     });
 
     it('should generate setter methods from setters object', () => {
       const task = new TestableTask('https://example.com/MapServer');
-      
+
       expect(typeof (task as any).testSetter).toBe('function');
       expect(typeof (task as any).anotherSetter).toBe('function');
     });
@@ -93,19 +93,19 @@ describe('Task', () => {
   describe('generateSetter method', () => {
     it('should generate a setter function that sets params', () => {
       const task = new TestableTask('https://example.com/MapServer');
-      
+
       const result = (task as any).testSetter('test-value');
-      
+
       expect(result).toBe(task);
       expect((task as any).params.testParam).toBe('test-value');
     });
 
     it('should handle multiple setters', () => {
       const task = new TestableTask('https://example.com/MapServer');
-      
+
       (task as any).testSetter('value1');
       (task as any).anotherSetter('value2');
-      
+
       expect((task as any).params.testParam).toBe('value1');
       expect((task as any).params.anotherParam).toBe('value2');
     });
@@ -120,28 +120,28 @@ describe('Task', () => {
 
     it('should set token and return task instance', () => {
       const result = task.token('test-token');
-      
+
       expect(result).toBe(task);
       expect((task as any).params.token).toBe('test-token');
     });
 
     it('should set apikey and return task instance', () => {
       const result = task.apikey('test-apikey');
-      
+
       expect(result).toBe(task);
       expect((task as any).params.token).toBe('test-apikey'); // apikey is alias for token
     });
 
     it('should set format and return task instance', () => {
       const result = task.format(true);
-      
+
       expect(result).toBe(task);
       expect((task as any).params.returnUnformattedValues).toBe(false);
     });
 
     it('should set format false and return task instance', () => {
       const result = task.format(false);
-      
+
       expect(result).toBe(task);
       expect((task as any).params.returnUnformattedValues).toBe(true);
     });
@@ -158,16 +158,16 @@ describe('Task', () => {
 
     it('should throw error when URL is not provided', async () => {
       const taskWithoutUrl = new Task({});
-      
+
       await expect(taskWithoutUrl.request()).rejects.toThrow('URL is required for task execution');
     });
 
     it('should make successful request with basic parameters', async () => {
       const mockResponse = { success: true, data: 'test' };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await task.request();
@@ -178,16 +178,16 @@ describe('Task', () => {
 
     it('should include task parameters in request URL', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).params = {
         param1: 'value1',
         param2: 42,
-        param3: true
+        param3: true,
       };
 
       await task.request();
@@ -198,21 +198,21 @@ describe('Task', () => {
 
     it('should merge requestParams from options', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       task = new TestableTask({
         url: 'https://example.com/MapServer',
         requestParams: {
-          globalParam: 'globalValue'
-        }
+          globalParam: 'globalValue',
+        },
       });
 
       (task as any).params = {
-        localParam: 'localValue'
+        localParam: 'localValue',
       };
 
       await task.request();
@@ -224,15 +224,15 @@ describe('Task', () => {
 
     it('should handle array parameters', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).params = {
         arrayParam: [1, 2, 3],
-        stringParam: 'test'
+        stringParam: 'test',
       };
 
       await task.request();
@@ -244,16 +244,16 @@ describe('Task', () => {
 
     it('should handle object parameters', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const objectParam = { key: 'value', num: 42 };
       (task as any).params = {
         objectParam,
-        stringParam: 'test'
+        stringParam: 'test',
       };
 
       await task.request();
@@ -265,10 +265,10 @@ describe('Task', () => {
 
     it('should skip null and undefined parameters', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).params = {
@@ -276,7 +276,7 @@ describe('Task', () => {
         nullParam: null,
         undefinedParam: undefined,
         zeroParam: 0,
-        falseParam: false
+        falseParam: false,
       };
 
       await task.request();
@@ -291,15 +291,15 @@ describe('Task', () => {
 
     it('should use proxy when configured', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       task = new TestableTask({
         url: 'https://example.com/MapServer',
-        proxy: true // proxy is boolean, not string
+        proxy: true, // proxy is boolean, not string
       });
 
       await task.request();
@@ -311,10 +311,10 @@ describe('Task', () => {
 
     it('should handle path without leading slash', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).path = 'noSlashPath';
@@ -326,10 +326,10 @@ describe('Task', () => {
 
     it('should handle path with leading slash', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).path = '/slashPath';
@@ -342,42 +342,33 @@ describe('Task', () => {
     it('should handle HTTP errors', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
       } as Response);
 
       await expect(task.request()).rejects.toThrow('HTTP error! status: 404');
     });
 
     it('should handle network errors', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       await expect(task.request()).rejects.toThrow('Network error');
-      expect(consoleSpy).toHaveBeenCalledWith('Task request error:', expect.any(Error));
-      
-      consoleSpy.mockRestore();
     });
 
     it('should handle JSON parsing errors', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+        json: () => Promise.reject(new Error('Invalid JSON')),
       } as Response);
 
       await expect(task.request()).rejects.toThrow('Invalid JSON');
-      expect(consoleSpy).toHaveBeenCalledWith('Task request error:', expect.any(Error));
-      
-      consoleSpy.mockRestore();
     });
 
     it('should handle empty path', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       (task as any).path = '';
@@ -391,19 +382,19 @@ describe('Task', () => {
   describe('URL handling edge cases', () => {
     it('should handle URLs with existing trailing slash', () => {
       const task = new Task('https://example.com/MapServer/');
-      
+
       expect((task as any).options.url).toBe('https://example.com/MapServer');
     });
 
     it('should handle URLs without trailing slash', () => {
       const task = new Task('https://example.com/MapServer');
-      
+
       expect((task as any).options.url).toBe('https://example.com/MapServer');
     });
 
     it('should handle empty string URL in options', () => {
       const task = new Task({ url: '' });
-      
+
       expect((task as any).options.url).toBe('');
     });
   });
@@ -411,11 +402,9 @@ describe('Task', () => {
   describe('method chaining', () => {
     it('should support method chaining', () => {
       const task = new Task('https://example.com/MapServer');
-      
-      const result = task.token('test-token')
-                        .apikey('test-key')
-                        .format(true);
-      
+
+      const result = task.token('test-token').apikey('test-key').format(true);
+
       expect(result).toBe(task);
       expect((task as any).params.token).toBe('test-key'); // apikey overwrites token
       expect((task as any).params.returnUnformattedValues).toBe(false);
@@ -429,23 +418,23 @@ describe('Task', () => {
         proxy: true,
         useCors: true,
         requestParams: {
-          defaultParam: 'defaultValue'
+          defaultParam: 'defaultValue',
         },
         token: 'initial-token',
-        apikey: 'initial-apikey'
+        apikey: 'initial-apikey',
       };
-      
+
       const task = new Task(options);
-      
+
       expect((task as any).options).toEqual({
         url: 'https://example.com/MapServer',
         proxy: true,
         useCors: true,
         requestParams: {
-          defaultParam: 'defaultValue'
+          defaultParam: 'defaultValue',
         },
         token: 'initial-token',
-        apikey: 'initial-apikey'
+        apikey: 'initial-apikey',
       });
     });
   });

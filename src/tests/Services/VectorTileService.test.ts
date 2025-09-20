@@ -18,7 +18,7 @@ describe('VectorTileService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockMap = {
       addSource: jest.fn(),
       removeSource: jest.fn(),
@@ -70,7 +70,7 @@ describe('VectorTileService', () => {
       const options: VectorTileServiceOptions = {
         url: 'https://example.com/VectorTileServer',
       };
-      
+
       const vectorOptions: VectorSourceOptions = {
         attribution: 'Custom Attribution',
         minzoom: 0,
@@ -79,12 +79,15 @@ describe('VectorTileService', () => {
 
       new VectorTileService('test-source', mockMap, options, vectorOptions);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'vector',
-        attribution: 'Custom Attribution',
-        minzoom: 0,
-        maxzoom: 18,
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'vector',
+          attribution: 'Custom Attribution',
+          minzoom: 0,
+          maxzoom: 18,
+        })
+      );
     });
   });
 
@@ -96,10 +99,13 @@ describe('VectorTileService', () => {
 
       new VectorTileService('test-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.objectContaining({
-        type: 'vector',
-        tiles: ['https://example.com/VectorTileServer/tile/{z}/{y}/{x}.pbf'],
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'test-source',
+        expect.objectContaining({
+          type: 'vector',
+          tiles: ['https://example.com/VectorTileServer/tile/{z}/{y}/{x}.pbf'],
+        })
+      );
     });
 
     it('should use metadata tile URL when available', async () => {
@@ -115,7 +121,7 @@ describe('VectorTileService', () => {
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
-      
+
       // Wait for metadata to load
       await service.getMetadata();
 
@@ -185,7 +191,7 @@ describe('VectorTileService', () => {
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
-      
+
       // First call
       const metadata1 = await service.getMetadata();
       // Second call
@@ -216,7 +222,7 @@ describe('VectorTileService', () => {
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
-      
+
       // Should not throw error
       expect(() => service.update()).not.toThrow();
     });
@@ -230,10 +236,13 @@ describe('VectorTileService', () => {
 
       new VectorTileService('basemap-source', mockMap, options);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('basemap-source', expect.objectContaining({
-        type: 'vector',
-        tiles: expect.arrayContaining([expect.stringContaining('World_Basemap_v2')])
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'basemap-source',
+        expect.objectContaining({
+          type: 'vector',
+          tiles: expect.arrayContaining([expect.stringContaining('World_Basemap_v2')]),
+        })
+      );
     });
 
     it('should support custom vector tile services with options', () => {
@@ -250,11 +259,14 @@ describe('VectorTileService', () => {
 
       new VectorTileService('custom-source', mockMap, options, vectorOptions);
 
-      expect(mockMap.addSource).toHaveBeenCalledWith('custom-source', expect.objectContaining({
-        attribution: 'Custom Data Provider',
-        minzoom: 2,
-        maxzoom: 16,
-      }));
+      expect(mockMap.addSource).toHaveBeenCalledWith(
+        'custom-source',
+        expect.objectContaining({
+          attribution: 'Custom Data Provider',
+          minzoom: 2,
+          maxzoom: 16,
+        })
+      );
     });
   });
 
@@ -334,9 +346,9 @@ describe('VectorTileService', () => {
             type: 'fill',
             'source-layer': 'polygons',
             layout: { visibility: 'visible' },
-            paint: { 'fill-color': '#ff0000' }
-          }
-        ]
+            paint: { 'fill-color': '#ff0000' },
+          },
+        ],
       };
 
       const mockMetadata = {
@@ -348,7 +360,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockStyleData)
+        json: () => Promise.resolve(mockStyleData),
       });
 
       const options: VectorTileServiceOptions = {
@@ -368,7 +380,7 @@ describe('VectorTileService', () => {
         source: 'test-source',
         'source-layer': 'polygons',
         layout: { visibility: 'visible' },
-        paint: { 'fill-color': '#ff0000' }
+        paint: { 'fill-color': '#ff0000' },
       });
     });
 
@@ -379,9 +391,9 @@ describe('VectorTileService', () => {
             type: 'line',
             'source-layer': 'roads',
             layout: {},
-            paint: { 'line-color': '#0000ff' }
-          }
-        ]
+            paint: { 'line-color': '#0000ff' },
+          },
+        ],
       };
 
       const mockMetadata = {
@@ -392,7 +404,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockStyleData)
+        json: () => Promise.resolve(mockStyleData),
       });
 
       const options: VectorTileServiceOptions = {
@@ -400,7 +412,7 @@ describe('VectorTileService', () => {
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
-      
+
       // First call
       const style1 = await service.getStyle();
       // Second call
@@ -419,7 +431,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
       });
 
       const options: VectorTileServiceOptions = {
@@ -458,7 +470,10 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ /* no layers property */ })
+        json: () =>
+          Promise.resolve({
+            /* no layers property */
+          }),
       });
 
       const options: VectorTileServiceOptions = {
@@ -467,7 +482,9 @@ describe('VectorTileService', () => {
 
       const service = new VectorTileService('test-source', mockMap, options);
 
-      await expect(service.getStyle()).rejects.toThrow('VectorTile style document is missing layers.');
+      await expect(service.getStyle()).rejects.toThrow(
+        'VectorTile style document is missing layers.'
+      );
     });
 
     it('should handle empty layers array in style data', async () => {
@@ -479,7 +496,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ layers: [] })
+        json: () => Promise.resolve({ layers: [] }),
       });
 
       const options: VectorTileServiceOptions = {
@@ -488,7 +505,9 @@ describe('VectorTileService', () => {
 
       const service = new VectorTileService('test-source', mockMap, options);
 
-      await expect(service.getStyle()).rejects.toThrow('VectorTile style document is missing layers.');
+      await expect(service.getStyle()).rejects.toThrow(
+        'VectorTile style document is missing layers.'
+      );
     });
 
     it('should use fetchOptions for style requests', async () => {
@@ -498,9 +517,9 @@ describe('VectorTileService', () => {
             type: 'symbol',
             'source-layer': 'labels',
             layout: { 'text-field': '{name}' },
-            paint: {}
-          }
-        ]
+            paint: {},
+          },
+        ],
       };
 
       const mockMetadata = {
@@ -509,18 +528,18 @@ describe('VectorTileService', () => {
       };
 
       const fetchOptions = {
-        headers: { Authorization: 'Bearer token123' }
+        headers: { Authorization: 'Bearer token123' },
       };
 
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockStyleData)
+        json: () => Promise.resolve(mockStyleData),
       });
 
       const options = {
         url: 'https://example.com/VectorTileServer',
-        fetchOptions
+        fetchOptions,
       } as VectorTileServiceOptions & { fetchOptions: RequestInit };
 
       const service = new VectorTileService('test-source', mockMap, options);
@@ -539,9 +558,9 @@ describe('VectorTileService', () => {
             type: 'circle',
             'source-layer': 'points',
             layout: {},
-            paint: { 'circle-radius': 5 }
-          }
-        ]
+            paint: { 'circle-radius': 5 },
+          },
+        ],
       };
 
       const mockMetadata = {
@@ -552,7 +571,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockStyleData)
+        json: () => Promise.resolve(mockStyleData),
       });
 
       const options: VectorTileServiceOptions = {
@@ -569,7 +588,7 @@ describe('VectorTileService', () => {
         source: 'test-source',
         'source-layer': 'points',
         layout: {},
-        paint: { 'circle-radius': 5 }
+        paint: { 'circle-radius': 5 },
       });
     });
 
@@ -598,7 +617,7 @@ describe('VectorTileService', () => {
 
       expect(source).toEqual({
         type: 'vector',
-        tiles: ['https://example.com/VectorTileServer/tile/{z}/{y}/{x}.pbf']
+        tiles: ['https://example.com/VectorTileServer/tile/{z}/{y}/{x}.pbf'],
       });
     });
 
@@ -610,7 +629,7 @@ describe('VectorTileService', () => {
       const vectorOptions: VectorSourceOptions = {
         attribution: 'Custom Attribution',
         minzoom: 3,
-        maxzoom: 15
+        maxzoom: 15,
       };
 
       const service = new VectorTileService('test-source', mockMap, options, vectorOptions);
@@ -621,7 +640,7 @@ describe('VectorTileService', () => {
         tiles: ['https://example.com/VectorTileServer/tile/{z}/{y}/{x}.pbf'],
         attribution: 'Custom Attribution',
         minzoom: 3,
-        maxzoom: 15
+        maxzoom: 15,
       });
     });
 
@@ -642,7 +661,9 @@ describe('VectorTileService', () => {
 
       const source = service._source;
 
-      expect(source.tiles).toEqual(['https://example.com/VectorTileServer/custom/path/{z}/{y}/{x}.pbf']);
+      expect(source.tiles).toEqual([
+        'https://example.com/VectorTileServer/custom/path/{z}/{y}/{x}.pbf',
+      ]);
     });
   });
 
@@ -650,12 +671,12 @@ describe('VectorTileService', () => {
     it('should pass fetchOptions to getServiceDetails for metadata', async () => {
       const fetchOptions = {
         headers: { 'X-API-Key': 'secret123' },
-        timeout: 5000
+        timeout: 5000,
       };
 
       const options = {
         url: 'https://example.com/VectorTileServer',
-        fetchOptions
+        fetchOptions,
       } as VectorTileServiceOptions & { fetchOptions: RequestInit };
 
       const service = new VectorTileService('test-source', mockMap, options);
@@ -671,10 +692,7 @@ describe('VectorTileService', () => {
   describe('Complex Metadata Scenarios', () => {
     it('should handle multiple tile URLs in metadata', async () => {
       const mockMetadata = {
-        tiles: [
-          '/tile/{z}/{y}/{x}.pbf',
-          '/fallback/tile/{z}/{y}/{x}.pbf'
-        ],
+        tiles: ['/tile/{z}/{y}/{x}.pbf', '/fallback/tile/{z}/{y}/{x}.pbf'],
         name: 'Multi-URL Service',
       };
 
@@ -695,7 +713,7 @@ describe('VectorTileService', () => {
       const mockMetadata = {
         tiles: ['/tile/{z}/{y}/{x}.pbf'],
         name: 'Test Service',
-        defaultStyles: undefined
+        defaultStyles: undefined,
       };
 
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
@@ -715,7 +733,7 @@ describe('VectorTileService', () => {
       const mockMetadata = {
         tiles: ['/tile/{z}/{y}/{x}.pbf'],
         name: 'Test Service',
-        defaultStyles: ''
+        defaultStyles: '',
       };
 
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
@@ -748,7 +766,7 @@ describe('VectorTileService', () => {
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
-      
+
       // Metadata should work
       const metadata = await service.getMetadata();
       expect(metadata).toEqual(mockMetadata);
@@ -766,7 +784,7 @@ describe('VectorTileService', () => {
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+        json: () => Promise.reject(new Error('Invalid JSON')),
       });
 
       const options: VectorTileServiceOptions = {

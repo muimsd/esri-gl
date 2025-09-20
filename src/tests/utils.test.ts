@@ -61,21 +61,18 @@ describe('Utils', () => {
         copyrightText: 'Test Copyright',
         layers: [
           { id: 0, name: 'Layer 0' },
-          { id: 1, name: 'Layer 1' }
-        ]
+          { id: 1, name: 'Layer 1' },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockMetadata)
+        json: () => Promise.resolve(mockMetadata),
       } as Response);
 
       const result = await getServiceDetails('https://example.com/MapServer');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.com/MapServer?f=json',
-        {}
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', {});
       expect(result).toEqual(mockMetadata);
     });
 
@@ -83,35 +80,32 @@ describe('Utils', () => {
       const mockMetadata = { serviceDescription: 'Test' };
       const fetchOptions = {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer token123' }
+        headers: { Authorization: 'Bearer token123' },
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockMetadata)
+        json: () => Promise.resolve(mockMetadata),
       } as Response);
 
       await getServiceDetails('https://example.com/MapServer', fetchOptions);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.com/MapServer?f=json',
-        fetchOptions
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', fetchOptions);
     });
 
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      await expect(
-        getServiceDetails('https://example.com/MapServer')
-      ).rejects.toThrow('Network error');
+      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
+        'Network error'
+      );
     });
 
     it('should handle HTTP errors', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
-        json: () => Promise.resolve({ error: 'Service not found' })
+        json: () => Promise.resolve({ error: 'Service not found' }),
       } as Response);
 
       // Should still resolve with the error response
@@ -122,12 +116,12 @@ describe('Utils', () => {
     it('should handle JSON parse errors', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+        json: () => Promise.reject(new Error('Invalid JSON')),
       } as Response);
 
-      await expect(
-        getServiceDetails('https://example.com/MapServer')
-      ).rejects.toThrow('Invalid JSON');
+      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
+        'Invalid JSON'
+      );
     });
 
     it('should handle empty URL', async () => {
@@ -135,7 +129,7 @@ describe('Utils', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockMetadata)
+        json: () => Promise.resolve(mockMetadata),
       } as Response);
 
       await getServiceDetails('');
@@ -152,25 +146,25 @@ describe('Utils', () => {
     beforeEach(() => {
       mockSourceCache = {
         _source: {
-          attribution: 'Original Attribution'
-        }
+          attribution: 'Original Attribution',
+        },
       };
 
       mockAttributionController = {
         _attribHTML: '<div>Attribution</div>',
         options: {
-          customAttribution: undefined
+          customAttribution: undefined,
         },
-        _updateAttributions: jest.fn()
+        _updateAttributions: jest.fn(),
       };
 
       mockMap = {
         _controls: [mockAttributionController],
         style: {
           sourceCaches: {
-            'test-source': mockSourceCache
-          }
-        }
+            'test-source': mockSourceCache,
+          },
+        },
       } as unknown as Map;
     });
 
@@ -202,21 +196,21 @@ describe('Utils', () => {
       expect(mockAttributionController.options.customAttribution).toEqual([
         'Attribution 1',
         'Attribution 2',
-        'Powered by <a href="https://www.esri.com">Esri</a>'
+        'Powered by <a href="https://www.esri.com">Esri</a>',
       ]);
     });
 
     it('should not duplicate Esri attribution in array', () => {
       mockAttributionController.options.customAttribution = [
         'Attribution 1',
-        'Powered by <a href="https://www.esri.com">Esri</a>'
+        'Powered by <a href="https://www.esri.com">Esri</a>',
       ];
 
       updateAttribution('New Attribution', 'test-source', mockMap as Map);
 
       expect(mockAttributionController.options.customAttribution).toEqual([
         'Attribution 1',
-        'Powered by <a href="https://www.esri.com">Esri</a>'
+        'Powered by <a href="https://www.esri.com">Esri</a>',
       ]);
     });
 
@@ -233,7 +227,7 @@ describe('Utils', () => {
       const mapWithOtherCaches = mockMap as unknown as Map & { style: MockMapStyle };
       delete mapWithOtherCaches.style.sourceCaches['test-source'];
       mapWithOtherCaches.style._otherSourceCaches = {
-        'test-source': mockSourceCache
+        'test-source': mockSourceCache,
       };
 
       updateAttribution('New Attribution', 'test-source', mockMap as Map);
@@ -282,16 +276,13 @@ describe('Utils', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockMetadata)
+        json: () => Promise.resolve(mockMetadata),
       } as Response);
 
       const cleanedUrl = cleanTrailingSlash('https://example.com/MapServer/');
       const result = await getServiceDetails(cleanedUrl);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.com/MapServer?f=json',
-        {}
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', {});
       expect(result).toEqual(mockMetadata);
     });
   });
@@ -310,16 +301,16 @@ describe('Utils', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockMetadata1)
+          json: () => Promise.resolve(mockMetadata1),
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockMetadata2)
+          json: () => Promise.resolve(mockMetadata2),
         } as Response);
 
       const [result1, result2] = await Promise.all([
         getServiceDetails('https://example1.com/MapServer'),
-        getServiceDetails('https://example2.com/MapServer')
+        getServiceDetails('https://example2.com/MapServer'),
       ]);
 
       expect(result1).toEqual(mockMetadata1);

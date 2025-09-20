@@ -20,7 +20,7 @@ import {
   // Utilities
   cleanTrailingSlash,
   getServiceDetails,
-  updateAttribution
+  updateAttribution,
 } from '@/main';
 
 // Mock global fetch
@@ -31,14 +31,15 @@ describe('Main Module Exports', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFetch.mockReset();
-    
+
     // Default mock for fetch
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        copyrightText: 'Test Attribution',
-        name: 'Test Service'
-      })
+      json: () =>
+        Promise.resolve({
+          copyrightText: 'Test Attribution',
+          name: 'Test Service',
+        }),
     } as Response);
   });
   describe('Service Exports', () => {
@@ -96,7 +97,7 @@ describe('Main Module Exports', () => {
       expect(Query).toBeDefined();
       expect(typeof Query).toBe('function');
       expect(Query.name).toBe('Query');
-      
+
       expect(query).toBeDefined();
       expect(typeof query).toBe('function');
       expect(query.name).toBe('query');
@@ -106,7 +107,7 @@ describe('Main Module Exports', () => {
       expect(Find).toBeDefined();
       expect(typeof Find).toBe('function');
       expect(Find.name).toBe('Find');
-      
+
       expect(find).toBeDefined();
       expect(typeof find).toBe('function');
       expect(find.name).toBe('find');
@@ -122,7 +123,7 @@ describe('Main Module Exports', () => {
       expect(IdentifyImage).toBeDefined();
       expect(typeof IdentifyImage).toBe('function');
       expect(IdentifyImage.name).toBe('IdentifyImage');
-      
+
       expect(identifyImage).toBeDefined();
       expect(typeof identifyImage).toBe('function');
       expect(identifyImage.name).toBe('identifyImage');
@@ -220,26 +221,27 @@ describe('Main Module Exports', () => {
         getNorth: () => 90,
         getSouth: () => -90,
         getEast: () => 180,
-        getWest: () => -180
-      })
+        getWest: () => -180,
+      }),
     } as unknown as import('@/types').Map;
 
     beforeEach(() => {
       jest.clearAllMocks();
-      
+
       // Additional mock setup for service tests
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          copyrightText: 'Test Attribution',
-          name: 'Test Service'
-        })
+        json: () =>
+          Promise.resolve({
+            copyrightText: 'Test Attribution',
+            name: 'Test Service',
+          }),
       } as Response);
     });
 
     it('should create DynamicMapService instance', () => {
       const service = new DynamicMapService('test-source', mockMap, {
-        url: 'https://example.com/service'
+        url: 'https://example.com/service',
       });
       expect(service).toBeInstanceOf(DynamicMapService);
       // Services extend Service base class but may not pass instanceof due to compilation
@@ -248,7 +250,7 @@ describe('Main Module Exports', () => {
 
     it('should create TiledMapService instance', () => {
       const service = new TiledMapService('test-source', mockMap, {
-        url: 'https://example.com/service'
+        url: 'https://example.com/service',
       });
       expect(service).toBeInstanceOf(TiledMapService);
       expect(service.constructor.name).toBe('TiledMapService');
@@ -256,7 +258,7 @@ describe('Main Module Exports', () => {
 
     it('should create ImageService instance', () => {
       const service = new ImageService('test-source', mockMap, {
-        url: 'https://example.com/service'
+        url: 'https://example.com/service',
       });
       expect(service).toBeInstanceOf(ImageService);
       expect(service.constructor.name).toBe('ImageService');
@@ -269,7 +271,7 @@ describe('Main Module Exports', () => {
 
     it('should create VectorTileService instance', () => {
       const service = new VectorTileService('test-source', mockMap, {
-        url: 'https://example.com/service'
+        url: 'https://example.com/service',
       });
       expect(service).toBeInstanceOf(VectorTileService);
       expect(service.constructor.name).toBe('VectorTileService');
@@ -277,7 +279,7 @@ describe('Main Module Exports', () => {
 
     it('should create FeatureService instance', () => {
       const service = new FeatureService('test-source', mockMap, {
-        url: 'https://example.com/service'
+        url: 'https://example.com/service',
       });
       expect(service).toBeInstanceOf(FeatureService);
       expect(service.constructor.name).toBe('FeatureService');
@@ -333,9 +335,9 @@ describe('Main Module Exports', () => {
     it('should updateAttribution be callable', () => {
       const mockMap = {
         addSource: jest.fn(),
-        removeSource: jest.fn()
+        removeSource: jest.fn(),
       } as unknown as import('@/types').Map;
-      
+
       expect(() => {
         updateAttribution('Test Attribution', 'test-source', mockMap);
       }).not.toThrow();
@@ -346,17 +348,30 @@ describe('Main Module Exports', () => {
     it('should have all expected exports available', () => {
       const expectedExports = [
         // Services
-        'Service', 'DynamicMapService', 'TiledMapService', 'ImageService',
-        'VectorBasemapStyle', 'VectorTileService', 'FeatureService',
+        'Service',
+        'DynamicMapService',
+        'TiledMapService',
+        'ImageService',
+        'VectorBasemapStyle',
+        'VectorTileService',
+        'FeatureService',
         // Tasks
-        'Task', 'Query', 'query', 'Find', 'find', 'IdentifyFeatures',
-        'IdentifyImage', 'identifyImage',
+        'Task',
+        'Query',
+        'query',
+        'Find',
+        'find',
+        'IdentifyFeatures',
+        'IdentifyImage',
+        'identifyImage',
         // Utilities
-        'cleanTrailingSlash', 'getServiceDetails', 'updateAttribution'
+        'cleanTrailingSlash',
+        'getServiceDetails',
+        'updateAttribution',
       ];
 
       const actualExports = Object.keys(EsriGL);
-      
+
       expectedExports.forEach(exportName => {
         expect(actualExports).toContain(exportName);
         expect(EsriGL[exportName as keyof typeof EsriGL]).toBeDefined();
@@ -366,7 +381,7 @@ describe('Main Module Exports', () => {
     it('should not have unexpected exports', () => {
       const expectedExportCount = 18; // 7 services + 8 tasks + 3 utilities
       const actualExportCount = Object.keys(EsriGL).length;
-      
+
       // Allow for some variance due to type exports and potential additional exports
       expect(actualExportCount).toBeGreaterThanOrEqual(expectedExportCount);
       expect(actualExportCount).toBeLessThanOrEqual(expectedExportCount + 5); // Some buffer for types

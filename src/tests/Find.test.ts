@@ -24,7 +24,7 @@ describe('Find', () => {
       const options: FindOptions = {
         url: 'https://example.com/MapServer',
         searchText: 'test',
-        contains: true
+        contains: true,
       };
       const find = new Find(options);
       expect(find).toBeInstanceOf(Find);
@@ -84,7 +84,7 @@ describe('Find', () => {
       const result = findTask.layerDefs(0, 'STATE_NAME=California');
       expect(result).toBe(findTask);
       expect((findTask as any).params.layerDefs).toBe('0:STATE_NAME=California');
-      
+
       // Add another layer def
       findTask.layerDefs(1, 'POP2000 > 100000');
       expect((findTask as any).params.layerDefs).toBe('0:STATE_NAME=California;1:POP2000 > 100000');
@@ -94,9 +94,9 @@ describe('Find', () => {
       const mockMap = {
         getBounds: () => ({
           getWest: () => -180,
-          getEast: () => 180
+          getEast: () => 180,
         }),
-        getSize: () => ({ x: 800, y: 600 })
+        getSize: () => ({ x: 800, y: 600 }),
       };
 
       const result = findTask.simplify(mockMap, 0.5);
@@ -120,15 +120,15 @@ describe('Find', () => {
           {
             type: 'Feature',
             properties: { STATE_NAME: 'California' },
-            geometry: { type: 'Point', coordinates: [-120, 35] }
-          }
-        ]
+            geometry: { type: 'Point', coordinates: [-120, 35] },
+          },
+        ],
       };
 
       const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockGeoJSON)
+        json: () => Promise.resolve(mockGeoJSON),
       } as Response);
 
       // Mock the request method from the base Task class
@@ -150,18 +150,19 @@ describe('Find', () => {
             value: 'California',
             attributes: {
               STATE_NAME: 'California',
-              POP2000: 33871648
+              POP2000: 33871648,
             },
             geometry: {
               type: 'Point',
-              coordinates: [-120, 35]
-            }
-          }
-        ]
+              coordinates: [-120, 35],
+            },
+          },
+        ],
       };
 
       // Mock first call to fail (GeoJSON), second to succeed (JSON)
-      jest.spyOn(findTask, 'request' as any)
+      jest
+        .spyOn(findTask, 'request' as any)
         .mockRejectedValueOnce(new Error('GeoJSON not supported'))
         .mockResolvedValueOnce(mockJSONResponse);
 
@@ -178,7 +179,8 @@ describe('Find', () => {
     it('should handle empty results', async () => {
       const mockJSONResponse = { results: [] };
 
-      jest.spyOn(findTask, 'request' as any)
+      jest
+        .spyOn(findTask, 'request' as any)
         .mockRejectedValueOnce(new Error('GeoJSON not supported'))
         .mockResolvedValueOnce(mockJSONResponse);
 
@@ -197,14 +199,15 @@ describe('Find', () => {
             foundFieldName: 'STATE_NAME',
             value: 'California',
             attributes: {
-              STATE_NAME: 'California'
-            }
+              STATE_NAME: 'California',
+            },
             // no geometry
-          }
-        ]
+          },
+        ],
       };
 
-      jest.spyOn(findTask, 'request' as any)
+      jest
+        .spyOn(findTask, 'request' as any)
         .mockRejectedValueOnce(new Error('GeoJSON not supported'))
         .mockResolvedValueOnce(mockJSONResponse);
 
@@ -223,7 +226,7 @@ describe('Find', () => {
     it('should create Find instance with options', () => {
       const options: FindOptions = {
         url: 'https://example.com/MapServer',
-        searchText: 'test'
+        searchText: 'test',
       };
       const findTask = find(options);
       expect(findTask).toBeInstanceOf(Find);
@@ -233,7 +236,7 @@ describe('Find', () => {
   describe('default parameters', () => {
     it('should have correct default parameters', () => {
       const findTask = new Find('https://example.com/MapServer');
-      
+
       expect((findTask as any).params.sr).toBe(4326);
       expect((findTask as any).params.contains).toBe(true);
       expect((findTask as any).params.returnGeometry).toBe(true);
@@ -246,7 +249,7 @@ describe('Find', () => {
   describe('setters configuration', () => {
     it('should have correct setters mapping', () => {
       const findTask = new Find('https://example.com/MapServer');
-      
+
       expect(findTask['setters']).toEqual({
         contains: 'contains',
         text: 'searchText',

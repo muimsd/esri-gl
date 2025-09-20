@@ -12,7 +12,7 @@ describe('Query Task', () => {
   describe('Constructor', () => {
     it('should create query with URL string', () => {
       const query = new Query('https://example.com/FeatureServer/0');
-      
+
       expect(query).toBeDefined();
     });
 
@@ -22,9 +22,36 @@ describe('Query Task', () => {
         where: 'POPULATION > 100000',
         outFields: ['NAME', 'POPULATION'],
         returnGeometry: false,
-        orderByFields: 'POPULATION DESC'
+        orderByFields: 'POPULATION DESC',
       });
-      
+
+      expect(query).toBeDefined();
+    });
+
+    it('should create query with advanced constructor options', () => {
+      const options = {
+        url: 'https://example.com/FeatureServer/0',
+        outStatistics: [
+          {
+            statisticType: 'count',
+            onStatisticField: 'OBJECTID',
+            outStatisticFieldName: 'COUNT_OBJECTID',
+          },
+        ],
+        resultOffset: 10,
+        resultRecordCount: 50,
+        maxAllowableOffset: 100,
+        geometryPrecision: 6,
+        time: [1234567890000, 1234567900000],
+        gdbVersion: 'DEFAULT',
+        historicMoment: 1234567890000,
+        returnTrueCurves: true,
+        returnZ: true,
+        returnM: false,
+        token: 'test-token',
+      };
+
+      const query = new Query(options);
       expect(query).toBeDefined();
     });
   });
@@ -38,7 +65,7 @@ describe('Query Task', () => {
 
     it('should set where clause', () => {
       const result = query.where('POPULATION > 50000');
-      
+
       expect(result).toBe(query); // Should return this for chaining
     });
 
@@ -74,8 +101,11 @@ describe('Query Task', () => {
 
     it('should set within geometry', () => {
       const result = query.within({
-        xmin: -180, ymin: -90, xmax: 180, ymax: 90,
-        spatialReference: { wkid: 4326 }
+        xmin: -180,
+        ymin: -90,
+        xmax: 180,
+        ymax: 90,
+        spatialReference: { wkid: 4326 },
       });
       expect(result).toBe(query);
     });
@@ -85,13 +115,38 @@ describe('Query Task', () => {
       expect(result).toBe(query);
     });
 
+    it('should set overlaps geometry', () => {
+      const result = query.overlaps({
+        xmin: -122.5,
+        ymin: 37.5,
+        xmax: -121.5,
+        ymax: 38.5,
+      });
+      expect(result).toBe(query);
+    });
+
+    it('should set bboxIntersects geometry', () => {
+      const result = query.bboxIntersects({
+        xmin: -122,
+        ymin: 37,
+        xmax: -121,
+        ymax: 38,
+      });
+      expect(result).toBe(query);
+    });
+
+    it('should set touches geometry', () => {
+      const result = query.touches({ lng: -122, lat: 37 });
+      expect(result).toBe(query);
+    });
+
     it('should allow method chaining', () => {
       const result = query
         .where('TYPE = "City"')
         .layer(1)
         .orderBy('POPULATION', 'DESC')
         .intersects({ lng: -122, lat: 37 });
-        
+
       expect(result).toBe(query);
     });
   });
@@ -110,14 +165,14 @@ describe('Query Task', () => {
           {
             type: 'Feature',
             properties: { OBJECTID: 1, NAME: 'Test City' },
-            geometry: { type: 'Point', coordinates: [-122, 37] }
-          }
-        ]
+            geometry: { type: 'Point', coordinates: [-122, 37] },
+          },
+        ],
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await query.run();
@@ -127,8 +182,8 @@ describe('Query Task', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Content-Type': 'application/x-www-form-urlencoded'
-          })
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }),
         })
       );
 
@@ -140,24 +195,24 @@ describe('Query Task', () => {
         features: [
           {
             attributes: { OBJECTID: 1, NAME: 'Test City' },
-            geometry: { x: -122, y: 37, spatialReference: { wkid: 4326 } }
-          }
-        ]
+            geometry: { x: -122, y: 37, spatialReference: { wkid: 4326 } },
+          },
+        ],
       };
 
       // First call with f=geojson fails, second with f=json succeeds
       mockFetch
         .mockResolvedValueOnce({
           ok: false,
-          status: 400
+          status: 400,
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(jsonResponse)
+          json: () => Promise.resolve(jsonResponse),
         } as Response);
 
       const result = await query.run();
-      
+
       expect(result.type).toBe('FeatureCollection');
       expect(result.features).toHaveLength(1);
       if (result.features[0]?.properties) {
@@ -168,9 +223,10 @@ describe('Query Task', () => {
     it('should handle empty results', async () => {
       mockFetch
         .mockResolvedValueOnce({ ok: false } as Response) // First request (geojson) fails
-        .mockResolvedValueOnce({                         // Second request (json) succeeds  
+        .mockResolvedValueOnce({
+          // Second request (json) succeeds
           ok: true,
-          json: () => Promise.resolve({ features: [] })
+          json: () => Promise.resolve({ features: [] }),
         } as Response);
 
       const result = await query.run();
@@ -189,7 +245,7 @@ describe('Query Task', () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
-        statusText: 'Internal Server Error'
+        statusText: 'Internal Server Error',
       } as Response);
 
       await expect(query.run()).rejects.toThrow();
@@ -208,7 +264,7 @@ describe('Query Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -223,13 +279,16 @@ describe('Query Task', () => {
 
     it('should set within relationship', async () => {
       query.within({
-        xmin: -180, ymin: -90, xmax: 180, ymax: 90,
-        spatialReference: { wkid: 4326 }
+        xmin: -180,
+        ymin: -90,
+        xmax: 180,
+        ymax: 90,
+        spatialReference: { wkid: 4326 },
       });
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -247,7 +306,7 @@ describe('Query Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -257,6 +316,67 @@ describe('Query Task', () => {
       const params = new URLSearchParams(body);
 
       expect(params.get('spatialRel')).toBe('esriSpatialRelWithin');
+    });
+
+    it('should set overlaps relationship', async () => {
+      query.overlaps({
+        xmin: -122.5,
+        ymin: 37.5,
+        xmax: -121.5,
+        ymax: 38.5,
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('spatialRel')).toBe('esriSpatialRelOverlaps');
+    });
+
+    it('should set bboxIntersects relationship', async () => {
+      query.bboxIntersects({
+        xmin: -122,
+        ymin: 37,
+        xmax: -121,
+        ymax: 38,
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('spatialRel')).toBe('esriSpatialRelEnvelopeIntersects');
+    });
+
+    it('should set touches relationship', async () => {
+      query.touches({ lng: -122, lat: 37 });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('spatialRel')).toBe('esriSpatialRelTouches');
     });
   });
 
@@ -272,7 +392,7 @@ describe('Query Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -290,7 +410,7 @@ describe('Query Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -315,24 +435,28 @@ describe('Query Task', () => {
         features: [
           {
             attributes: { ID: 1, NAME: 'Point Feature' },
-            geometry: { x: -122, y: 37, spatialReference: { wkid: 4326 } }
-          }
-        ]
+            geometry: { x: -122, y: 37, spatialReference: { wkid: 4326 } },
+          },
+        ],
       };
 
-      mockFetch
-        .mockResolvedValueOnce({ ok: false } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(esriResponse)
-        } as Response);
+      mockFetch.mockResolvedValueOnce({ ok: false } as Response).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(esriResponse),
+      } as Response);
 
       const result = await query.run();
 
-      expect((result.features[0].geometry as unknown as { x: number; y: number; spatialReference: unknown })).toEqual({
-        x: -122, 
-        y: 37, 
-        spatialReference: { wkid: 4326 }
+      expect(
+        result.features[0].geometry as unknown as {
+          x: number;
+          y: number;
+          spatialReference: unknown;
+        }
+      ).toEqual({
+        x: -122,
+        y: 37,
+        spatialReference: { wkid: 4326 },
       });
     });
 
@@ -342,24 +466,32 @@ describe('Query Task', () => {
           {
             attributes: { ID: 1, NAME: 'Polygon Feature' },
             geometry: {
-              rings: [[[-122, 37], [-121, 37], [-121, 38], [-122, 38], [-122, 37]]],
-              spatialReference: { wkid: 4326 }
-            }
-          }
-        ]
+              rings: [
+                [
+                  [-122, 37],
+                  [-121, 37],
+                  [-121, 38],
+                  [-122, 38],
+                  [-122, 37],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            },
+          },
+        ],
       };
 
-      mockFetch
-        .mockResolvedValueOnce({ ok: false } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(esriResponse)
-        } as Response);
+      mockFetch.mockResolvedValueOnce({ ok: false } as Response).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(esriResponse),
+      } as Response);
 
       const result = await query.run();
 
       expect((result.features[0].geometry as unknown as { rings: unknown }).rings).toBeDefined();
-      expect((result.features[0].geometry as unknown as { spatialReference: unknown }).spatialReference).toEqual({ wkid: 4326 });
+      expect(
+        (result.features[0].geometry as unknown as { spatialReference: unknown }).spatialReference
+      ).toEqual({ wkid: 4326 });
     });
   });
 
@@ -375,7 +507,7 @@ describe('Query Task', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] })
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
       } as Response);
 
       await query.run();
@@ -384,6 +516,209 @@ describe('Query Task', () => {
       const url = fetchCall[0] as string;
 
       expect(url).toContain('/MapServer/2/query');
+    });
+  });
+
+  describe('Execution Methods', () => {
+    let query: Query;
+
+    beforeEach(() => {
+      query = new Query('https://example.com/FeatureServer/0');
+    });
+
+    it('should execute count query', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ count: 42 }),
+      } as Response);
+
+      const count = await query.count();
+
+      expect(count).toBe(42);
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('returnCountOnly')).toBe('true');
+    });
+
+    it('should execute ids query', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ objectIds: [1, 2, 3, 4, 5] }),
+      } as Response);
+
+      const ids = await query.ids();
+
+      expect(ids).toEqual([1, 2, 3, 4, 5]);
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('returnIdsOnly')).toBe('true');
+    });
+
+    it('should execute bounds query', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            extent: {
+              xmin: -122.5,
+              ymin: 37.5,
+              xmax: -121.5,
+              ymax: 38.5,
+            },
+          }),
+      } as Response);
+
+      const bounds = await query.bounds();
+
+      expect(bounds).toEqual({
+        _southWest: { lat: 37.5, lng: -122.5 },
+        _northEast: { lat: 38.5, lng: -121.5 },
+      });
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('returnExtentOnly')).toBe('true');
+    });
+
+    it('should handle bounds query with invalid response', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      await expect(query.bounds()).rejects.toThrow('Invalid bounds returned');
+    });
+  });
+
+  describe('Geometry Processing', () => {
+    let query: Query;
+
+    beforeEach(() => {
+      query = new Query('https://example.com/FeatureServer/0');
+    });
+
+    it('should handle null geometry', async () => {
+      query.intersects(null);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('geometryType')).toBe('esriGeometryPoint');
+    });
+
+    it('should handle LatLng-like geometry', async () => {
+      query.intersects({ lat: 37.5, lng: -122.5 });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('geometryType')).toBe('esriGeometryPoint');
+      const geometry = JSON.parse(params.get('geometry') || '{}');
+      expect(geometry).toEqual({
+        x: -122.5,
+        y: 37.5,
+        spatialReference: { wkid: 4326 },
+      });
+    });
+
+    it('should handle Bounds-like geometry', async () => {
+      query.intersects({
+        _southWest: { lat: 37.0, lng: -123.0 },
+        _northEast: { lat: 38.0, lng: -122.0 },
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('geometryType')).toBe('esriGeometryEnvelope');
+      const geometry = JSON.parse(params.get('geometry') || '{}');
+      expect(geometry).toEqual({
+        xmin: -123.0,
+        ymin: 37.0,
+        xmax: -122.0,
+        ymax: 38.0,
+        spatialReference: { wkid: 4326 },
+      });
+    });
+
+    it('should handle Esri envelope geometry', async () => {
+      const envelope = {
+        xmin: -122.5,
+        ymin: 37.5,
+        xmax: -121.5,
+        ymax: 38.5,
+        spatialReference: { wkid: 4326 },
+      };
+
+      query.intersects(envelope);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('geometryType')).toBe('esriGeometryEnvelope');
+      const geometry = JSON.parse(params.get('geometry') || '{}');
+      expect(geometry).toEqual(envelope);
+    });
+
+    it('should handle default geometry format', async () => {
+      const customGeometry = { type: 'Point', coordinates: [-122.5, 37.5] };
+
+      query.intersects(customGeometry);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ type: 'FeatureCollection', features: [] }),
+      } as Response);
+
+      await query.run();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const body = fetchCall[1]?.body as string;
+      const params = new URLSearchParams(body);
+
+      expect(params.get('geometryType')).toBe('esriGeometryPoint');
+      const geometry = JSON.parse(params.get('geometry') || '{}');
+      expect(geometry).toEqual(customGeometry);
     });
   });
 });
