@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 // @ts-ignore - CSS type declarations not provided
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -7,6 +7,8 @@ import { FeatureService } from '../../main';
 const FeatureServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Initializing map...');
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -39,6 +41,8 @@ const FeatureServiceDemo: React.FC = () => {
     map.current.on('load', () => {
       if (!map.current) return;
 
+      setLoadingMessage('Creating Feature Service...');
+
       // Create a Feature Service using GeoJSON (more reliable for demo)
       const sourceId = 'tn-bridges-source';
       const layerId = 'tn-bridges-layer';
@@ -58,22 +62,32 @@ const FeatureServiceDemo: React.FC = () => {
         if (map.current.getLayer(layerId)) return; // already added
         if (!map.current.getSource(sourceId)) return; // source not yet registered
 
+        setLoadingMessage('Loading layer style...');
+
         try {
           // Use getStyle() to get the appropriate layer configuration
           const style = await featureService.getStyle();
           console.log('Using FeatureService style:', style);
 
+          setLoadingMessage('Adding layer to map...');
+
           // Add layer using the style configuration
-          // @ts-ignore - Dynamic layer type and source from service metadata
           map.current.addLayer({
             id: layerId,
-            type: style.type as unknown as maplibregl.LayerType,
+            // @ts-expect-error - Dynamic layer type from FeatureService style
+            type: style.type,
+            // @ts-expect-error - Source ID reference for MapLibre
             source: sourceId,
             layout: style.layout || {},
             paint: style.paint || {},
           });
+
+          setLoadingMessage('Loading complete!');
+          setTimeout(() => setIsLoading(false), 500);
         } catch (error) {
           console.error('Error adding layer with style:', error);
+          setLoadingMessage('Adding fallback layer...');
+          
           // Fallback to basic circle layer
           map.current.addLayer({
             id: layerId,
@@ -86,12 +100,16 @@ const FeatureServiceDemo: React.FC = () => {
               'circle-stroke-width': 1,
             },
           });
+
+          setLoadingMessage('Loading complete!');
+          setTimeout(() => setIsLoading(false), 500);
         }
       };
 
       // Add layer when the source is available using sourcedata event
       const onSourceData = (e: maplibregl.MapSourceDataEvent) => {
         if (e?.sourceId === sourceId) {
+          setLoadingMessage('Processing source data...');
           addLayerIfNeeded();
           map.current?.off('sourcedata', onSourceData);
         }
@@ -106,6 +124,11 @@ const FeatureServiceDemo: React.FC = () => {
         if (!map.current || map.current.getLayer(layerId) || attempts > 50) {
           window.clearInterval(interval);
           map.current?.off('sourcedata', onSourceData);
+          // Ensure loading is disabled if we timeout
+          if (attempts > 50) {
+            setLoadingMessage('Loading timeout - layer may not be visible');
+            setTimeout(() => setIsLoading(false), 1000);
+          }
         }
       }, 100);
 
@@ -146,7 +169,7 @@ const FeatureServiceDemo: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <div
         style={{
           padding: '10px',
@@ -161,6 +184,54 @@ const FeatureServiceDemo: React.FC = () => {
         details.
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
+      
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '16px',
+            }}
+          />
+          <div
+            style={{
+              fontSize: '16px',
+              color: '#374151',
+              fontWeight: '500',
+            }}
+          >
+            {loadingMessage}
+          </div>
+        </div>
+      )}
+      
+      {/* CSS Animation for Spinner */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
