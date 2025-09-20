@@ -423,37 +423,45 @@ describe('Find Task', () => {
       expect((findWithOffset as any).params.maxAllowableOffset).toBe(10);
     });
 
+    // Test subclass to expose params for testing
+    class TestFind extends Find {
+      public getParams() {
+        // @ts-expect-error: Accessing protected/private member for testing
+        return this.params;
+      }
+    }
+
     it('should set geometryPrecision parameter in constructor', () => {
-      const findWithPrecision = new Find({
+      const findWithPrecision = new TestFind({
         url: 'https://example.com/MapServer',
         geometryPrecision: 3,
       });
-      expect((findWithPrecision as any).params.geometryPrecision).toBe(3);
+      expect(findWithPrecision.getParams().geometryPrecision).toBe(3);
     });
 
     it('should set dynamicLayers parameter in constructor', () => {
       const dynamicLayers = [{ id: 0, source: { mapLayerId: 1 } }];
-      const findWithDynamic = new Find({
+      const findWithDynamic = new TestFind({
         url: 'https://example.com/MapServer',
         dynamicLayers,
       });
-      expect((findWithDynamic as any).params.dynamicLayers).toEqual(dynamicLayers);
+      expect(findWithDynamic.getParams().dynamicLayers).toEqual(dynamicLayers);
     });
 
     it('should set returnZ parameter in constructor', () => {
-      const findWithZ = new Find({
+      const findWithZ = new TestFind({
         url: 'https://example.com/MapServer',
         returnZ: true,
       });
-      expect((findWithZ as any).params.returnZ).toBe(true);
+      expect(findWithZ.getParams().returnZ).toBe(true);
     });
 
     it('should set returnM parameter in constructor', () => {
-      const findWithM = new Find({
+      const findWithM = new TestFind({
         url: 'https://example.com/MapServer',
         returnM: false,
       });
-      expect((findWithM as any).params.returnM).toBe(false);
+      expect(findWithM.getParams().returnM).toBe(false);
     });
 
     it('should handle different geometry types in conversion', async () => {
