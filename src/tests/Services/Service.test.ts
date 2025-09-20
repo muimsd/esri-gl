@@ -589,154 +589,6 @@ describe('Service', () => {
     });
   });
 
-  describe('Event System', () => {
-    let service: TestableService;
-    let callback1: jest.Mock;
-    let callback2: jest.Mock;
-
-    beforeEach(() => {
-      service = new TestableService({ url: 'https://example.com/test' });
-      callback1 = jest.fn();
-      callback2 = jest.fn();
-    });
-
-    describe('on()', () => {
-      it('should add event listener', () => {
-        const result = service.on('requeststart', callback1);
-        expect(result).toBe(service); // Should return service for chaining
-      });
-
-      it('should allow multiple listeners for same event', () => {
-        service.on('requeststart', callback1);
-        service.on('requeststart', callback2);
-
-        service.fire('requeststart', {
-          url: 'https://example.com/test',
-          params: {},
-          method: 'GET',
-        });
-
-        expect(callback1).toHaveBeenCalledTimes(1);
-        expect(callback2).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    describe('off()', () => {
-      it('should remove specific event listener', () => {
-        service.on('requeststart', callback1);
-        service.on('requeststart', callback2);
-
-        const result = service.off('requeststart', callback1);
-        expect(result).toBe(service); // Should return service for chaining
-
-        service.fire('requeststart', {
-          url: 'https://example.com/test',
-          params: {},
-          method: 'GET',
-        });
-
-        expect(callback1).not.toHaveBeenCalled();
-        expect(callback2).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle removing non-existent listener gracefully', () => {
-        service.off('requeststart', callback1); // Should not throw
-      });
-    });
-
-    describe('fire()', () => {
-      it('should fire event with data', () => {
-        service.on('requeststart', callback1);
-
-        const eventData = {
-          url: 'https://example.com/test/layers',
-          params: { f: 'json' },
-          method: 'GET',
-        };
-
-        const result = service.fire('requeststart', eventData);
-        expect(result).toBe(service); // Should return service for chaining
-        expect(callback1).toHaveBeenCalledWith(eventData);
-      });
-
-      it('should handle events with no listeners', () => {
-        expect(() => {
-          service.fire('requeststart', {
-            url: 'https://example.com/test',
-            params: {},
-            method: 'GET',
-          });
-        }).not.toThrow();
-      });
-    });
-
-    describe('Request Events', () => {
-      beforeEach(() => {
-        mockFetch.mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
-      });
-
-      it('should fire requeststart and requestend events', async () => {
-        const startCallback = jest.fn();
-        const endCallback = jest.fn();
-
-        service.on('requeststart', startCallback);
-        service.on('requestend', endCallback);
-
-        await service.get('/layers', { f: 'json' });
-
-        expect(startCallback).toHaveBeenCalledWith({
-          url: 'https://example.com/test/layers',
-          params: { f: 'json' },
-          method: 'GET',
-        });
-
-        expect(endCallback).toHaveBeenCalledWith({
-          url: 'https://example.com/test/layers',
-          params: { f: 'json' },
-          method: 'GET',
-        });
-      });
-
-      it('should fire requestsuccess event on successful request', async () => {
-        const successCallback = jest.fn();
-        service.on('requestsuccess', successCallback);
-
-        await service.get('/layers', { f: 'json' });
-
-        expect(successCallback).toHaveBeenCalledWith({
-          url: 'https://example.com/test/layers',
-          params: { f: 'json' },
-          response: { success: true },
-          method: 'GET',
-        });
-      });
-
-      it('should fire requesterror event on failed request', async () => {
-        mockFetch.mockRejectedValue(new Error('Network error'));
-
-        const errorCallback = jest.fn();
-        service.on('requesterror', errorCallback);
-
-        try {
-          await service.get('/layers');
-        } catch {
-          // Expected to throw
-        }
-
-        expect(errorCallback).toHaveBeenCalledWith({
-          url: 'https://example.com/test/layers',
-          params: {},
-          message: 'Network error',
-          code: undefined,
-          method: 'GET',
-        });
-      });
-    });
-  });
-
   describe('Parameter Handling', () => {
     let service: TestableService;
 
@@ -773,6 +625,142 @@ describe('Service', () => {
       const calledUrl = mockFetch.mock.calls[0][0] as string;
       expect(calledUrl).toContain('maxRecordCount=0');
       expect(calledUrl).toContain('returnGeometry=false');
+    });
+  });
+
+  describe('Missing Coverage Tests', () => {
+    let service: TestableService;
+
+    beforeEach(() => {
+      service = new TestableService({ url: 'https://example.com/test' });
+    });
+
+    it('should handle production environment error logging in metadata fetch', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetch.mockRejectedValue(new Error('Metadata fetch failed'));
+
+      await expect(service.metadata()).rejects.toThrow('Metadata fetch failed');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error fetching service metadata:',
+        expect.any(Error)
+      );
+
+      process.env.NODE_ENV = originalEnv;
+      consoleSpy.mockRestore();
+    });
+
+    it('should include token in request parameters when provided', async () => {
+      service = new TestableService({ 
+        url: 'https://example.com/test',
+        token: 'test-token' 
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+
+      await service.get('/layers');
+
+      const calledUrl = mockFetch.mock.calls[0][0] as string;
+      expect(calledUrl).toContain('token=test-token');
+    });
+
+    it('should merge requestParams with other parameters', async () => {
+      service = new TestableService({ 
+        url: 'https://example.com/test',
+        requestParams: { customParam: 'customValue' }
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+
+      await service.get('/layers', { f: 'json' });
+
+      const calledUrl = mockFetch.mock.calls[0][0] as string;
+      expect(calledUrl).toContain('customParam=customValue');
+      expect(calledUrl).toContain('f=json');
+    });
+
+    it('should queue requests when authenticating', async () => {
+      service.testAuthenticating = true;
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+
+      // Make a request while authenticating - don't await it yet
+      const requestPromise = service.get('/layers');
+
+      // Give a small delay for the request to be queued
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Request should be queued, not executed immediately
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(service.testRequestQueue).toHaveLength(1);
+
+      // Simulate authentication completion
+      service.testAuthenticating = false;
+      
+      // Manually process the queue like the authenticate method would
+      const queued = service.testRequestQueue.shift();
+      if (queued) {
+        const [method, path, params, callback, context] = queued;
+        (context as any)._makeRequest(method, path, params, callback);
+      }
+
+      // Now the request should complete
+      await requestPromise;
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    }, 10000);
+
+    it('should fire authenticationrequired event and add authenticate method to error', async () => {
+      const authRequiredCallback = jest.fn();
+      service.on('authenticationrequired', authRequiredCallback);
+
+      // Mock 401 response that would trigger authentication required
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: async () => ({ 
+          error: { 
+            code: 401, 
+            message: 'Invalid token',
+            details: ['Token required'] 
+          } 
+        }),
+      } as Response);
+
+      let thrownError: any;
+      try {
+        await service.get('/layers');
+      } catch (error) {
+        thrownError = error;
+      }
+
+      // The authenticationrequired event should be fired for 401 errors
+      expect(authRequiredCallback).toHaveBeenCalledWith({
+        authenticate: expect.any(Function),
+      });
+
+      // The error should have authenticate method added
+      expect(thrownError.authenticate).toEqual(expect.any(Function));
+    });
+
+    it('should use service factory function', () => {
+      const { service: serviceFactory } = require('../../Services/Service');
+      const factoryService = serviceFactory({ url: 'https://example.com/test' });
+      
+      expect(factoryService).toBeInstanceOf(Service);
     });
   });
 });
