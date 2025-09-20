@@ -443,3 +443,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Esri Leaflet** - Inspiration for API design and architectural patterns
 - **MapLibre GL JS** & **Mapbox GL JS** - Incredible WebGL mapping libraries
 - **Esri ArcGIS Platform** - Comprehensive GIS services and APIs
+- **[mapbox-gl-esri-sources](https://github.com/frontiersi/mapbox-gl-esri-sources/)** - Reference implementation for Esri service integration patterns
