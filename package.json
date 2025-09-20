@@ -94,9 +94,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/muimsd/esri-gl.git"
+    "url": "https://github.com/muimsd/esri-gl.git"
   },
-  "homepage": "https://muimsd.github.io/esri-gl/",
+  "bugs": {
+    "url": "https://github.com/muimsd/esri-gl/issues"
+  },
+  "homepage": "https://esri-gl.netlify.app",
+  "demo": "https://esri-gl-demo.netlify.app",
   "author": "Muhammad Imran Siddique 2025, Rowan Winsemius 2020-2025",
   "license": "MIT"
 }
