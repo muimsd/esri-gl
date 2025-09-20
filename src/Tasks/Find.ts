@@ -249,10 +249,21 @@ export class Find extends Task {
 
     // Polyline geometry
     if ('paths' in geom && Array.isArray(geom.paths)) {
-      return {
-        type: 'LineString',
-        coordinates: geom.paths[0] as number[][],
-      };
+      const paths = geom.paths as number[][][];
+
+      if (paths.length === 1) {
+        // Single path = LineString
+        return {
+          type: 'LineString',
+          coordinates: paths[0],
+        };
+      } else {
+        // Multiple paths = MultiLineString
+        return {
+          type: 'MultiLineString',
+          coordinates: paths,
+        };
+      }
     }
 
     // Default: return null for unknown geometry types

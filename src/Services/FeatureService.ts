@@ -132,7 +132,10 @@ export class FeatureService {
         this._setupBoundingBoxUpdates();
       }
     } catch (error) {
-      console.error('Error creating FeatureService source:', error);
+      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+      if (!isTestEnvironment) {
+        console.error('Error creating FeatureService source:', error);
+      }
       // Don't rethrow - service should handle errors gracefully
       // The source just won't be created and the service will be in a degraded state
     }

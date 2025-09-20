@@ -518,7 +518,7 @@ describe('ImageService', () => {
       mockMap.getSource.mockReturnValue(mockSource as unknown as any);
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Set date using the method (this is the proper API)
       const fromDate = new Date('2020-01-01T00:00:00.000Z');
       const toDate = new Date('2020-12-31T00:00:00.000Z');
@@ -544,7 +544,7 @@ describe('ImageService', () => {
       mockMap.getSource.mockReturnValue(mockSource as unknown as any);
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Set date using numeric timestamps
       service.setDate(1577836800000, 1609459200000);
 
@@ -579,7 +579,7 @@ describe('ImageService', () => {
       mockMap.getSource.mockReturnValue(mockSource as unknown as any);
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Set date using the method
       const fromDate = new Date('2020-01-01T00:00:00.000Z');
       const toDate = new Date('2020-12-31T00:00:00.000Z');
@@ -605,7 +605,7 @@ describe('ImageService', () => {
       mockMap.getSource.mockReturnValue(mockSource as unknown as any);
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Set the date first
       const fromDate = new Date('2020-01-01T00:00:00.000Z');
       const toDate = new Date('2020-12-31T00:00:00.000Z');
@@ -630,15 +630,15 @@ describe('ImageService', () => {
 
       // Create service without mock source for identify test
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Set the date first
       const fromDate = new Date('2020-01-01T00:00:00.000Z');
       const toDate = new Date('2020-12-31T00:00:00.000Z');
-      
+
       // Set the date directly on options to avoid _updateSource call during identify
       (service as any).esriServiceOptions.from = fromDate;
       (service as any).esriServiceOptions.to = toDate;
-      
+
       await service.identify({ lng: -118.2437, lat: 34.0522 });
 
       const callUrl = mockFetch.mock.calls[0][0] as string;
@@ -703,7 +703,7 @@ describe('ImageService', () => {
       };
 
       const service = new ImageService('test-source', mockMap, options);
-      
+
       // Simulate metadata being loaded
       (service as any)._serviceMetadata = {
         copyrightText: 'Test Attribution',

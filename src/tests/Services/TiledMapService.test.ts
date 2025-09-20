@@ -192,7 +192,7 @@ describe('TiledMapService', () => {
       const updateAttribution = jest.fn();
       const originalModule = await import('@/utils');
       jest.spyOn(originalModule, 'updateAttribution').mockImplementation(updateAttribution);
-      
+
       // Simulate metadata being loaded
       (service as any)._serviceMetadata = {
         copyrightText: 'Test Attribution',
@@ -200,11 +200,7 @@ describe('TiledMapService', () => {
 
       await service.setAttributionFromService();
 
-      expect(updateAttribution).toHaveBeenCalledWith(
-        'Test Attribution',
-        'test-source',
-        mockMap
-      );
+      expect(updateAttribution).toHaveBeenCalledWith('Test Attribution', 'test-source', mockMap);
     });
 
     it('should fetch metadata first if not available when setting attribution', async () => {
@@ -226,11 +222,7 @@ describe('TiledMapService', () => {
 
       await service.setAttributionFromService();
 
-      expect(updateAttribution).toHaveBeenCalledWith(
-        'Fetched Attribution',
-        'test-source',
-        mockMap
-      );
+      expect(updateAttribution).toHaveBeenCalledWith('Fetched Attribution', 'test-source', mockMap);
     });
   });
 });

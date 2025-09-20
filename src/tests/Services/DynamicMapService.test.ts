@@ -310,12 +310,12 @@ describe('DynamicMapService', () => {
       };
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
-      
+
       service.setLayerDefs({ '0': 'POPULATION > 100000', '1': 'STATE_NAME = "California"' });
 
       expect(service.esriServiceOptions.layerDefs).toEqual({
         '0': 'POPULATION > 100000',
-        '1': 'STATE_NAME = "California"'
+        '1': 'STATE_NAME = "California"',
       });
       expect(mockSource.setTiles).toHaveBeenCalled();
     });
@@ -328,7 +328,7 @@ describe('DynamicMapService', () => {
       };
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
-      
+
       service.setLayers([0, 1, 2]);
 
       expect(service.esriServiceOptions.layers).toEqual([0, 1, 2]);
@@ -343,7 +343,7 @@ describe('DynamicMapService', () => {
       };
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
-      
+
       const from = new Date('2020-01-01');
       const to = new Date('2020-12-31');
       service.setDate(from, to);
@@ -367,7 +367,7 @@ describe('DynamicMapService', () => {
       const updateAttribution = jest.fn();
       const originalModule = await import('@/utils');
       jest.spyOn(originalModule, 'updateAttribution').mockImplementation(updateAttribution);
-      
+
       // Simulate metadata being loaded
       (service as any)._serviceMetadata = {
         copyrightText: 'Test Attribution',
@@ -375,11 +375,7 @@ describe('DynamicMapService', () => {
 
       await service.setAttributionFromService();
 
-      expect(updateAttribution).toHaveBeenCalledWith(
-        'Test Attribution',
-        'test-source',
-        mockMap
-      );
+      expect(updateAttribution).toHaveBeenCalledWith('Test Attribution', 'test-source', mockMap);
     });
 
     it('should fetch metadata first if not available when setting attribution', async () => {
@@ -400,11 +396,7 @@ describe('DynamicMapService', () => {
 
       await service.setAttributionFromService();
 
-      expect(updateAttribution).toHaveBeenCalledWith(
-        'Fetched Attribution',
-        'test-source',
-        mockMap
-      );
+      expect(updateAttribution).toHaveBeenCalledWith('Fetched Attribution', 'test-source', mockMap);
     });
   });
 

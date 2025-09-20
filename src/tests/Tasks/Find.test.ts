@@ -426,7 +426,6 @@ describe('Find Task', () => {
     // Test subclass to expose params for testing
     class TestFind extends Find {
       public getParams() {
-        // @ts-expect-error: Accessing protected/private member for testing
         return this.params;
       }
     }

@@ -638,7 +638,7 @@ describe('Service', () => {
     it('should handle production environment error logging in metadata fetch', async () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       mockFetch.mockRejectedValue(new Error('Metadata fetch failed'));
 
@@ -654,9 +654,9 @@ describe('Service', () => {
     });
 
     it('should include token in request parameters when provided', async () => {
-      service = new TestableService({ 
+      service = new TestableService({
         url: 'https://example.com/test',
-        token: 'test-token' 
+        token: 'test-token',
       });
 
       mockFetch.mockResolvedValue({
@@ -671,9 +671,9 @@ describe('Service', () => {
     });
 
     it('should merge requestParams with other parameters', async () => {
-      service = new TestableService({ 
+      service = new TestableService({
         url: 'https://example.com/test',
-        requestParams: { customParam: 'customValue' }
+        requestParams: { customParam: 'customValue' },
       });
 
       mockFetch.mockResolvedValue({
@@ -708,7 +708,7 @@ describe('Service', () => {
 
       // Simulate authentication completion
       service.testAuthenticating = false;
-      
+
       // Manually process the queue like the authenticate method would
       const queued = service.testRequestQueue.shift();
       if (queued) {
@@ -726,19 +726,8 @@ describe('Service', () => {
       const authRequiredCallback = jest.fn();
       service.on('authenticationrequired', authRequiredCallback);
 
-      // Mock 401 response that would trigger authentication required
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        json: async () => ({ 
-          error: { 
-            code: 401, 
-            message: 'Invalid token',
-            details: ['Token required'] 
-          } 
-        }),
-      } as Response);
+      // Mock 498 response that would trigger authentication required (ArcGIS token error)
+      mockFetch.mockRejectedValue(Object.assign(new Error('Invalid token'), { code: 498 }));
 
       let thrownError: any;
       try {
@@ -747,7 +736,7 @@ describe('Service', () => {
         thrownError = error;
       }
 
-      // The authenticationrequired event should be fired for 401 errors
+      // The authenticationrequired event should be fired for 498/499 errors
       expect(authRequiredCallback).toHaveBeenCalledWith({
         authenticate: expect.any(Function),
       });
@@ -759,7 +748,7 @@ describe('Service', () => {
     it('should use service factory function', () => {
       const { service: serviceFactory } = require('../../Services/Service');
       const factoryService = serviceFactory({ url: 'https://example.com/test' });
-      
+
       expect(factoryService).toBeInstanceOf(Service);
     });
   });

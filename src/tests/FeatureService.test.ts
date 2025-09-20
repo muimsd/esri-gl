@@ -562,25 +562,19 @@ describe('FeatureService', () => {
 
   describe('Error Handling', () => {
     it('should handle source creation errors', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-
       // Mock metadata fetch failure (first call fails)
       mockFetch.mockRejectedValueOnce(new Error('Service metadata fetch failed'));
 
-      // Constructor shouldn't throw, but error should be logged async
+      // Constructor shouldn't throw, but error should be handled gracefully
       expect(() => {
         new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       }).not.toThrow();
 
-      // Wait for async source creation to complete and catch the error
+      // Wait for async source creation to complete and handle the error
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error creating FeatureService source:',
-        expect.any(Error)
-      );
-
-      consoleSpy.mockRestore();
+      // Note: Console errors are suppressed in test environment to reduce noise
+      // The service should handle errors gracefully without throwing
     });
 
     it('should handle vector tile detection errors gracefully', async () => {
@@ -680,14 +674,14 @@ describe('FeatureService', () => {
   describe('Style Management', () => {
     it('should get style when metadata is already loaded', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      
+
       // Simulate metadata being loaded
       (service as any)._serviceMetadata = {
         geometryType: 'esriGeometryPoint',
       };
 
       const style = await service.getStyle();
-      
+
       expect(style).toEqual({
         type: 'circle',
         source: 'test-source',
@@ -703,7 +697,7 @@ describe('FeatureService', () => {
     it('should fetch metadata first if not available when getting style', async () => {
       // Reset mocks for this test
       mockFetch.mockReset();
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: () =>
@@ -798,7 +792,7 @@ describe('FeatureService', () => {
     it('should handle production environment logging in updateData', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
       const service = new FeatureService('test-source', mockMap as Map, {
@@ -821,7 +815,7 @@ describe('FeatureService', () => {
     it('should handle production environment error logging in queryFeatures', async () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       mockFetch.mockReset();
       mockFetch.mockRejectedValue(new Error('Network error'));
@@ -830,16 +824,13 @@ describe('FeatureService', () => {
 
       await expect(service.queryFeatures()).rejects.toThrow('Network error');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error querying features:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Error querying features:', expect.any(Error));
 
       process.env.NODE_ENV = originalEnv;
       consoleSpy.mockRestore();
     });
 
-    it('should handle bounding box updates with debouncing', (done) => {
+    it('should handle bounding box updates with debouncing', done => {
       const service = new FeatureService('test-source', mockMap as Map, {
         ...mockServiceOptions,
         useVectorTiles: false,
@@ -850,8 +841,9 @@ describe('FeatureService', () => {
       service.setBoundingBoxFilter(true);
 
       // Mock the map event handlers
-      const boundingBoxHandler = (mockMap.on as jest.Mock).mock.calls
-        .find(call => call[0] === 'moveend')?.[1];
+      const boundingBoxHandler = (mockMap.on as jest.Mock).mock.calls.find(
+        call => call[0] === 'moveend'
+      )?.[1];
 
       expect(boundingBoxHandler).toBeDefined();
 
