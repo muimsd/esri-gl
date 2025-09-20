@@ -720,7 +720,7 @@ describe('Service', () => {
       await requestPromise;
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
-    }, 10000);
+    }, 200);
 
     it('should fire authenticationrequired event and add authenticate method to error', async () => {
       const authRequiredCallback = jest.fn();
