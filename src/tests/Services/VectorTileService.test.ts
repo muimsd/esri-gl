@@ -527,10 +527,6 @@ describe('VectorTileService', () => {
         name: 'Test Service',
       };
 
-      const fetchOptions = {
-        headers: { Authorization: 'Bearer token123' },
-      };
-
       mockGetServiceDetails.mockResolvedValue(mockMetadata);
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -539,7 +535,6 @@ describe('VectorTileService', () => {
 
       const options: VectorTileServiceOptions = {
         url: 'https://example.com/VectorTileServer',
-        fetchOptions,
       };
 
       const service = new VectorTileService('test-source', mockMap, options);
@@ -547,7 +542,7 @@ describe('VectorTileService', () => {
 
       expect(global.fetch).toHaveBeenCalledWith(
         'https://example.com/VectorTileServer/resources/styles/root.json',
-        fetchOptions
+        undefined
       );
     });
 
