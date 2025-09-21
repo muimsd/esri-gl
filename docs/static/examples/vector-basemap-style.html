@@ -6,7 +6,6 @@
     <title>Vector Basemap Style Demo</title>
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         #map { height: 100vh; width: 100vw; }
@@ -150,7 +149,8 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { VectorBasemapStyle } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         let map;
         let currentStyle = 'ArcGIS:Streets';
         let apiKey = '';
@@ -243,7 +243,7 @@
                 controls.classList.add('loading');
                 errorDiv.style.display = 'none';
 
-                const vectorStyle = new EsriGL.VectorBasemapStyle(styleId, apiKey);
+                const vectorStyle = new VectorBasemapStyle(styleId, apiKey);
                 const response = await fetch(vectorStyle.styleUrl);
                 
                 if (!response.ok) {

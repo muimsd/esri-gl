@@ -147,9 +147,9 @@
     </div>
 
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
     
-    <script>
+    <script type="module">
+        import { DynamicMapService, TiledMapService, FeatureService, VectorTileService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://demotiles.maplibre.org/style.json',
@@ -188,7 +188,7 @@
                 let service;
                 switch (type) {
                     case 'dynamic':
-                        service = new esrigl.DynamicMapService(serviceId, map, { url });
+                        service = new DynamicMapService(serviceId, map, { url });
                         map.addLayer({
                             id: layerId,
                             type: 'raster',
@@ -197,7 +197,7 @@
                         break;
 
                     case 'tiled':
-                        service = new esrigl.TiledMapService(serviceId, map, { url });
+                        service = new TiledMapService(serviceId, map, { url });
                         map.addLayer({
                             id: layerId,
                             type: 'raster',
@@ -206,7 +206,7 @@
                         break;
 
                     case 'feature':
-                        service = new esrigl.FeatureService(serviceId, map, {
+                        service = new FeatureService(serviceId, map, {
                             url,
                             useVectorTiles: true
                         });
@@ -253,7 +253,7 @@
                         break;
 
                     case 'vector':
-                        service = new esrigl.VectorTileService(serviceId, map, { url });
+                        service = new VectorTileService(serviceId, map, { url });
                         break;
                 }
 
