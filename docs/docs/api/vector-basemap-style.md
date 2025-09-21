@@ -1,6 +1,6 @@
 # VectorBasemapStyle
 
-<iframe src="/examples/minimal-example.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
+<!-- Example iframe removed: referenced file /examples/minimal-example.html does not exist. -->
 
 For loading complete [Esri Vector Basemap Styles](https://developers.arcgis.com/rest/services-reference/enterprise/vector-basemap-style-service.htm) that provide ready-to-use basemap designs with consistent styling and global coverage.
 
