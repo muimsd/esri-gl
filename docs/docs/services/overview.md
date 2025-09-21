@@ -1,6 +1,6 @@
 # Services Overview
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
+<!-- Example viewer is not available. The embedded example will be added soon. -->
 
 esri-gl provides a comprehensive suite of service classes that integrate Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. Each service follows a consistent architectural pattern while being optimized for specific data types and use cases.
 
