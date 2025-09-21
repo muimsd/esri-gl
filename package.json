@@ -1,6 +1,6 @@
 {
   "name": "esri-gl",
-  "version": "0.9.0-alpha.6",
+  "version": "0.9.0-alpha.8",
   "type": "module",
   "description": "A module for making it easier to use Esri services in mapbox-gl or maplibre-gl.",
   "main": "dist/esri-gl.js",
@@ -102,5 +102,15 @@
   "homepage": "https://esri-gl.netlify.app",
   "demo": "https://esri-gl-demo.netlify.app",
   "author": "Muhammad Imran Siddique 2025, Rowan Winsemius 2020-2025",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "mapbox",
+    "maplibre",
+    "map",
+    "esri",
+    "gl",
+    "typescript",
+    "react",
+    "react-map-gl"
+  ]
 }

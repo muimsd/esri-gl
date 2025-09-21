@@ -123,10 +123,8 @@
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     
-    <!-- esri-gl -->
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
-    
-    <script>
+    <script type="module">
+        import { ImageService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -152,7 +150,8 @@
         map.on('load', () => {
             try {
                 // Create ImageService
-                service = new EsriGL.ImageService('image-source', map, {
+                try {
+                service = new ImageService('image-source', map, {
                     url: 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer',
                     format: 'jpg',
                     renderingRule: false

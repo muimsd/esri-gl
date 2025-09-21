@@ -117,10 +117,8 @@
     <!-- MapLibre GL JavaScript -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     
-    <!-- esri-gl Library -->
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
-
-    <script>
+    <script type="module">
+        import { DynamicMapService, FeatureService, TiledMapService, VectorTileService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         // Initialize MapLibre GL map
         const map = new maplibregl.Map({
             container: 'map',
@@ -176,7 +174,7 @@
                 
                 switch (serviceType) {
                     case 'dynamic':
-                        currentService = new esrigl.DynamicMapService(sourceId, map, {
+                        currentService = new DynamicMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -191,7 +189,7 @@
                         break;
 
                     case 'feature':
-                        currentService = new esrigl.FeatureService(sourceId, map, {
+                        currentService = new FeatureService(sourceId, map, {
                             url: serviceUrl,
                             useVectorTiles: true,
                             useBoundingBox: true
@@ -206,7 +204,7 @@
                         break;
 
                     case 'tiled':
-                        currentService = new esrigl.TiledMapService(sourceId, map, {
+                        currentService = new TiledMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -221,7 +219,7 @@
                         break;
 
                     case 'vector':
-                        currentService = new esrigl.VectorTileService(sourceId, map, {
+                        currentService = new VectorTileService(sourceId, map, {
                             url: serviceUrl
                         });
                         

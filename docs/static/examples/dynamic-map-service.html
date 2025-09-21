@@ -161,10 +161,8 @@
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     
-    <!-- esri-gl -->
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
-    
-    <script>
+    <script type="module">
+        import { DynamicMapService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -192,7 +190,7 @@
         map.on('load', () => {
             try {
                 // Create DynamicMapService
-                service = new EsriGL.DynamicMapService('dynamic-source', map, {
+                service = new DynamicMapService('dynamic-source', map, {
                     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
                     layers: 'show:0,1,2'
                 });

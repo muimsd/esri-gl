@@ -14,9 +14,9 @@
     <div id="map"></div>
     
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
     
-    <script>
+    <script type="module">
+        import { DynamicMapService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://demotiles.maplibre.org/style.json',
@@ -26,7 +26,7 @@
 
         map.on('load', () => {
             // Add ArcGIS Dynamic Map Service
-            new esrigl.DynamicMapService('esri-service', map, {
+            new DynamicMapService('esri-service', map, {
                 url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
             });
 
