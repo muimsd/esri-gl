@@ -1,6 +1,9 @@
 name: Publish Stable to NPM
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       version_type:
