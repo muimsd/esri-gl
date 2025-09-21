@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-### v0.9.0 
+### v0.9.0-alpha.4 
 **🎉 First Stable Release**
 - **Stable Release**: Graduated from alpha to stable release
 - **Code Quality**: 92.94% test coverage with 651 comprehensive tests
