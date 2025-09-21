@@ -24,6 +24,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      packages: write
     
     steps:
       - name: Checkout code
@@ -105,6 +106,49 @@ jobs:
         run: npm publish --tag ${{ steps.release-info.outputs.npm_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        run: |
+          # Create a backup of original package.json
+          cp package.json package.json.bak
+          
+          # Update package.json for GitHub Packages
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            
+            // Add scope if not already present
+            if (!pkg.name.startsWith('@')) {
+              pkg.name = '@muimsd/' + pkg.name;
+            }
+            
+            // Add publishConfig for GitHub Packages
+            pkg.publishConfig = {
+              registry: 'https://npm.pkg.github.com/'
+            };
+            
+            // Ensure repository field is correct
+            if (!pkg.repository || typeof pkg.repository === 'string') {
+              pkg.repository = {
+                type: 'git',
+                url: 'https://github.com/muimsd/esri-gl.git'
+              };
+            }
+            
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          
+          # Setup GitHub Packages registry
+          npm config set @muimsd:registry https://npm.pkg.github.com/
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
+          
+          # Publish to GitHub Packages
+          npm publish --tag ${{ steps.release-info.outputs.npm_tag }}
+          
+          # Restore original package.json
+          mv package.json.bak package.json
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract release notes
         id: extract-notes
