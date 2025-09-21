@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TiledMapService Demo - esri-gl</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        
+        .info-panel h4 {
+            margin: 0 0 6px 0;
+        }
+        
+        .info-panel p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .url {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #f5f5f5;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <button id="toggleBtn">Hide Tiled Layer</button>
+    </div>
+    
+    <div class="loading" id="loading">Loading Tiled Map Service...</div>
+    
+    <div class="info-panel" id="infoPanel" style="display: none;">
+        <h4>Tiled Map Service</h4>
+        <p>Pre-rendered cached map tiles from ArcGIS Server for fast performance.</p>
+        <div class="url">https://services.arcgisonline.com/.../World_Topo_Map/MapServer</div>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <!-- esri-gl -->
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
+    
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm-tiles': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap contributors'
+                    }
+                },
+                layers: [
+                    { id: 'osm-tiles', type: 'raster', source: 'osm-tiles' }
+                ]
+            },
+            center: [-95.7129, 37.0902],
+            zoom: 4
+        });
+
+        let service = null;
+        let showTiled = true;
+        
+        map.on('load', () => {
+            try {
+                // Create TiledMapService
+                service = new EsriGL.TiledMapService('tiled-source', map, {
+                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'
+                });
+
+                // Add layer
+                map.addLayer({
+                    id: 'tiled-layer',
+                    type: 'raster',
+                    source: 'tiled-source',
+                    paint: { 'raster-opacity': 0.7 }
+                });
+
+                // Hide loading, show info panel
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('infoPanel').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading service:', error);
+                document.getElementById('loading').innerHTML = 'Error loading service: ' + error.message;
+                document.getElementById('loading').style.color = 'red';
+            }
+        });
+
+        // Toggle button functionality
+        document.getElementById('toggleBtn').addEventListener('click', () => {
+            showTiled = !showTiled;
+            const visibility = showTiled ? 'visible' : 'none';
+            
+            if (map.getLayer('tiled-layer')) {
+                map.setLayoutProperty('tiled-layer', 'visibility', visibility);
+            }
+            
+            document.getElementById('toggleBtn').textContent = 
+                showTiled ? 'Hide Tiled Layer' : 'Show Tiled Layer';
+        });
+    </script>
+</body>
+</html>

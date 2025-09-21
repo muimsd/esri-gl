@@ -1,6 +1,6 @@
 # Services Overview
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 esri-gl provides a comprehensive suite of service classes that integrate Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. Each service follows a consistent architectural pattern while being optimized for specific data types and use cases.
 
@@ -248,5 +248,5 @@ const tiledService = new TiledMapService('optimized', map, { url: '...' }, {
 
 - Explore individual service documentation for detailed examples
 - Check out the [demo components](https://github.com/muimsd/esri-map-gl/tree/master/src/demo/components) for working implementations
-- Review the [API reference](../api) for complete method signatures
+- Review the API reference documentation for complete method signatures
 - Join the community discussions for support and feature requests

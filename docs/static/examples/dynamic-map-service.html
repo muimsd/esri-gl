@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DynamicMapService Demo - esri-gl</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            max-width: 200px;
+        }
+        
+        .controls h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+        }
+        
+        .layer-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .layer-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .layer-control input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .layer-control label {
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .identify-btn {
+            margin-top: 10px;
+            padding: 6px 10px;
+            width: 100%;
+            border: 1px solid #007cba;
+            border-radius: 4px;
+            background: #007cba;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .identify-btn:hover {
+            background: #005a87;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        
+        .info-panel h4 {
+            margin: 0 0 6px 0;
+        }
+        
+        .info-panel p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .url {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        .identify-mode {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <div id="identifyMode" class="identify-mode" style="display: none;">
+            Click on the map to identify features
+        </div>
+        
+        <h4>Visible Layers</h4>
+        <div class="layer-controls" id="layerControls">
+            <div class="layer-control">
+                <input type="checkbox" id="layer0" checked>
+                <label for="layer0">Cities</label>
+            </div>
+            <div class="layer-control">
+                <input type="checkbox" id="layer1" checked>
+                <label for="layer1">Highways</label>
+            </div>
+            <div class="layer-control">
+                <input type="checkbox" id="layer2" checked>
+                <label for="layer2">States</label>
+            </div>
+        </div>
+        
+        <button class="identify-btn" id="identifyBtn">Enable Identify</button>
+    </div>
+    
+    <div class="loading" id="loading">Loading Dynamic Map Service...</div>
+    
+    <div class="info-panel" id="infoPanel" style="display: none;">
+        <h4>Dynamic Map Service</h4>
+        <p>Server-rendered map tiles with dynamic layer control and identify operations.</p>
+        <div class="url">https://sampleserver6.arcgisonline.com/.../USA/MapServer</div>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <!-- esri-gl -->
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
+    
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm-tiles': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap contributors'
+                    }
+                },
+                layers: [
+                    { id: 'osm-tiles', type: 'raster', source: 'osm-tiles' }
+                ]
+            },
+            center: [-95.7129, 37.0902],
+            zoom: 4
+        });
+
+        let service = null;
+        let identifyMode = false;
+        let selectedLayers = [0, 1, 2];
+        
+        map.on('load', () => {
+            try {
+                // Create DynamicMapService
+                service = new EsriGL.DynamicMapService('dynamic-source', map, {
+                    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+                    layers: 'show:0,1,2'
+                });
+
+                // Add layer
+                map.addLayer({
+                    id: 'dynamic-layer',
+                    type: 'raster',
+                    source: 'dynamic-source',
+                    paint: { 'raster-opacity': 0.8 }
+                });
+
+                // Hide loading, show info panel
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('infoPanel').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading service:', error);
+                document.getElementById('loading').innerHTML = 'Error loading service: ' + error.message;
+                document.getElementById('loading').style.color = 'red';
+            }
+        });
+
+        // Layer control functionality
+        document.querySelectorAll('input[type="checkbox"]').forEach((checkbox, index) => {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    if (!selectedLayers.includes(index)) {
+                        selectedLayers.push(index);
+                    }
+                } else {
+                    selectedLayers = selectedLayers.filter(id => id !== index);
+                }
+                
+                if (service) {
+                    const layersParam = selectedLayers.length > 0 ? `show:${selectedLayers.join(',')}` : 'show:';
+                    service.setLayers(layersParam);
+                }
+            });
+        });
+
+        // Identify functionality
+        document.getElementById('identifyBtn').addEventListener('click', () => {
+            identifyMode = !identifyMode;
+            const btn = document.getElementById('identifyBtn');
+            const mode = document.getElementById('identifyMode');
+            
+            if (identifyMode) {
+                btn.textContent = 'Disable Identify';
+                btn.style.background = '#dc3545';
+                mode.style.display = 'block';
+                map.getCanvas().style.cursor = 'crosshair';
+            } else {
+                btn.textContent = 'Enable Identify';
+                btn.style.background = '#007cba';
+                mode.style.display = 'none';
+                map.getCanvas().style.cursor = '';
+            }
+        });
+
+        // Map click for identify
+        map.on('click', (e) => {
+            if (identifyMode && service) {
+                service.identify(e.lngLat, true)
+                    .then(results => {
+                        if (results.features.length > 0) {
+                            const feature = results.features[0];
+                            let content = `<strong>Layer ${feature.layerId}</strong><br>`;
+                            Object.entries(feature.attributes).forEach(([key, value]) => {
+                                if (value && key !== 'OBJECTID') {
+                                    content += `${key}: ${value}<br>`;
+                                }
+                            });
+                            
+                            new maplibregl.Popup()
+                                .setLngLat(e.lngLat)
+                                .setHTML(content)
+                                .addTo(map);
+                        } else {
+                            new maplibregl.Popup()
+                                .setLngLat(e.lngLat)
+                                .setHTML('No features found')
+                                .addTo(map);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Identify error:', error);
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML('Error identifying features')
+                            .addTo(map);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

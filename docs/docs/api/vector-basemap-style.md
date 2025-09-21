@@ -1,655 +1,112 @@
 # VectorBasemapStyle
 
-<iframe src="/examples/minimal-example.html" width="100%" height="400" frameBorder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/minimal-example.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 For loading complete [Esri Vector Basemap Styles](https://developers.arcgis.com/rest/services-reference/enterprise/vector-basemap-style-service.htm) that provide ready-to-use basemap designs with consistent styling and global coverage.
 
 ## Constructor
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| id | `string` | An id to assign to the basemap style |
-| map | `Map` | A MapLibre GL or Mapbox GL map instance |
-| esriServiceOptions | `object` | Options for the Vector Basemap Style (see below) |
-
-## Esri Service Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| style | `string` | | **Required** Basemap style identifier |
-| apiKey | `string` | | Esri API key for authentication |
-| token | `string` | | Authentication token |
-| language | `string` | `'en'` | Language for labels and text |
-| worldview | `string` | `'USA'` | Regional perspective for boundaries |
-| fetchOptions | `object` | | Additional fetch request options |
-
-## Available Basemap Styles
-
-### Navigation & Streets
-
-| Style ID | Description | Best For |
-|----------|-------------|----------|
-| `arcgis/navigation` | High contrast navigation style | Turn-by-turn navigation |
-| `arcgis/navigation-night` | Dark navigation style | Night mode navigation |
-| `arcgis/streets` | Balanced street map | General mapping applications |
-| `arcgis/streets-night` | Dark street map | Night mode applications |
-| `arcgis/streets-relief` | Streets with terrain relief | Elevation-aware applications |
-
-### Imagery & Satellite
-
-| Style ID | Description | Best For |
-|----------|-------------|----------|
-| `arcgis/imagery` | High-resolution satellite imagery | Aerial analysis |
-| `arcgis/imagery/hybrid` | Imagery with labels and roads | Mixed aerial/road context |
-| `arcgis/imagery/labels` | Imagery with comprehensive labels | Detailed aerial mapping |
-
-### Topographic & Terrain
-
-| Style ID | Description | Best For |
-|----------|-------------|----------|
-| `arcgis/topographic` | Detailed topographic map | Outdoor recreation |
-| `arcgis/terrain` | Physical terrain representation | Geographic analysis |
-| `arcgis/oceans` | Bathymetric ocean mapping | Marine applications |
-
-### Specialty Styles
-
-| Style ID | Description | Best For |
-|----------|-------------|----------|
-| `arcgis/light-gray` | Minimal light background | Data visualization |
-| `arcgis/dark-gray` | Minimal dark background | Dark mode data viz |
-| `arcgis/nova` | Modern, clean design | Contemporary applications |
-| `arcgis/colorful` | Vibrant, high-contrast | Public-facing apps |
-
-## Usage
-
-### Basic Implementation
-
-## Complete Example
-
 ```typescript
-import { VectorBasemapStyle } from 'esri-gl'
-import maplibregl from 'maplibre-gl'
-
-const map = new maplibregl.Map({
-  container: 'map',
-  center: [-118.2437, 34.0522], // Los Angeles
-  zoom: 9
-})
-
-// Initialize with basic style first
-map.setStyle({
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256
-    }
-  },
-  layers: [{
-    id: 'osm',
-    type: 'raster',
-    source: 'osm'
-  }]
-})
-
-// Available style options
-const styleOptions = [
-  { id: 'arcgis/streets', name: 'Streets' },
-  { id: 'arcgis/topographic', name: 'Topographic' },
-  { id: 'arcgis/navigation', name: 'Navigation' },
-  { id: 'arcgis/streets-relief', name: 'Streets Relief' },
-  { id: 'arcgis/dark-gray', name: 'Dark Gray' },
-  { id: 'arcgis/light-gray', name: 'Light Gray' },
-  { id: 'arcgis/oceans', name: 'Oceans' },
-  { id: 'arcgis/imagery', name: 'Imagery' }
-]
-
-// Function to switch styles
-const setStyle = async (styleId: string, apiKey: string): Promise<void> => {
-  try {
-    const vectorStyle = new VectorBasemapStyle(styleId, apiKey)
-    const response = await fetch(vectorStyle.styleUrl)
-    const style = await response.json()
-    
-    map.setStyle(style)
-    console.log(`Loaded style: ${styleId}`)
-  } catch (error) {
-    console.error('Error loading style:', error)
-    alert('Error loading Esri style. Please check your API key.')
-  }
-}
-
-// Usage with API key
-const ESRI_API_KEY = 'your-esri-api-key-here'
-
-map.on('load', () => {
-  // Set initial style
-  setStyle('arcgis/streets', ESRI_API_KEY)
-  
-  // Create style switcher UI
-  const styleControl = document.createElement('div')
-  styleControl.className = 'maplibre-ctrl maplibre-ctrl-group'
-  styleControl.innerHTML = `
-    <select id="style-selector">
-      ${styleOptions.map(option => 
-        `<option value="${option.id}">${option.name}</option>`
-      ).join('')}
-    </select>
-  `
-  
-  const selector = styleControl.querySelector('#style-selector')
-  selector.addEventListener('change', (e) => {
-    setStyle(e.target.value, ESRI_API_KEY)
-  })
-  
-  // Add control to map
-  map.getContainer().appendChild(styleControl)
-})
+new VectorBasemapStyle(styleId: string, apiKey: string)
 ```
 
-## With Language and Worldview
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| styleId | `string` | **Required** Esri basemap style identifier (e.g., 'ArcGIS:Streets') |
+| apiKey | `string` | **Required** Esri API key for authentication |
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| styleUrl | `string` | The constructed style URL for MapLibre/Mapbox |
+| apiKey | `string` | The provided API key |
+| styleId | `string` | The basemap style identifier |
+
+## Available Style IDs
+
+| Style ID | Description | Use Case |
+|----------|-------------|----------|
+| `ArcGIS:Streets` | Standard street map | General purpose mapping |
+| `ArcGIS:Topographic` | Topographic map with terrain | Outdoor recreation, analysis |
+| `ArcGIS:Navigation` | High-contrast navigation style | Turn-by-turn navigation |
+| `ArcGIS:Streets:Relief` | Streets with hillshade relief | Context with terrain |
+| `ArcGIS:LightGray` | Light gray reference map | Data visualization overlay |
+| `ArcGIS:DarkGray` | Dark gray reference map | Dark theme applications |
+| `ArcGIS:Oceans` | Bathymetric ocean mapping | Marine applications |
+| `ArcGIS:Human:Geography` | Human geography emphasis | Demographics, social data |
+
+## Basic Example
 
 ```typescript
-// Localized basemap with specific worldview
-const localizedStyle = new VectorBasemapStyle('arcgis/streets', ESRI_API_KEY, {
-  language: 'de',      // German labels
-  worldview: 'GER'     // German worldview for boundaries
-})
+import { VectorBasemapStyle } from 'esri-gl';
 
-// Fetch and apply the localized style
-fetch(localizedStyle.styleUrl)
-  .then(response => response.json())
-  .then(style => map.setStyle(style))
-  .catch(error => console.error('Failed to load localized style:', error))
+// Create basemap style instance
+const basemapStyle = new VectorBasemapStyle('ArcGIS:Streets', 'YOUR_API_KEY');
+
+// Apply to map
+const response = await fetch(basemapStyle.styleUrl);
+const style = await response.json();
+map.setStyle(style);
+```
+
+## Dynamic Style Switching
+
+```typescript
+const basemap = new VectorBasemapStyle('ArcGIS:Streets', apiKey);
+
+// Function to switch basemap styles
+async function switchBasemap(newStyleId) {
+  basemap.styleId = newStyleId;
+  const response = await fetch(basemap.styleUrl);
+  const style = await response.json();
+  map.setStyle(style);
+}
+
+// Switch to topographic style
+await switchBasemap('ArcGIS:Topographic');
 ```
 
 ## Error Handling
 
 ```typescript
-const loadStyleSafely = async (styleId: string, apiKey: string): Promise<boolean> => {
+async function loadBasemap(styleId, apiKey) {
   try {
-    const vectorStyle = new VectorBasemapStyle(styleId, apiKey)
-    
-    // Check if style URL is accessible
-    const response = await fetch(vectorStyle.styleUrl, { method: 'HEAD' })
+    const basemap = new VectorBasemapStyle(styleId, apiKey);
+    const response = await fetch(basemap.styleUrl);
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
-    // Load full style
-    const styleResponse = await fetch(vectorStyle.styleUrl)
-    const style = await styleResponse.json()
-    
-    // Validate style structure
-    if (!style.version || !style.sources || !style.layers) {
-      throw new Error('Invalid style format received')
-    }
-    
-    map.setStyle(style)
-    return true
-    
+    const style = await response.json();
+    map.setStyle(style);
   } catch (error) {
-    console.error(`Failed to load style ${styleId}:`, error.message)
-    
-    // Fallback to previous style or default
-    return false
-  }
-}
-
-// Usage with fallback
-const applyStyleWithFallback = async (styleId: string): Promise<void> => {
-  const success = await loadStyleSafely(styleId, ESRI_API_KEY)
-  
-  if (!success) {
-    console.warn(`Falling back to default style`)
-    // Apply fallback logic here
+    console.error('Failed to load basemap:', error);
   }
 }
 ```
 
-### Dark Mode Navigation
+## Authentication
 
-```typescript
-// Perfect for navigation applications
-const navigationBasemap = new VectorBasemapStyle('nav-basemap', map, {
-  style: 'arcgis/navigation-night',
-  apiKey: 'your-api-key',
-  language: 'en',
-  worldview: 'USA'
-});
-```
+Vector basemap styles require an Esri API key. Get a free key from the [ArcGIS Developer Dashboard](https://developers.arcgis.com/):
 
-### Imagery Hybrid for Analysis
+1. Create an account at [developers.arcgis.com](https://developers.arcgis.com/)
+2. Create a new application
+3. Generate an API key with basemap privileges
+4. Use the key in your VectorBasemapStyle constructor
 
-```typescript
-// Satellite imagery with road overlays
-const imageryBasemap = new VectorBasemapStyle('imagery-basemap', map, {
-  style: 'arcgis/imagery/hybrid',
-  apiKey: 'your-api-key'
-});
+## Browser Support
 
-// Add your data layers on top
-map.on('style.load', () => {
-  // Add your custom data layers here
-  map.addSource('my-data', { /* your data source */ });
-  map.addLayer({
-    id: 'my-layer',
-    source: 'my-data',
-    type: 'fill',
-    paint: {
-      'fill-color': '#ff0000',
-      'fill-opacity': 0.5
-    }
-  });
-});
-```
+Compatible with MapLibre GL JS and Mapbox GL JS in all modern browsers. Vector tiles provide:
 
-### Data Visualization Background
+- Sharp rendering at all zoom levels
+- Efficient data transfer and caching
+- Client-side styling and customization
+- High performance on mobile devices
 
-```typescript
-// Clean, minimal background for data visualization
-const dataVizBasemap = new VectorBasemapStyle('viz-basemap', map, {
-  style: 'arcgis/light-gray',
-  apiKey: 'your-api-key'
-});
+## Service Documentation
 
-// Customize further by hiding unnecessary layers
-map.on('style.load', () => {
-  // Hide POI labels for cleaner look
-  const layers = map.getStyle().layers;
-  layers.forEach(layer => {
-    if (layer.id.includes('poi') && layer.type === 'symbol') {
-      map.setLayoutProperty(layer.id, 'visibility', 'none');
-    }
-  });
-});
-```
-
-## Advanced Configuration
-
-### Dynamic Style Switching
-
-```typescript
-class BasemapManager {
-  private map: Map;
-  private currentBasemap: VectorBasemapStyle | null = null;
-  private apiKey: string;
-
-  constructor(map: Map, apiKey: string) {
-    this.map = map;
-    this.apiKey = apiKey;
-  }
-
-  switchBasemap(styleId: string) {
-    // Remove current basemap
-    if (this.currentBasemap) {
-      this.currentBasemap.remove();
-    }
-
-    // Load new basemap
-    this.currentBasemap = new VectorBasemapStyle('basemap', this.map, {
-      style: styleId,
-      apiKey: this.apiKey
-    });
-
-    // Preserve user data layers
-    this.map.on('style.load', () => {
-      this.restoreDataLayers();
-    });
-  }
-
-  private restoreDataLayers() {
-    // Re-add your custom data layers after style change
-    // Store layer configs and restore them here
-  }
-}
-
-// Usage
-const basemapManager = new BasemapManager(map, 'your-api-key');
-
-// Switch to different basemaps
-document.getElementById('streets-btn').onclick = () => {
-  basemapManager.switchBasemap('arcgis/streets');
-};
-
-document.getElementById('imagery-btn').onclick = () => {
-  basemapManager.switchBasemap('arcgis/imagery/hybrid');
-};
-
-document.getElementById('topo-btn').onclick = () => {
-  basemapManager.switchBasemap('arcgis/topographic');
-};
-```
-
-### Localization Support
-
-```typescript
-// Different language and regional perspectives
-const localizedBasemaps = {
-  'en-US': new VectorBasemapStyle('us-basemap', map, {
-    style: 'arcgis/streets',
-    language: 'en',
-    worldview: 'USA',
-    apiKey: 'your-api-key'
-  }),
-  
-  'es-ES': new VectorBasemapStyle('es-basemap', map, {
-    style: 'arcgis/streets',
-    language: 'es',
-    worldview: 'EUR',
-    apiKey: 'your-api-key'
-  }),
-  
-  'zh-CN': new VectorBasemapStyle('cn-basemap', map, {
-    style: 'arcgis/streets',
-    language: 'zh-Hans',
-    worldview: 'CHN',
-    apiKey: 'your-api-key'
-  })
-};
-
-// Switch based on user preference
-const userLocale = navigator.language;
-const basemap = localizedBasemaps[userLocale] || localizedBasemaps['en-US'];
-```
-
-### Custom Attribution
-
-```typescript
-const basemap = new VectorBasemapStyle('custom-basemap', map, {
-  style: 'arcgis/streets',
-  apiKey: 'your-api-key'
-});
-
-// Add custom attribution
-map.on('style.load', () => {
-  map.getSource('esri-basemap')?.setAttribution(
-    '© Esri | Custom Application Name'
-  );
-});
-```
-
-## Integration Patterns
-
-### With React
-
-```tsx
-import React, { useEffect, useRef, useState } from 'react';
-import { Map } from 'maplibre-gl';
-import { VectorBasemapStyle } from 'esri-gl';
-
-interface BasemapSelectorProps {
-  apiKey: string;
-}
-
-const BasemapSelector: React.FC<BasemapSelectorProps> = ({ apiKey }) => {
-  const mapRef = useRef<Map | null>(null);
-  const [basemapStyle, setBasemapStyle] = useState('arcgis/streets');
-
-  const basemapOptions = [
-    { id: 'arcgis/streets', name: 'Streets' },
-    { id: 'arcgis/imagery/hybrid', name: 'Imagery' },
-    { id: 'arcgis/topographic', name: 'Topographic' },
-    { id: 'arcgis/light-gray', name: 'Light Gray' }
-  ];
-
-  useEffect(() => {
-    if (mapRef.current) {
-      new VectorBasemapStyle('basemap', mapRef.current, {
-        style: basemapStyle,
-        apiKey
-      });
-    }
-  }, [basemapStyle, apiKey]);
-
-  return (
-    <div className="basemap-container">
-      <div className="basemap-selector">
-        {basemapOptions.map(option => (
-          <button
-            key={option.id}
-            onClick={() => setBasemapStyle(option.id)}
-            className={basemapStyle === option.id ? 'active' : ''}
-          >
-            {option.name}
-          </button>
-        ))}
-      </div>
-      <div ref={mapRef} className="map-container" />
-    </div>
-  );
-};
-```
-
-### With Vue
-
-```vue
-<template>
-  <div class="basemap-container">
-    <div class="basemap-controls">
-      <select v-model="selectedStyle" @change="updateBasemap">
-        <option value="arcgis/streets">Streets</option>
-        <option value="arcgis/imagery/hybrid">Imagery</option>
-        <option value="arcgis/topographic">Topographic</option>
-        <option value="arcgis/light-gray">Light Gray</option>
-      </select>
-    </div>
-    <div ref="mapContainer" class="map"></div>
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted, watch } from 'vue';
-import { Map } from 'maplibre-gl';
-import { VectorBasemapStyle } from 'esri-gl';
-
-const mapContainer = ref(null);
-const selectedStyle = ref('arcgis/streets');
-let map = null;
-let basemap = null;
-
-const props = defineProps({
-  apiKey: String
-});
-
-onMounted(() => {
-  map = new Map({
-    container: mapContainer.value,
-    center: [-95, 37],
-    zoom: 4
-  });
-
-  updateBasemap();
-});
-
-const updateBasemap = () => {
-  if (basemap) {
-    basemap.remove();
-  }
-  
-  if (map) {
-    basemap = new VectorBasemapStyle('basemap', map, {
-      style: selectedStyle.value,
-      apiKey: props.apiKey
-    });
-  }
-};
-
-watch(selectedStyle, updateBasemap);
-</script>
-```
-
-## Methods
-
-### `remove()`
-
-Removes the basemap style and cleans up resources.
-
-```typescript
-const basemap = new VectorBasemapStyle('temp-basemap', map, {
-  style: 'arcgis/streets',
-  apiKey: 'your-key'
-});
-
-// Later, remove the basemap
-basemap.remove();
-```
-
-### `update(options)`
-
-Updates the basemap configuration.
-
-```typescript
-basemap.update({
-  style: 'arcgis/imagery/hybrid',
-  language: 'es'
-});
-```
-
-## Performance Optimization
-
-### Preloading Styles
-
-```typescript
-// Preload multiple styles for faster switching
-const styleCache = new Map();
-
-const preloadStyles = async (styles: string[], apiKey: string) => {
-  const promises = styles.map(async style => {
-    const response = await fetch(
-      `https://basemaps-api.arcgis.com/arcgis/rest/services/styles/${style}?type=style&token=${apiKey}`
-    );
-    const styleJson = await response.json();
-    styleCache.set(style, styleJson);
-  });
-
-  await Promise.all(promises);
-};
-
-// Usage
-await preloadStyles([
-  'arcgis/streets',
-  'arcgis/imagery/hybrid',
-  'arcgis/topographic'
-], 'your-api-key');
-```
-
-### Memory Management
-
-```typescript
-class OptimizedBasemapManager {
-  private map: Map;
-  private basemaps = new Map<string, VectorBasemapStyle>();
-  private currentBasemap: string | null = null;
-
-  constructor(map: Map) {
-    this.map = map;
-  }
-
-  async switchBasemap(styleId: string, options: any) {
-    // Hide current basemap instead of removing
-    if (this.currentBasemap && this.basemaps.has(this.currentBasemap)) {
-      this.basemaps.get(this.currentBasemap)?.hide();
-    }
-
-    // Create or show new basemap
-    if (!this.basemaps.has(styleId)) {
-      this.basemaps.set(styleId, new VectorBasemapStyle(
-        `basemap-${styleId}`, this.map, options
-      ));
-    } else {
-      this.basemaps.get(styleId)?.show();
-    }
-
-    this.currentBasemap = styleId;
-  }
-
-  cleanup() {
-    this.basemaps.forEach(basemap => basemap.remove());
-    this.basemaps.clear();
-  }
-}
-```
-
-## Error Handling
-
-```typescript
-const createBasemap = async (styleId: string, apiKey: string) => {
-  try {
-    const basemap = new VectorBasemapStyle('basemap', map, {
-      style: styleId,
-      apiKey
-    });
-
-    // Listen for style load events
-    map.on('style.load', () => {
-      console.log(`Basemap ${styleId} loaded successfully`);
-    });
-
-    return basemap;
-  } catch (error) {
-    console.error(`Failed to load basemap ${styleId}:`, error);
-    
-    // Fallback to a simple basemap
-    return new VectorBasemapStyle('fallback-basemap', map, {
-      style: 'arcgis/light-gray',
-      apiKey
-    });
-  }
-};
-
-// Handle network errors
-map.on('sourcedataloading', (e) => {
-  if (e.sourceId.includes('basemap')) {
-    console.log('Loading basemap tiles...');
-  }
-});
-
-map.on('error', (e) => {
-  console.error('Basemap error:', e);
-  // Show user-friendly error message
-});
-```
-
-## Best Practices
-
-1. **API Key Management**: Store API keys securely and rotate them regularly
-2. **Style Consistency**: Choose basemaps that complement your data visualization
-3. **Performance**: Use appropriate basemaps for your use case (light-gray for data viz, imagery for analysis)
-4. **Accessibility**: Consider color contrast and readability for all users
-5. **Localization**: Use appropriate language and worldview settings for your audience
-
-## Troubleshooting
-
-### Common Issues
-
-**Problem**: Basemap not loading  
-**Solution**: Verify your API key is valid and has appropriate permissions
-
-**Problem**: Attribution not showing  
-**Solution**: Ensure attribution is enabled in your map configuration
-
-**Problem**: Style switching is slow  
-**Solution**: Implement style preloading or caching strategies
-
-**Problem**: Labels in wrong language  
-**Solution**: Set the correct `language` and `worldview` parameters
-
-### Debugging
-
-```typescript
-// Check available styles
-fetch('https://basemaps-api.arcgis.com/arcgis/rest/services/styles?f=json')
-  .then(r => r.json())
-  .then(styles => console.log('Available styles:', styles));
-
-// Monitor style loading
-map.on('styledata', (e) => {
-  console.log('Style event:', e.dataType);
-});
-
-// Check current style
-console.log('Current style:', map.getStyle());
-```
+For complete service details, see the official [Esri Vector Basemap Style Service](https://developers.arcgis.com/rest/services-reference/enterprise/vector-basemap-style-service.htm) documentation.

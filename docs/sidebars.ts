@@ -49,6 +49,10 @@ const sidebars: SidebarsConfig = {
         'api/feature-service',
         'api/vector-tile-service',
         'api/vector-basemap-style',
+        'api/identify-features',
+        'api/identify-image',
+        'api/query',
+        'api/find',
       ],
     },
     {

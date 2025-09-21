@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Documentation
 
-<iframe src="https://esri-gl.netlify.app/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS, replicating Esri Leaflet's architecture patterns.
 
@@ -24,18 +24,18 @@ npm install esri-gl
 Import the desired service class and create sources that are automatically added to your map:
 
 ```typescript
-import { TiledMapService } from 'esri-gl';
+import { DynamicMapService } from 'esri-gl';
 
 // Create the source
-new TiledMapService('imagery-source', map, {
-  url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+new DynamicMapService('usa-source', map, {
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
 });
 
 // Add it as a layer to your map
 map.addLayer({
-  id: 'imagery-layer',
+  id: 'usa-layer',
   type: 'raster',
-  source: 'imagery-source',
+  source: 'usa-source',
 });
 ```
 
@@ -48,14 +48,14 @@ Load the package via CDN:
 ```
 
 ```javascript
-new TiledMapService('imagery-source', map, {
-  url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+new DynamicMapService('usa-source', map, {
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
 });
 
 map.addLayer({
-  id: 'imagery-layer',
+  id: 'usa-layer',
   type: 'raster',
-  source: 'imagery-source',
+  source: 'usa-source',
 });
 ```
 

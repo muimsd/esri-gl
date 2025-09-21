@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorTileService Demo - esri-gl</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .controls h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+        }
+        
+        .controls .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        
+        .info-panel h4 {
+            margin: 0 0 6px 0;
+        }
+        
+        .info-panel p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .url {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        button {
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #f5f5f5;
+        }
+        
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <h4>Vector Tile Layer</h4>
+        <div class="button-group">
+            <button id="addBtn">Add Layer</button>
+            <button id="removeBtn" disabled>Remove Layer</button>
+        </div>
+    </div>
+    
+    <div class="loading" id="loading">Loading Vector Tile Service...</div>
+    
+    <div class="info-panel" id="infoPanel" style="display: none;">
+        <h4>Vector Tile Service</h4>
+        <p>High-performance vector tiles with scalable rendering and interactive features.</p>
+        <div class="url">https://vectortileservices3.arcgis.com/.../Santa_Monica_Mountains_Parcels_VTL</div>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <!-- esri-gl -->
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
+    
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm-tiles': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OpenStreetMap contributors'
+                    }
+                },
+                layers: [
+                    { id: 'osm-tiles', type: 'raster', source: 'osm-tiles' }
+                ]
+            },
+            center: [-118.805, 34.027], // Santa Monica area
+            zoom: 12
+        });
+
+        let service = null;
+        let layerAdded = false;
+        let layerLoading = false;
+        
+        map.on('load', async () => {
+            try {
+                // Create VectorTileService
+                service = new EsriGL.VectorTileService('vector-tiles-demo', map, {
+                    url: 'https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer'
+                });
+
+                // Hide loading, show info panel
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('infoPanel').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading service:', error);
+                document.getElementById('loading').innerHTML = 'Error loading service: ' + error.message;
+                document.getElementById('loading').style.color = 'red';
+            }
+        });
+
+        // Add layer functionality
+        async function addVectorTileLayer() {
+            if (!service || layerAdded || layerLoading) return;
+            
+            layerLoading = true;
+            const addBtn = document.getElementById('addBtn');
+            const removeBtn = document.getElementById('removeBtn');
+            
+            addBtn.disabled = true;
+            addBtn.innerHTML = '<span class="spinner"></span>Adding...';
+            
+            try {
+                // Try to get the style from the service
+                let style = await service.getStyle();
+                
+                if (style && style.type) {
+                    // Use service-provided style
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: style.type,
+                        source: 'vector-tiles-demo',
+                        'source-layer': style['source-layer'],
+                        layout: style.layout || {},
+                        paint: style.paint || {}
+                    });
+                } else {
+                    // Fallback style for parcels
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: 'fill',
+                        source: 'vector-tiles-demo',
+                        'source-layer': 'Santa_Monica_Mountains_Parcels',
+                        paint: {
+                            'fill-color': '#088',
+                            'fill-opacity': 0.8,
+                            'fill-outline-color': '#fff'
+                        }
+                    });
+                }
+                
+                layerAdded = true;
+                addBtn.innerHTML = 'Add Layer';
+                addBtn.disabled = true;
+                removeBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error adding layer:', error);
+                
+                // Try fallback style
+                try {
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: 'fill',
+                        source: 'vector-tiles-demo',
+                        'source-layer': 'Santa_Monica_Mountains_Parcels',
+                        paint: {
+                            'fill-color': '#088',
+                            'fill-opacity': 0.8,
+                            'fill-outline-color': '#fff'
+                        }
+                    });
+                    
+                    layerAdded = true;
+                    addBtn.innerHTML = 'Add Layer';
+                    addBtn.disabled = true;
+                    removeBtn.disabled = false;
+                } catch (fallbackError) {
+                    console.error('Fallback layer failed:', fallbackError);
+                    addBtn.innerHTML = 'Add Layer';
+                    addBtn.disabled = false;
+                }
+            }
+            
+            layerLoading = false;
+        }
+
+        function removeVectorTileLayer() {
+            if (map.getLayer('vector-tiles-layer')) {
+                map.removeLayer('vector-tiles-layer');
+            }
+            
+            layerAdded = false;
+            document.getElementById('addBtn').disabled = false;
+            document.getElementById('removeBtn').disabled = true;
+        }
+
+        // Button event listeners
+        document.getElementById('addBtn').addEventListener('click', addVectorTileLayer);
+        document.getElementById('removeBtn').addEventListener('click', removeVectorTileLayer);
+    </script>
+</body>
+</html>
