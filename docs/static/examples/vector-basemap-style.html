@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Basemap Style Demo</title>
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.umd.js"></script>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        #api-key-form {
+            text-align: center;
+            padding: 20px;
+        }
+        #api-key-form h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        #api-key-form p {
+            margin: 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        #api-key-input {
+            width: 100%;
+            max-width: 250px;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        #set-key-btn {
+            padding: 8px 16px;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #set-key-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .style-controls h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .style-controls p {
+            margin: 0 0 15px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .style-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .style-btn {
+            padding: 6px 12px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .style-btn.active {
+            background-color: #007acc;
+            color: white;
+        }
+        .style-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .style-btn.active:hover {
+            background-color: #0066aa;
+        }
+        #change-key-btn {
+            padding: 6px 12px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .api-key-link {
+            color: #007acc;
+            text-decoration: none;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #ffebee;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="controls">
+        <div id="api-key-form">
+            <h3>Vector Basemap Style Demo</h3>
+            <p>Enter your Esri API Key to use vector basemap styles:</p>
+            <input type="password" id="api-key-input" placeholder="Enter Esri API Key">
+            <div>
+                <button id="set-key-btn" disabled>Set API Key</button>
+            </div>
+            <p style="font-size: 12px; margin-top: 15px;">
+                Get a free API key from <a href="https://developers.arcgis.com/" target="_blank" class="api-key-link">ArcGIS Developers</a>
+            </p>
+        </div>
+        <div id="style-controls" class="style-controls" style="display: none;">
+            <h3>Vector Basemap Style Demo</h3>
+            <p>Switch between different Esri vector basemap styles</p>
+            <div class="style-buttons">
+                <button class="style-btn active" data-style="ArcGIS:Streets">Streets</button>
+                <button class="style-btn" data-style="ArcGIS:Topographic">Topographic</button>
+                <button class="style-btn" data-style="ArcGIS:Navigation">Navigation</button>
+                <button class="style-btn" data-style="ArcGIS:Streets:Relief">Streets Relief</button>
+                <button class="style-btn" data-style="ArcGIS:DarkGray">Dark Gray</button>
+                <button class="style-btn" data-style="ArcGIS:LightGray">Light Gray</button>
+                <button class="style-btn" data-style="ArcGIS:Oceans">Oceans</button>
+            </div>
+            <button id="change-key-btn">Change API Key</button>
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let currentStyle = 'ArcGIS:Streets';
+        let apiKey = '';
+
+        // Initialize map with basic OSM style
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {
+                        osm: {
+                            type: 'raster',
+                            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                            tileSize: 256,
+                            attribution: '© OpenStreetMap contributors'
+                        }
+                    },
+                    layers: [{
+                        id: 'osm',
+                        type: 'raster',
+                        source: 'osm'
+                    }]
+                },
+                center: [-118.2437, 34.0522],
+                zoom: 9
+            });
+        }
+
+        // Set up API key form
+        function setupApiKeyForm() {
+            const input = document.getElementById('api-key-input');
+            const button = document.getElementById('set-key-btn');
+
+            input.addEventListener('input', function() {
+                button.disabled = !this.value.trim();
+            });
+
+            button.addEventListener('click', function() {
+                const key = input.value.trim();
+                if (key) {
+                    apiKey = key;
+                    showStyleControls();
+                    setStyle('ArcGIS:Streets'); // Load default style
+                }
+            });
+        }
+
+        // Show style controls and hide API key form
+        function showStyleControls() {
+            document.getElementById('api-key-form').style.display = 'none';
+            document.getElementById('style-controls').style.display = 'block';
+        }
+
+        // Show API key form and hide style controls
+        function showApiKeyForm() {
+            document.getElementById('api-key-form').style.display = 'block';
+            document.getElementById('style-controls').style.display = 'none';
+            // Reset to OSM style
+            if (map) {
+                initMap();
+            }
+        }
+
+        // Set up style controls
+        function setupStyleControls() {
+            const buttons = document.querySelectorAll('.style-btn');
+            const changeKeyBtn = document.getElementById('change-key-btn');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const styleId = this.dataset.style;
+                    setStyle(styleId);
+                });
+            });
+
+            changeKeyBtn.addEventListener('click', function() {
+                showApiKeyForm();
+            });
+        }
+
+        // Set Esri vector basemap style
+        async function setStyle(styleId) {
+            if (!map || !apiKey) return;
+
+            const controls = document.getElementById('controls');
+            const errorDiv = document.getElementById('error-message');
+            
+            try {
+                controls.classList.add('loading');
+                errorDiv.style.display = 'none';
+
+                const vectorStyle = new EsriGL.VectorBasemapStyle(styleId, apiKey);
+                const response = await fetch(vectorStyle.styleUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load style');
+                }
+                
+                const style = await response.json();
+                map.setStyle(style);
+                currentStyle = styleId;
+                
+                // Update active button
+                document.querySelectorAll('.style-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.style === styleId);
+                });
+
+                controls.classList.remove('loading');
+            } catch (error) {
+                console.error('Error loading style:', error);
+                controls.classList.remove('loading');
+                errorDiv.textContent = 'Error loading Esri style. Please check your API key.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Initialize everything
+        initMap();
+        setupApiKeyForm();
+        setupStyleControls();
+    </script>
+</body>
+</html>

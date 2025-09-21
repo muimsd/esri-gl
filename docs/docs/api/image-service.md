@@ -1,6 +1,6 @@
 # ImageService
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 For accessing [ArcGIS Image Services](https://developers.arcgis.com/rest/services-reference/image-service.htm) that provide analytical raster data with advanced rendering capabilities.
 
@@ -134,24 +134,190 @@ map.addLayer({
 })
 ```
 
-## Identify Pixel Values
+## Complete Interactive Example
 
 ```typescript
-// Click to get pixel values
-map.on('click', async (e) => {
-    try {
-        const results = await elevationService.identify(e.lngLat, {
-            returnGeometry: false,
-            returnCatalogItems: false
-        })
-        
-        if (results.value) {
-            console.log(`Elevation: ${results.value} meters`)
-        }
-    } catch (error) {
-        console.error('Identify failed:', error)
-    }
+import { ImageService } from 'esri-gl'
+import maplibregl from 'maplibre-gl'
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      'osm-tiles': {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap contributors'
+      }
+    },
+    layers: [{
+      id: 'osm-tiles',
+      type: 'raster',
+      source: 'osm-tiles'
+    }]
+  },
+  center: [-95.7129, 37.0902], // Center of USA
+  zoom: 4
 })
+
+let imageService: ImageService | null = null
+
+map.on('load', () => {
+  try {
+    // Create Landsat image service
+    imageService = new ImageService('landsat-source', map, {
+      url: 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer',
+      format: 'jpg',
+      renderingRule: {
+        rasterFunction: 'Natural Color'
+      }
+    })
+
+    // Add the image layer
+    map.addLayer({
+      id: 'landsat-layer',
+      type: 'raster',
+      source: 'landsat-source',
+      paint: {
+        'raster-opacity': 0.8
+      }
+    })
+
+    console.log('Landsat imagery loaded successfully')
+
+  } catch (error) {
+    console.error('Error loading Landsat service:', error)
+  }
+})
+
+// Rendering rule functions
+const applyNaturalColor = (): void => {
+  if (imageService) {
+    imageService.setRenderingRule({
+      rasterFunction: 'Natural Color'
+    })
+  }
+}
+
+const applyColorInfrared = (): void => {
+  if (imageService) {
+    imageService.setRenderingRule({
+      rasterFunction: 'Color Infrared'
+    })
+  }
+}
+
+const applyNDVI = (): void => {
+  if (imageService) {
+    imageService.setRenderingRule({
+      rasterFunction: 'NDVI',
+      rasterFunctionArguments: {
+        VisibleBandID: 3,
+        InfraredBandID: 4
+      }
+    })
+  }
+}
+
+// Click to identify pixel values
+map.on('click', async (e) => {
+  if (!imageService) return
+
+  try {
+    const results = await imageService.identify(e.lngLat, {
+      returnGeometry: false,
+      returnCatalogItems: true,
+      pixelSize: map.transform.pixelsToGeoUnits(1)
+    })
+
+    if (results.catalogItems && results.catalogItems.features.length > 0) {
+      const feature = results.catalogItems.features[0]
+      const props = feature.attributes
+      
+      console.log('Image Info:', {
+        acquisitionDate: props.AcquisitionDate,
+        cloudCover: props.CloudCover,
+        sunElevation: props.SunElevation,
+        pixelValue: results.value
+      })
+
+      // Show popup with information
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div>
+            <h4>Landsat Pixel Info</h4>
+            <p><strong>Date:</strong> ${new Date(props.AcquisitionDate).toLocaleDateString()}</p>
+            <p><strong>Cloud Cover:</strong> ${props.CloudCover}%</p>
+            <p><strong>Sun Elevation:</strong> ${props.SunElevation}°</p>
+            ${results.value ? `<p><strong>Pixel Value:</strong> ${results.value}</p>` : ''}
+          </div>
+        `)
+        .addTo(map)
+    }
+  } catch (error) {
+    console.error('Identify error:', error)
+  }
+})
+
+// Control panel for rendering rules
+const addRenderingControls = (): void => {
+  const controlPanel = document.createElement('div')
+  controlPanel.className = 'maplibre-ctrl maplibre-ctrl-group'
+  controlPanel.style.cssText = `
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  `
+  
+  controlPanel.innerHTML = `
+    <h4 style="margin: 0 0 8px 0; font-size: 0.9rem;">Rendering Rules</h4>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <button id="natural-color" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer;">
+        Natural Color
+      </button>
+      <button id="color-infrared" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer;">
+        Color Infrared
+      </button>
+      <button id="ndvi" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer;">
+        NDVI
+      </button>
+    </div>
+  `
+
+  // Add event listeners
+  controlPanel.querySelector('#natural-color')!.addEventListener('click', applyNaturalColor)
+  controlPanel.querySelector('#color-infrared')!.addEventListener('click', applyColorInfrared)
+  controlPanel.querySelector('#ndvi')!.addEventListener('click', applyNDVI)
+
+  // Add to map
+  map.getContainer().appendChild(controlPanel)
+}
+
+// Add controls after map loads
+map.on('load', addRenderingControls)
+```
+
+## Time-Enabled Image Services
+
+```typescript
+// Work with time-enabled image services
+const timeEnabledService = new ImageService('weather-source', map, {
+  url: 'https://example.com/WeatherImageServer',
+  time: Date.now() - (24 * 60 * 60 * 1000) // 24 hours ago
+})
+
+// Update time to get different imagery
+const updateTime = (timestamp: number): void => {
+  timeEnabledService.setTime(timestamp)
+}
+
+// Set time to specific date
+const specificDate = new Date('2023-06-15').getTime()
+updateTime(specificDate)
 ```
 
 ## Dynamic Rendering Updates

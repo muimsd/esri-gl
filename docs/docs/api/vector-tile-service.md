@@ -1,6 +1,6 @@
 # VectorTileService
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 For accessing [ArcGIS Vector Tile Services](https://developers.arcgis.com/rest/services-reference/vector-tile-service.htm) that provide pre-generated vector tiles for fast rendering and client-side styling.
 

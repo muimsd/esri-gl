@@ -1,0 +1,111 @@
+name: Publish Release to GitHub Packages
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-to-github-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com/'
+          scope: '@muimsd'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run validation
+        run: npm run validate
+
+      - name: Build package
+        run: npm run build:prod
+
+      - name: Update package.json for GitHub Packages
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            
+            // Add scope if not already present
+            if (!pkg.name.startsWith('@')) {
+              pkg.name = '@muimsd/' + pkg.name;
+            }
+            
+            // Add publishConfig for GitHub Packages
+            pkg.publishConfig = {
+              registry: 'https://npm.pkg.github.com/'
+            };
+            
+            // Ensure repository field is correct
+            if (!pkg.repository || typeof pkg.repository === 'string') {
+              pkg.repository = {
+                type: 'git',
+                url: 'https://github.com/muimsd/esri-gl.git'
+              };
+            }
+            
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [[ "$RELEASE_TAG" == *"alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" == *"beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" == *"rc"* ]]; then
+            echo "tag=rc" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to GitHub Packages
+        run: npm publish --tag ${{ steps.npm-tag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const packageName = require('./package.json').name;
+            const version = require('./package.json').version;
+            
+            github.rest.repos.createReleaseComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ github.event.release.id }},
+              body: `📦 **Published to GitHub Packages**
+            
+            This release has been published to GitHub Packages as \`${packageName}@${version}\`.
+            
+            **Install from GitHub Packages:**
+            \`\`\`bash
+            npm config set @muimsd:registry https://npm.pkg.github.com/
+            npm install ${packageName}@${{ steps.npm-tag.outputs.tag }}
+            \`\`\`
+            
+            **Or using .npmrc:**
+            \`\`\`
+            @muimsd:registry=https://npm.pkg.github.com/
+            \`\`\`
+            `
+            })

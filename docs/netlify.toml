@@ -21,7 +21,13 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+    X-Frame-Options = "SAMEORIGIN"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Allow examples to be embedded in iframes from same origin
+[[headers]]
+  for = "/examples/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"

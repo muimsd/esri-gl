@@ -2,15 +2,12 @@
 sidebar_position: 1
 ---
 
-# esri-gl Documentation
+# Documentation
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameborder="0" style={{ border: "1px solid #ccc", borderRadius: "8px", marginBottom: "20px" }}></iframe>
+<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS, replicating Esri Leaflet's architecture patterns.
 
-:::info Current Version
-**v0.9.0-alpha.3** - Features major improvements including consolidated TypeScript declarations, 92.94% test coverage, and streamlined build system.
-:::
 
 ## Quick Start
 
@@ -27,19 +24,19 @@ npm install esri-gl
 Import the desired service class and create sources that are automatically added to your map:
 
 ```typescript
-import { TiledMapService } from 'esri-gl'
+import { DynamicMapService } from 'esri-gl';
 
 // Create the source
-new TiledMapService('imagery-source', map, {
-    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-})
+new DynamicMapService('usa-source', map, {
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+});
 
 // Add it as a layer to your map
 map.addLayer({
-    id: 'imagery-layer',
-    type: 'raster',
-    source: 'imagery-source'
-})
+  id: 'usa-layer',
+  type: 'raster',
+  source: 'usa-source',
+});
 ```
 
 ### CDN Usage
@@ -51,19 +48,19 @@ Load the package via CDN:
 ```
 
 ```javascript
-new esriMapGL.TiledMapService('imagery-source', map, {
-    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-})
+new DynamicMapService('usa-source', map, {
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+});
 
 map.addLayer({
-    id: 'imagery-layer',
-    type: 'raster',
-    source: 'imagery-source'
-})
+  id: 'usa-layer',
+  type: 'raster',
+  source: 'usa-source',
+});
 ```
 
 ## What's Next?
 
 - 📚 [Learn about Services](./services/overview) - Core service classes
-- 🎯 [Explore Examples](./examples/basic) - Interactive demos  
+- 🎯 [Explore Examples](./examples/basic) - Interactive demos
 - 🔧 [API Reference](./api/dynamic-map-service) - Detailed documentation

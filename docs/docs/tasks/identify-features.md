@@ -2,6 +2,28 @@
 
 Identify features at a point across multiple map services, with advanced tolerance and filtering options.
 
+## Interactive Demo
+
+*Note: Demo would show identify functionality with layer controls - implementation pending*
+
+## Quick Start
+
+```typescript
+import { IdentifyFeatures } from 'esri-gl';
+
+// Create identify task
+const identifyTask = new IdentifyFeatures({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+});
+
+// Configure and execute
+const results = await identifyTask
+  .at({ lng: -100, lat: 40 }, map)
+  .layers([0, 1, 2])
+  .tolerance(5)
+  .returnGeometry(true);
+```
+
 ## Constructor
 
 ```typescript
@@ -27,236 +49,112 @@ new IdentifyFeatures(options: IdentifyOptions)
 
 ## Chainable Methods
 
-All methods return the task instance for chaining:
+### `.at(point, map)`
+Execute identification at a geographic point.
+- **point**: `{lng: number, lat: number}` or `[lng, lat]`
+- **map**: MapLibre GL or Mapbox GL map instance
 
-```typescript
-task.tolerance(5).layers([0, 1]).returnGeometry(true)
-```
+### `.layers(layers)`
+Set which layers to identify.
+- **layers**: `number[]` | `string` - Layer IDs or 'all'
 
-### Configuration Methods
+### `.tolerance(pixels)`
+Set search tolerance in pixels.
+- **pixels**: `number` - Search radius from click point
 
-| Method | Description |
-|--------|-------------|
-| `layers(layers)` | Set layers to identify |
-| `tolerance(pixels)` | Set search tolerance |
-| `returnGeometry(boolean)` | Include geometry in results |
-| `returnFieldName(boolean)` | Include field names |
-| `token(token)` | Set authentication token |
+### `.returnGeometry(include)`
+Include feature geometry in results.
+- **include**: `boolean` - Whether to return geometry
 
-## Execution Methods
+### `.token(authToken)`
+Set authentication token.
+- **authToken**: `string` - ArcGIS authentication token
 
-### `.at(point, map, callback?)`
+## Usage Examples
 
-Identify features at a geographic point.
+### Basic Identification
+```javascript
+const identifyTask = new EsriGL.IdentifyFeatures({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+});
 
-```typescript
-// Promise-based
-const results = await task.at({ lng: -95.7, lat: 37.1 }, map)
-
-// Callback-based  
-task.at({ lng: -95.7, lat: 37.1 }, map, (error, results) => {
-    if (error) {
-        console.error(error)
-    } else {
-        console.log(results)
-    }
-})
-```
-
-**Parameters:**
-- `point` - `{lng: number, lat: number}` - Geographic coordinates
-- `map` - MapLibre/Mapbox GL map instance
-- `callback` - Optional callback function
-
-## Basic Example
-
-```typescript
-import { IdentifyFeatures } from 'esri-gl'
-
-// Create identify task
-const identifyTask = new IdentifyFeatures({
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-    tolerance: 5,
-    returnGeometry: true,
-    layers: 'all'
-})
-
-// Handle map clicks
 map.on('click', async (e) => {
-    try {
-        const results = await identifyTask.at(e.lngLat, map)
-        
-        if (results.results.length > 0) {
-            console.log('Identified features:', results.results)
-            showPopup(e.lngLat, results.results)
-        } else {
-            console.log('No features found')
-        }
-    } catch (error) {
-        console.error('Identify failed:', error)
+  const results = await identifyTask.at(e.lngLat, map);
+  console.log('Identified features:', results);
+});
+```
+
+### With Layer Filtering
+```javascript
+const identifyTask = new EsriGL.IdentifyFeatures({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+})
+.layers([0, 1, 2]) // Only identify layers 0, 1, and 2
+.tolerance(10)     // 10 pixel tolerance
+.returnGeometry(true);
+
+const results = await identifyTask.at({ lng: -95, lat: 37 }, map);
+```
+
+### Advanced Configuration
+```javascript
+const identifyTask = new EsriGL.IdentifyFeatures({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+  returnFieldName: true,
+  returnUnformattedValues: true
+})
+.layers('visible') // Only identify visible layers
+.tolerance(5)
+.returnGeometry(true);
+
+// Execute with custom map extent
+const results = await identifyTask.at(
+  { lng: -100, lat: 40 }, 
+  map,
+  {
+    mapExtent: map.getBounds(),
+    imageDisplay: {
+      width: map.getContainer().offsetWidth,
+      height: map.getContainer().offsetHeight,
+      dpi: 96
     }
-})
+  }
+);
 ```
 
-## Advanced Configuration
-
-```typescript
-// Configure with chained methods
-const advancedTask = new IdentifyFeatures({
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer'
-})
-.layers([0, 1, 2]) // Specific layers only
-.tolerance(10) // Larger search area
-.returnGeometry(true) // Include feature shapes
-.returnFieldName(true) // Include field names
-.returnUnformattedValues(true) // Raw values
-
-// Execute identify
-const results = await advancedTask.at({ lng: -95.7, lat: 37.1 }, map)
-```
-
-## Multiple Services
-
-```typescript
-// Identify across multiple services
-const services = [
-    'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-    'https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer',
-    'https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer'
-]
-
-async function identifyMultiple(point, map) {
-    const tasks = services.map(url => 
-        new IdentifyFeatures({ url })
-            .tolerance(5)
-            .returnGeometry(true)
-    )
-    
-    const results = await Promise.all(
-        tasks.map(task => task.at(point, map))
-    )
-    
-    // Combine results from all services
-    const allFeatures = results.flatMap(result => result.results)
-    return allFeatures
-}
-```
-
-## Custom Popup Display
-
-```typescript
-function showPopup(lngLat, features) {
-    // Create popup content
-    const content = features.map(feature => {
-        const { layerName, attributes } = feature
-        
-        const rows = Object.entries(attributes)
-            .map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`)
-            .join('')
-            
-        return `
-            <div>
-                <h3>${layerName}</h3>
-                <table>
-                    ${rows}
-                </table>
-            </div>
-        `
-    }).join('<hr>')
-    
-    // Show popup
-    new maplibregl.Popup()
-        .setLngLat(lngLat)
-        .setHTML(content)
-        .addTo(map)
-}
-```
-
-## Response Format
-
-```typescript
-interface IdentifyResponse {
-    results: IdentifyResult[]
-}
-
-interface IdentifyResult {
-    layerId: number
-    layerName: string
-    value: string
-    displayFieldName: string
-    attributes: Record<string, any>
-    geometry?: GeoJSON.Geometry
-    geometryType?: string
-    feature?: GeoJSON.Feature
-}
-```
-
-## Error Handling
-
-```typescript
-// Handle different types of errors
-map.on('click', async (e) => {
-    try {
-        const results = await identifyTask.at(e.lngLat, map)
-        handleResults(results)
-    } catch (error) {
-        if (error.code === 400) {
-            console.error('Invalid request parameters')
-        } else if (error.code === 404) {
-            console.error('Service not found')
-        } else if (error.name === 'NetworkError') {
-            console.error('Network connection failed')
-        } else {
-            console.error('Unexpected error:', error.message)
-        }
-    }
-})
-```
-
-## Performance Tips
-
-1. **Set appropriate tolerance**: Balance accuracy vs. performance
-2. **Limit layers**: Only identify needed layers
-3. **Avoid geometry**: Skip geometry if not needed for display
-4. **Cache tasks**: Reuse task instances for multiple identifies
-5. **Debounce clicks**: Prevent rapid successive requests
-
-```typescript
-// Debounced identify
-let identifyTimeout
-map.on('click', (e) => {
-    clearTimeout(identifyTimeout)
-    identifyTimeout = setTimeout(async () => {
-        const results = await identifyTask.at(e.lngLat, map)
-        handleResults(results)
-    }, 250)
-})
-```
-
-## Integration with Services
-
-```typescript
+### Integration with Services
+```javascript
 // Use with DynamicMapService
-import { DynamicMapService, IdentifyFeatures } from 'esri-gl'
-
-const service = new DynamicMapService('usa-source', map, {
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-    layers: [0, 1, 2, 3]
-})
+const service = new EsriGL.DynamicMapService('usa-source', map, {
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+  layers: [0, 1, 2, 3]
+});
 
 // Create identify task for same service
-const identifyTask = new IdentifyFeatures({
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+const identifyTask = new EsriGL.IdentifyFeatures({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
 })
 .layers([0, 1, 2, 3]) // Match service layers
-.tolerance(5)
+.tolerance(5);
 
-// Alternative: use service's built-in identify method
 map.on('click', async (e) => {
-    // Option 1: Task-based (more flexible)
-    const taskResults = await identifyTask.at(e.lngLat, map)
-    
-    // Option 2: Service method (simpler)
-    const serviceResults = await service.identify(e.lngLat, true)
-})
+  // Option 1: Task-based (more flexible)
+  const taskResults = await identifyTask.at(e.lngLat, map);
+  
+  // Option 2: Service method (simpler)
+  const serviceResults = await service.identify(e.lngLat, true);
+});
 ```
+
+## Key Features
+
+- **Flexible Layer Targeting** - Identify specific layers or all visible layers
+- **Tolerance Control** - Adjust search radius for different use cases
+- **Geometry Options** - Include or exclude feature geometry in results
+- **Chainable Interface** - Fluent API for configuration
+- **Service Integration** - Works with any ArcGIS MapServer
+- **Advanced Filtering** - Support for dynamic layers and complex queries
+
+## API Reference
+
+For detailed parameter specifications, see [IdentifyFeatures API Reference](../api/identify-features).

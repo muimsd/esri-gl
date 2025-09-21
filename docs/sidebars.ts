@@ -21,6 +21,11 @@ const sidebars: SidebarsConfig = {
       label: 'Services',
       items: [
         'services/overview',
+        'services/dynamic-map-service',
+        'services/tiled-map-service',
+        'services/image-service',
+        'services/vector-tile-service',
+        'services/vector-basemap-style',
       ],
     },
     {
@@ -44,6 +49,10 @@ const sidebars: SidebarsConfig = {
         'api/feature-service',
         'api/vector-tile-service',
         'api/vector-basemap-style',
+        'api/identify-features',
+        'api/identify-image',
+        'api/query',
+        'api/find',
       ],
     },
     {
