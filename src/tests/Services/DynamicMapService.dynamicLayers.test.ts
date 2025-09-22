@@ -20,7 +20,7 @@ class StubMap {
     // Mock the sourceCache that _updateSource expects
     this.style.sourceCaches[id] = {
       clearTiles: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     };
   }
   getSource(id: string) {
@@ -35,7 +35,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('appends dynamicLayers param when set', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     // Initially no dynamicLayers
@@ -56,7 +56,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('builds and applies filter as definitionExpression', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     // Apply a comparison filter
@@ -73,7 +73,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('builds IN filter correctly', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     svc.setLayerFilter(1, { field: 'STATE_ABBR', op: 'IN', values: ['CA', 'OR', 'WA'] });
@@ -86,7 +86,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('builds BETWEEN filter correctly', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     svc.setLayerFilter(2, { field: 'POP2000', op: 'BETWEEN', from: 1000000, to: 5000000 });
@@ -99,15 +99,15 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('builds grouped AND filter correctly', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     svc.setLayerFilter(2, {
       op: 'AND',
       filters: [
         { field: 'POP2000', op: '>', value: 1000000 },
-        { field: 'SUB_REGION', op: '=', value: 'Pacific' }
-      ]
+        { field: 'SUB_REGION', op: '=', value: 'Pacific' },
+      ],
     });
 
     const src = (map as any).getSource('dyn-src') as any;
@@ -118,7 +118,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
   test('maps visible to visibility and adds default source', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
-      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer'
+      url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     svc.setDynamicLayers([{ id: 5, visible: false }]);
@@ -134,22 +134,22 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
-      layers: [0, 1, 2] // Multiple layers visible
+      layers: [0, 1, 2], // Multiple layers visible
     });
 
     // Apply style to layer 2 only
     svc.setLayerRenderer(2, {
       type: 'simple',
-      symbol: { type: 'esriSFS', color: [0, 122, 255, 90] }
+      symbol: { type: 'esriSFS', color: [0, 122, 255, 90] },
     });
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
-    
+
     // Should contain styled layer 2
     expect(encoded).toContain('"id":2');
     expect(encoded).toContain('"symbol":{"type":"esriSFS","color":[0,122,255,90]}');
-    
+
     // Should also contain entries for other visible layers (0, 1)
     expect(encoded).toContain('"id":0');
     expect(encoded).toContain('"id":1');
@@ -160,23 +160,23 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
-      layers: [1, 2, 3] // Multiple layers visible
+      layers: [1, 2, 3], // Multiple layers visible
     });
 
     // Apply filter to layer 2 only
     svc.setLayerFilter(2, {
       field: 'STATE_NAME',
       op: '=',
-      value: 'California'
+      value: 'California',
     });
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
-    
+
     // Should contain filtered layer 2
     expect(encoded).toContain('"id":2');
     expect(encoded).toContain("STATE_NAME+=+'California'");
-    
+
     // Should also contain entries for other visible layers (1, 3)
     expect(encoded).toContain('"id":1');
     expect(encoded).toContain('"id":3');

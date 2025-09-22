@@ -25,7 +25,7 @@ import type {
   FieldInfo,
   Extent,
   LayerInfo,
-  BatchLayerOperation
+  BatchLayerOperation,
 } from '@/types';
 
 // Minimal raster source type returned to the map
@@ -118,11 +118,11 @@ export class DynamicMapService {
     try {
       const normalized = (dl as DynamicLayer[]).map(l => {
         const { visible, ...rest } = l;
-        
+
         const withSource = {
           ...rest,
           // ensure required source exists
-          source: l.source ?? { type: 'mapLayer', mapLayerId: l.id }
+          source: l.source ?? { type: 'mapLayer', mapLayerId: l.id },
         } as Record<string, unknown>;
 
         // Convert client-friendly 'visible' to ArcGIS 'visibility'
@@ -177,14 +177,14 @@ export class DynamicMapService {
     if (src.setTiles) {
       // New MapboxGL >= 2.13.0
       src.setTiles(this._source.tiles);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } else if ((this._map as any).style.sourceCaches) {
       // Old MapboxGL and MaplibreGL
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } else if ((this._map as any).style._otherSourceCaches) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
@@ -211,12 +211,12 @@ export class DynamicMapService {
   private _ensureAllVisibleLayers(dynamicLayers: DynamicLayer[]): DynamicLayer[] {
     const visibleLayerIds = this._getVisibleLayerIds();
     const existingIds = new Set(dynamicLayers.map(dl => dl.id));
-    
+
     // Add entries for visible layers that aren't already in dynamicLayers
     const additional = visibleLayerIds
       .filter(id => !existingIds.has(id))
       .map(id => ({ id, visible: true }));
-    
+
     return [...dynamicLayers, ...additional];
   }
 
@@ -307,36 +307,48 @@ export class DynamicMapService {
   private _isBetweenFilter(f: LayerFilter): f is BetweenFilter {
     return (
       typeof f !== 'string' &&
-      'op' in f && f.op === 'BETWEEN' &&
-      'field' in f && typeof (f as BetweenFilter).field === 'string' &&
-      'from' in f && (f as BetweenFilter).from !== undefined &&
-      'to' in f && (f as BetweenFilter).to !== undefined
+      'op' in f &&
+      f.op === 'BETWEEN' &&
+      'field' in f &&
+      typeof (f as BetweenFilter).field === 'string' &&
+      'from' in f &&
+      (f as BetweenFilter).from !== undefined &&
+      'to' in f &&
+      (f as BetweenFilter).to !== undefined
     );
   }
 
   private _isInFilter(f: LayerFilter): f is InFilter {
     return (
       typeof f !== 'string' &&
-      'op' in f && f.op === 'IN' &&
-      'field' in f && typeof (f as InFilter).field === 'string' &&
-      'values' in f && Array.isArray((f as InFilter).values)
+      'op' in f &&
+      f.op === 'IN' &&
+      'field' in f &&
+      typeof (f as InFilter).field === 'string' &&
+      'values' in f &&
+      Array.isArray((f as InFilter).values)
     );
   }
 
   private _isNullFilter(f: LayerFilter): f is NullFilter {
     return (
       typeof f !== 'string' &&
-      'op' in f && (f.op === 'IS NULL' || f.op === 'IS NOT NULL') &&
-      'field' in f && typeof (f as NullFilter).field === 'string'
+      'op' in f &&
+      (f.op === 'IS NULL' || f.op === 'IS NOT NULL') &&
+      'field' in f &&
+      typeof (f as NullFilter).field === 'string'
     );
   }
 
   private _isComparisonFilter(f: LayerFilter): f is ComparisonFilter {
     return (
       typeof f !== 'string' &&
-      'field' in f && typeof (f as ComparisonFilter).field === 'string' &&
-      'op' in f && typeof (f as ComparisonFilter).op === 'string' &&
-      'value' in f && (f as ComparisonFilter).value !== undefined
+      'field' in f &&
+      typeof (f as ComparisonFilter).field === 'string' &&
+      'op' in f &&
+      typeof (f as ComparisonFilter).op === 'string' &&
+      'value' in f &&
+      (f as ComparisonFilter).value !== undefined
     );
   }
 
@@ -407,7 +419,10 @@ export class DynamicMapService {
     return layersStr ? layersStr.replace('show', 'visible') : false;
   }
 
-  identify(lnglat: { lng: number; lat: number }, returnGeometry: boolean = false): Promise<unknown> {
+  identify(
+    lnglat: { lng: number; lat: number },
+    returnGeometry: boolean = false
+  ): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const canvas = (this._map as any).getCanvas();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,9 +446,9 @@ export class DynamicMapService {
       f: 'json',
     });
 
-  if (this._layerDefs) params.append('layerDefs', this._layerDefs);
-  if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
-  if (this._time) params.append('time', this._time);
+    if (this._layerDefs) params.append('layerDefs', this._layerDefs);
+    if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
+    if (this._time) params.append('time', this._time);
 
     return new Promise((resolve, reject) => {
       fetch(
@@ -455,22 +470,22 @@ export class DynamicMapService {
     const current = (this.esriServiceOptions.dynamicLayers as DynamicLayer[] | false) || [];
     const next = Array.isArray(current) ? [...current] : [];
     const idx = next.findIndex(l => l.id === layerId);
-    
+
     if (idx >= 0) {
-      next[idx] = { 
-        ...next[idx], 
-        drawingInfo: { 
-          ...next[idx].drawingInfo, 
-          labelingInfo: [labelingInfo] 
-        } 
+      next[idx] = {
+        ...next[idx],
+        drawingInfo: {
+          ...next[idx].drawingInfo,
+          labelingInfo: [labelingInfo],
+        },
       };
     } else {
-      next.push({ 
-        id: layerId, 
-        drawingInfo: { labelingInfo: [labelingInfo] } 
+      next.push({
+        id: layerId,
+        drawingInfo: { labelingInfo: [labelingInfo] },
       });
     }
-    
+
     // Ensure all visible layers are included
     this.esriServiceOptions.dynamicLayers = this._ensureAllVisibleLayers(next);
     this._updateSource();
@@ -482,7 +497,7 @@ export class DynamicMapService {
       // If enabling labels but no labeling info exists, set a default
       const current = (this.esriServiceOptions.dynamicLayers as DynamicLayer[] | false) || [];
       const layer = Array.isArray(current) ? current.find(l => l.id === layerId) : null;
-      
+
       if (!layer?.drawingInfo?.labelingInfo) {
         // Set a basic label configuration
         this.setLayerLabels(layerId, {
@@ -490,8 +505,8 @@ export class DynamicMapService {
           symbol: {
             type: 'esriTS',
             color: [0, 0, 0, 255],
-            font: { family: 'Arial', size: 8 }
-          }
+            font: { family: 'Arial', size: 8 },
+          },
         });
       }
     } else {
@@ -499,12 +514,12 @@ export class DynamicMapService {
       const current = (this.esriServiceOptions.dynamicLayers as DynamicLayer[] | false) || [];
       const next = Array.isArray(current) ? [...current] : [];
       const idx = next.findIndex(l => l.id === layerId);
-      
+
       if (idx >= 0) {
         const drawingInfo = { ...next[idx].drawingInfo };
         delete drawingInfo.labelingInfo;
         next[idx] = { ...next[idx], drawingInfo };
-        
+
         // Ensure all visible layers are included
         this.esriServiceOptions.dynamicLayers = this._ensureAllVisibleLayers(next);
         this._updateSource();
@@ -517,13 +532,13 @@ export class DynamicMapService {
     const current = (this.esriServiceOptions.dynamicLayers as DynamicLayer[] | false) || [];
     const next = Array.isArray(current) ? [...current] : [];
     const idx = next.findIndex(l => l.id === layerId);
-    
+
     if (idx >= 0) {
       next[idx] = { ...next[idx], layerTimeOptions: timeOptions };
     } else {
       next.push({ id: layerId, layerTimeOptions: timeOptions });
     }
-    
+
     // Ensure all visible layers are included
     this.esriServiceOptions.dynamicLayers = this._ensureAllVisibleLayers(next);
     this._updateSource();
@@ -534,38 +549,38 @@ export class DynamicMapService {
     const { from, to, intervalMs, loop = false, onFrame, onComplete } = options;
     const totalDuration = to.getTime() - from.getTime();
     const steps = Math.ceil(totalDuration / intervalMs);
-    
-    return new Promise<void>((resolve) => {
+
+    return new Promise<void>(resolve => {
       let currentStep = 0;
-      
+
       const animate = () => {
         if (currentStep >= steps && !loop) {
           onComplete?.();
           resolve();
           return;
         }
-        
+
         const progress = (currentStep % steps) / steps;
-        const currentTime = new Date(from.getTime() + (progress * totalDuration));
-        
+        const currentTime = new Date(from.getTime() + progress * totalDuration);
+
         // Update service time extent
         this.esriServiceOptions.from = currentTime;
         this.esriServiceOptions.to = currentTime;
         this._updateSource();
-        
+
         onFrame?.(currentTime, progress);
         currentStep++;
-        
+
         setTimeout(animate, intervalMs);
       };
-      
+
       animate();
     });
   }
 
   /** Get statistics for a sublayer */
   async getLayerStatistics(
-    layerId: number, 
+    layerId: number,
     statisticFields: Array<{
       statisticType: 'count' | 'sum' | 'min' | 'max' | 'avg' | 'stddev' | 'var';
       onStatisticField: string;
@@ -581,20 +596,20 @@ export class DynamicMapService {
       f: 'json',
       where: options.where || '1=1',
       outStatistics: JSON.stringify(statisticFields),
-      returnGeometry: 'false'
+      returnGeometry: 'false',
     });
-    
+
     if (options.groupByFieldsForStatistics) {
       params.append('groupByFieldsForStatistics', options.groupByFieldsForStatistics);
     }
-    
+
     const response = await fetch(`${queryUrl}?${params.toString()}`);
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(`Statistics query failed: ${data.error.message}`);
     }
-    
+
     return data.features || [];
   }
 
@@ -605,42 +620,44 @@ export class DynamicMapService {
       f: 'json',
       where: options.where || '1=1',
       returnGeometry: options.returnGeometry !== false ? 'true' : 'false',
-      outFields: Array.isArray(options.outFields) ? options.outFields.join(',') : (options.outFields || '*')
+      outFields: Array.isArray(options.outFields)
+        ? options.outFields.join(',')
+        : options.outFields || '*',
     });
-    
+
     if (options.geometry) {
       params.append('geometry', JSON.stringify(options.geometry));
       params.append('geometryType', options.geometryType || 'esriGeometryEnvelope');
       params.append('spatialRel', options.spatialRel || 'esriSpatialRelIntersects');
     }
-    
+
     if (options.orderByFields) {
       params.append('orderByFields', options.orderByFields);
     }
-    
+
     if (options.resultOffset) {
       params.append('resultOffset', options.resultOffset.toString());
     }
-    
+
     if (options.resultRecordCount) {
       params.append('resultRecordCount', options.resultRecordCount.toString());
     }
-    
+
     if (options.returnCountOnly) {
       params.append('returnCountOnly', 'true');
     }
-    
+
     if (options.returnIdsOnly) {
       params.append('returnIdsOnly', 'true');
     }
-    
+
     const response = await fetch(`${queryUrl}?${params.toString()}`);
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(`Layer query failed: ${data.error.message}`);
     }
-    
+
     return data;
   }
 
@@ -655,32 +672,32 @@ export class DynamicMapService {
       transparent: options.transparent !== false ? 'true' : 'false',
       dpi: (options.dpi || 96).toString(),
       bboxSR: (options.bboxSR || 3857).toString(),
-      imageSR: (options.imageSR || 3857).toString()
+      imageSR: (options.imageSR || 3857).toString(),
     });
-    
+
     if (options.layerDefs) {
       params.append('layerDefs', JSON.stringify(options.layerDefs));
     }
-    
+
     if (options.dynamicLayers) {
       const normalized = this._ensureAllVisibleLayers(options.dynamicLayers);
       params.append('dynamicLayers', JSON.stringify(normalized));
     }
-    
+
     if (options.gdbVersion) {
       params.append('gdbVersion', options.gdbVersion);
     }
-    
+
     if (options.historicMoment) {
       params.append('historicMoment', options.historicMoment.toString());
     }
-    
+
     const response = await fetch(`${exportUrl}?${params.toString()}`);
-    
+
     if (!response.ok) {
       throw new Error(`Export failed: ${response.statusText}`);
     }
-    
+
     return response.blob();
   }
 
@@ -688,20 +705,20 @@ export class DynamicMapService {
   async generateLegend(layerIds?: number[]): Promise<LegendInfo[]> {
     const legendUrl = `${this.esriServiceOptions.url}/legend`;
     const params = new URLSearchParams({
-      f: 'json'
+      f: 'json',
     });
-    
+
     if (layerIds?.length) {
       params.append('layers', layerIds.join(','));
     }
-    
+
     const response = await fetch(`${legendUrl}?${params.toString()}`);
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(`Legend generation failed: ${data.error.message}`);
     }
-    
+
     return data.layers || [];
   }
 
@@ -709,14 +726,14 @@ export class DynamicMapService {
   async getLayerInfo(layerId: number): Promise<LayerMetadata> {
     const layerUrl = `${this.esriServiceOptions.url}/${layerId}`;
     const params = new URLSearchParams({ f: 'json' });
-    
+
     const response = await fetch(`${layerUrl}?${params.toString()}`);
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(`Layer info request failed: ${data.error.message}`);
     }
-    
+
     return data;
   }
 
@@ -739,14 +756,14 @@ export class DynamicMapService {
   async discoverLayers(): Promise<LayerInfo[]> {
     const serviceUrl = this.esriServiceOptions.url;
     const params = new URLSearchParams({ f: 'json' });
-    
+
     const response = await fetch(`${serviceUrl}?${params.toString()}`);
     const data = await response.json();
-    
+
     if (data.error) {
       throw new Error(`Service discovery failed: ${data.error.message}`);
     }
-    
+
     return data.layers || [];
   }
 
@@ -754,12 +771,12 @@ export class DynamicMapService {
   setBulkLayerProperties(operations: BatchLayerOperation[]): void {
     const current = (this.esriServiceOptions.dynamicLayers as DynamicLayer[] | false) || [];
     const next = Array.isArray(current) ? [...current] : [];
-    
+
     // Process all operations
     for (const op of operations) {
       const idx = next.findIndex(l => l.id === op.layerId);
       const layer = idx >= 0 ? { ...next[idx] } : { id: op.layerId };
-      
+
       switch (op.operation) {
         case 'visibility':
           layer.visible = op.value as boolean;
@@ -776,23 +793,23 @@ export class DynamicMapService {
           break;
         }
         case 'labels':
-          layer.drawingInfo = { 
-            ...layer.drawingInfo, 
-            labelingInfo: op.value as LayerLabelingInfo[] 
+          layer.drawingInfo = {
+            ...layer.drawingInfo,
+            labelingInfo: op.value as LayerLabelingInfo[],
           };
           break;
         case 'time':
           layer.layerTimeOptions = op.value as LayerTimeOptions;
           break;
       }
-      
+
       if (idx >= 0) {
         next[idx] = layer;
       } else {
         next.push(layer);
       }
     }
-    
+
     // Ensure all visible layers are included
     this.esriServiceOptions.dynamicLayers = this._ensureAllVisibleLayers(next);
     this._updateSource();

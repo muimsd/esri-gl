@@ -49,11 +49,11 @@ describe('DynamicMapService Labeling', () => {
           font: {
             family: 'Arial',
             size: 12,
-            weight: 'bold'
-          }
+            weight: 'bold',
+          },
         },
         minScale: 0,
-        maxScale: 25000000
+        maxScale: 25000000,
       };
 
       service.setLayerLabels(2, labelConfig);
@@ -61,12 +61,12 @@ describe('DynamicMapService Labeling', () => {
       // Check that dynamicLayers was set correctly
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       expect(Array.isArray(dynamicLayers)).toBe(true);
-      
+
       // Should include the labeled layer
       const labeledLayer = dynamicLayers.find(l => l.id === 2);
       expect(labeledLayer).toBeDefined();
       expect(labeledLayer.drawingInfo.labelingInfo).toEqual([labelConfig]);
-      
+
       // Should include all visible layers (0, 1, 2)
       expect(dynamicLayers).toHaveLength(3);
       expect(dynamicLayers.map(l => l.id).sort()).toEqual([0, 1, 2]);
@@ -75,7 +75,7 @@ describe('DynamicMapService Labeling', () => {
     it('should use correct field names in label expressions', () => {
       service.setLayerLabels(2, {
         labelExpression: '[state_name]', // Should use actual field name
-        symbol: { type: 'esriTS', color: [0, 0, 0, 255] }
+        symbol: { type: 'esriTS', color: [0, 0, 0, 255] },
       });
 
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
@@ -86,12 +86,12 @@ describe('DynamicMapService Labeling', () => {
     it('should generate correct URL with dynamicLayers parameter', () => {
       service.setLayerLabels(2, {
         labelExpression: '[state_name]',
-        symbol: { type: 'esriTS', color: [0, 0, 0, 255] }
+        symbol: { type: 'esriTS', color: [0, 0, 0, 255] },
       });
 
       const source = service._source;
       const tileUrl = source.tiles[0];
-      
+
       expect(tileUrl).toContain('dynamicLayers=');
       expect(tileUrl).toContain(encodeURIComponent('[state_name]'));
     });
@@ -102,19 +102,19 @@ describe('DynamicMapService Labeling', () => {
         type: 'simple',
         symbol: {
           type: 'esriSFS',
-          color: [255, 0, 0, 128]
-        }
+          color: [255, 0, 0, 128],
+        },
       });
 
       // Then add labels
       service.setLayerLabels(2, {
         labelExpression: '[state_name]',
-        symbol: { type: 'esriTS', color: [0, 0, 0, 255] }
+        symbol: { type: 'esriTS', color: [0, 0, 0, 255] },
       });
 
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       const layer = dynamicLayers.find(l => l.id === 2);
-      
+
       // Should have both renderer and labels
       expect(layer.drawingInfo.renderer).toBeDefined();
       expect(layer.drawingInfo.labelingInfo).toBeDefined();
@@ -126,7 +126,7 @@ describe('DynamicMapService Labeling', () => {
       // First apply labels
       service.setLayerLabels(2, {
         labelExpression: '[state_name]',
-        symbol: { type: 'esriTS', color: [0, 0, 0, 255] }
+        symbol: { type: 'esriTS', color: [0, 0, 0, 255] },
       });
 
       // Then disable them
@@ -134,7 +134,7 @@ describe('DynamicMapService Labeling', () => {
 
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       const layer = dynamicLayers.find(l => l.id === 2);
-      
+
       // labelingInfo should be removed or empty
       expect(layer.drawingInfo.labelingInfo).toBeUndefined();
     });
@@ -144,7 +144,7 @@ describe('DynamicMapService Labeling', () => {
 
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       const layer = dynamicLayers.find(l => l.id === 2);
-      
+
       // Should have default labelingInfo
       expect(layer.drawingInfo.labelingInfo).toBeDefined();
       expect(layer.drawingInfo.labelingInfo).toHaveLength(1);
@@ -163,18 +163,17 @@ describe('DynamicMapService Labeling', () => {
             family: 'Arial',
             size: 12,
             style: 'normal',
-            weight: 'bold'
-          }
-        }
+            weight: 'bold',
+          },
+        },
       });
 
-      const source = mockMap.getSource('test-source');
-      expect(source.setTiles).toHaveBeenCalled();
-      
-      const lastCall = source.setTiles.mock.calls[source.setTiles.mock.calls.length - 1];
-      const url = lastCall[0][0];
-      expect(url).toContain('dynamicLayers=');
-      expect(url).toContain('[state_abbr]');
+      const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
+      const layer = dynamicLayers.find(l => l.id === 0);
+
+      expect(layer.drawingInfo.labelingInfo).toBeDefined();
+      expect(layer.drawingInfo.labelingInfo[0].labelExpression).toBe('[state_abbr]');
+      expect(layer.drawingInfo.labelingInfo[0].symbol.color).toEqual([0, 0, 0, 255]);
     });
 
     it('should apply population labels correctly', () => {
@@ -188,17 +187,17 @@ describe('DynamicMapService Labeling', () => {
             family: 'Arial',
             size: 9,
             style: 'normal',
-            weight: 'bold'
-          }
-        }
+            weight: 'bold',
+          },
+        },
       });
 
-      const source = mockMap.getSource('test-source');
-      expect(source.setTiles).toHaveBeenCalled();
-      
-      const lastCall = source.setTiles.mock.calls[source.setTiles.mock.calls.length - 1];
-      const url = lastCall[0][0];
-      expect(url).toContain('[pop2000]');
+      const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
+      const layer = dynamicLayers.find(l => l.id === 0);
+
+      expect(layer.drawingInfo.labelingInfo).toBeDefined();
+      expect(layer.drawingInfo.labelingInfo[0].labelExpression).toBe('[pop2000]');
+      expect(layer.drawingInfo.labelingInfo[0].symbol.color).toEqual([0, 255, 0, 255]);
     });
 
     it('should apply sub-region labels correctly', () => {
@@ -212,17 +211,64 @@ describe('DynamicMapService Labeling', () => {
             family: 'Arial',
             size: 8,
             style: 'normal',
-            weight: 'bold'
-          }
-        }
+            weight: 'bold',
+          },
+        },
       });
 
-      const source = mockMap.getSource('test-source');
-      expect(source.setTiles).toHaveBeenCalled();
-      
-      const lastCall = source.setTiles.mock.calls[source.setTiles.mock.calls.length - 1];
-      const url = lastCall[0][0];
-      expect(url).toContain('[sub_region]');
+      const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
+      const layer = dynamicLayers.find(l => l.id === 0);
+
+      expect(layer.drawingInfo.labelingInfo).toBeDefined();
+      expect(layer.drawingInfo.labelingInfo[0].labelExpression).toBe('[sub_region]');
+      expect(layer.drawingInfo.labelingInfo[0].symbol.color).toEqual([255, 255, 0, 255]);
+    });
+    it('should apply city labels to layer 0 correctly', () => {
+      service.setLayerLabels(0, {
+        labelExpression: '[areaname]',
+        symbol: {
+          type: 'esriTS',
+          color: [255, 255, 255, 255],
+          backgroundColor: [255, 140, 0, 160],
+          font: {
+            family: 'Arial',
+            size: 11,
+            style: 'normal',
+            weight: 'bold',
+          },
+        },
+      });
+
+      const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
+      const layer = dynamicLayers.find(l => l.id === 0);
+
+      expect(layer.drawingInfo.labelingInfo).toBeDefined();
+      expect(layer.drawingInfo.labelingInfo[0].labelExpression).toBe('[areaname]');
+      expect(layer.drawingInfo.labelingInfo[0].symbol.color).toEqual([255, 255, 255, 255]);
+    });
+
+    it('should apply highway labels to layer 1 correctly', () => {
+      service.setLayerLabels(1, {
+        labelExpression: '[route]',
+        symbol: {
+          type: 'esriTS',
+          color: [255, 255, 255, 255],
+          backgroundColor: [34, 139, 34, 160],
+          font: {
+            family: 'Arial',
+            size: 10,
+            style: 'normal',
+            weight: 'bold',
+          },
+        },
+      });
+
+      const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
+      const layer = dynamicLayers.find(l => l.id === 1);
+
+      expect(layer.drawingInfo.labelingInfo).toBeDefined();
+      expect(layer.drawingInfo.labelingInfo[0].labelExpression).toBe('[route]');
+      expect(layer.drawingInfo.labelingInfo[0].symbol.backgroundColor).toEqual([34, 139, 34, 160]);
     });
   });
 });

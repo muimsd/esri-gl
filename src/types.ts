@@ -206,7 +206,15 @@ export interface LayerTimeOptions {
   useTime?: boolean;
   timeExtent?: number[] | null;
   timeOffset?: number;
-  timeOffsetUnits?: 'esriTimeUnitsMilliseconds' | 'esriTimeUnitsSeconds' | 'esriTimeUnitsMinutes' | 'esriTimeUnitsHours' | 'esriTimeUnitsDays' | 'esriTimeUnitsWeeks' | 'esriTimeUnitsMonths' | 'esriTimeUnitsYears';
+  timeOffsetUnits?:
+    | 'esriTimeUnitsMilliseconds'
+    | 'esriTimeUnitsSeconds'
+    | 'esriTimeUnitsMinutes'
+    | 'esriTimeUnitsHours'
+    | 'esriTimeUnitsDays'
+    | 'esriTimeUnitsWeeks'
+    | 'esriTimeUnitsMonths'
+    | 'esriTimeUnitsYears';
   [key: string]: unknown;
 }
 
@@ -257,7 +265,20 @@ export interface StatisticResult {
 
 export interface FieldInfo {
   name: string;
-  type: 'esriFieldTypeOID' | 'esriFieldTypeString' | 'esriFieldTypeInteger' | 'esriFieldTypeSmallInteger' | 'esriFieldTypeDouble' | 'esriFieldTypeSingle' | 'esriFieldTypeDate' | 'esriFieldTypeGeometry' | 'esriFieldTypeBlob' | 'esriFieldTypeRaster' | 'esriFieldTypeGUID' | 'esriFieldTypeGlobalID' | 'esriFieldTypeXML';
+  type:
+    | 'esriFieldTypeOID'
+    | 'esriFieldTypeString'
+    | 'esriFieldTypeInteger'
+    | 'esriFieldTypeSmallInteger'
+    | 'esriFieldTypeDouble'
+    | 'esriFieldTypeSingle'
+    | 'esriFieldTypeDate'
+    | 'esriFieldTypeGeometry'
+    | 'esriFieldTypeBlob'
+    | 'esriFieldTypeRaster'
+    | 'esriFieldTypeGUID'
+    | 'esriFieldTypeGlobalID'
+    | 'esriFieldTypeXML';
   alias?: string;
   length?: number;
   nullable?: boolean;
@@ -276,7 +297,12 @@ export interface LayerInfo {
   name: string;
   type: string;
   description?: string;
-  geometryType?: 'esriGeometryPoint' | 'esriGeometryMultipoint' | 'esriGeometryPolyline' | 'esriGeometryPolygon' | 'esriGeometryEnvelope';
+  geometryType?:
+    | 'esriGeometryPoint'
+    | 'esriGeometryMultipoint'
+    | 'esriGeometryPolyline'
+    | 'esriGeometryPolygon'
+    | 'esriGeometryEnvelope';
   minScale?: number;
   maxScale?: number;
   defaultVisibility?: boolean;
@@ -301,7 +327,10 @@ export interface LayerMetadata extends LayerInfo {
     id: number;
     name: string;
     relatedTableId: number;
-    cardinality: 'esriRelCardinalityOneToOne' | 'esriRelCardinalityOneToMany' | 'esriRelCardinalityManyToMany';
+    cardinality:
+      | 'esriRelCardinalityOneToOne'
+      | 'esriRelCardinalityOneToMany'
+      | 'esriRelCardinalityManyToMany';
   }>;
 }
 
@@ -336,8 +365,19 @@ export interface FeatureSet {
 export interface LayerQueryOptions {
   where?: string;
   geometry?: GeoJSON.Geometry;
-  geometryType?: 'esriGeometryEnvelope' | 'esriGeometryPoint' | 'esriGeometryMultipoint' | 'esriGeometryPolyline' | 'esriGeometryPolygon';
-  spatialRel?: 'esriSpatialRelIntersects' | 'esriSpatialRelContains' | 'esriSpatialRelWithin' | 'esriSpatialRelTouches' | 'esriSpatialRelCrosses' | 'esriSpatialRelOverlaps';
+  geometryType?:
+    | 'esriGeometryEnvelope'
+    | 'esriGeometryPoint'
+    | 'esriGeometryMultipoint'
+    | 'esriGeometryPolyline'
+    | 'esriGeometryPolygon';
+  spatialRel?:
+    | 'esriSpatialRelIntersects'
+    | 'esriSpatialRelContains'
+    | 'esriSpatialRelWithin'
+    | 'esriSpatialRelTouches'
+    | 'esriSpatialRelCrosses'
+    | 'esriSpatialRelOverlaps';
   returnGeometry?: boolean;
   outFields?: string[] | string;
   orderByFields?: string;
@@ -359,7 +399,19 @@ export interface MapExportOptions {
   bbox: [number, number, number, number];
   size: [number, number];
   dpi?: number;
-  format?: 'png' | 'png8' | 'png24' | 'png32' | 'jpg' | 'pdf' | 'gif' | 'svg' | 'emf' | 'ps' | 'bmp' | 'tiff';
+  format?:
+    | 'png'
+    | 'png8'
+    | 'png24'
+    | 'png32'
+    | 'jpg'
+    | 'pdf'
+    | 'gif'
+    | 'svg'
+    | 'emf'
+    | 'ps'
+    | 'bmp'
+    | 'tiff';
   transparent?: boolean;
   bboxSR?: number;
   imageSR?: number;

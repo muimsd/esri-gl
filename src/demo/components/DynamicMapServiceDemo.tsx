@@ -60,7 +60,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         source: 'dynamic-source',
       });
 
-  // Add click handler for identify using IdentifyFeatures task
+      // Add click handler for identify using IdentifyFeatures task
       map.current.on('click', async e => {
         if (!service.current || !map.current) return;
 
@@ -151,9 +151,9 @@ const DynamicMapServiceDemo: React.FC = () => {
           type: 'esriSLS',
           style: 'esriSLSSolid',
           color: [0, 82, 204, 255],
-          width: 1
-        }
-      }
+          width: 1,
+        },
+      },
     });
     setStyleApplied(true);
   };
@@ -172,7 +172,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     service.current.setLayerFilter(2, {
       field: 'SUB_REGION',
       op: '=',
-      value: 'Pacific'
+      value: 'Pacific',
     });
     setFilterApplied(true);
   };
@@ -183,7 +183,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     service.current.setLayerFilter(2, {
       field: 'POP2000',
       op: '>',
-      value: 5000000
+      value: 5000000,
     });
     setFilterApplied(true);
   };
@@ -195,32 +195,77 @@ const DynamicMapServiceDemo: React.FC = () => {
     setFilterApplied(false);
   };
 
-  // Advanced features - Multiple labeling options
+  // Advanced features - Multiple labeling options for different layers
   const labelOptions = [
     { value: 'none', label: 'No Labels' },
-    { value: 'state_name', label: 'State Names', field: 'state_name' },
-    { value: 'state_abbr', label: 'State Abbreviations', field: 'state_abbr' },
-    { value: 'sub_region', label: 'Geographic Regions', field: 'sub_region' },
-    { value: 'population', label: 'Population (2000)', field: 'pop2000' },
-    { value: 'pop_density', label: 'Population per sq mi', field: 'pop00_sqmi' },
+    // Cities layer (0) options
+    { value: 'city_names', label: 'City Names', field: 'areaname', layerId: 0 },
+    { value: 'city_states', label: 'City States', field: 'st', layerId: 0 },
+    { value: 'city_class', label: 'City Classification', field: 'class', layerId: 0 },
+    // Highways layer (1) options
+    { value: 'highway_routes', label: 'Highway Routes', field: 'route', layerId: 1 },
+    { value: 'highway_numbers', label: 'Route Numbers', field: 'rte_num1', layerId: 1 },
+    { value: 'highway_types', label: 'Highway Types', field: 'type', layerId: 1 },
+    // States layer (2) options
+    { value: 'state_name', label: 'State Names', field: 'state_name', layerId: 2 },
+    { value: 'state_abbr', label: 'State Abbreviations', field: 'state_abbr', layerId: 2 },
+    { value: 'sub_region', label: 'Geographic Regions', field: 'sub_region', layerId: 2 },
+    { value: 'population', label: 'State Population (2000)', field: 'pop2000', layerId: 2 },
+    { value: 'pop_density', label: 'Population per sq mi', field: 'pop00_sqmi', layerId: 2 },
   ];
 
   const applyLabels = (labelType: string) => {
     if (!service.current) return;
-    
+
     const labelOption = labelOptions.find(opt => opt.value === labelType);
     if (!labelOption || labelType === 'none') {
       clearLabels();
       return;
     }
 
-    let labelExpression = `[${labelOption.field}]`;
+    const labelExpression = `[${labelOption.field}]`;
     let fontSize = 10;
     let textColor: [number, number, number, number] = [255, 255, 255, 255];
     let backgroundColor: [number, number, number, number] = [0, 0, 0, 128];
+    const layerId = labelOption.layerId || 2;
 
-    // Customize formatting based on label type
+    // Customize formatting based on layer and label type
     switch (labelType) {
+      // Cities layer styling
+      case 'city_names':
+        fontSize = 11;
+        textColor = [255, 255, 255, 255];
+        backgroundColor = [255, 140, 0, 160]; // Orange background
+        break;
+      case 'city_states':
+        fontSize = 9;
+        textColor = [0, 0, 0, 255];
+        backgroundColor = [255, 255, 255, 180]; // White background
+        break;
+      case 'city_class':
+        fontSize = 8;
+        textColor = [255, 255, 0, 255]; // Yellow text
+        backgroundColor = [128, 0, 128, 140]; // Purple background
+        break;
+
+      // Highways layer styling
+      case 'highway_routes':
+        fontSize = 10;
+        textColor = [255, 255, 255, 255];
+        backgroundColor = [34, 139, 34, 160]; // Green background
+        break;
+      case 'highway_numbers':
+        fontSize = 12;
+        textColor = [0, 0, 0, 255];
+        backgroundColor = [255, 255, 255, 200]; // White background
+        break;
+      case 'highway_types':
+        fontSize = 8;
+        textColor = [255, 215, 0, 255]; // Gold text
+        backgroundColor = [0, 0, 0, 160];
+        break;
+
+      // States layer styling (existing)
       case 'state_abbr':
         fontSize = 12;
         textColor = [0, 0, 0, 255];
@@ -232,8 +277,6 @@ const DynamicMapServiceDemo: React.FC = () => {
         backgroundColor = [0, 0, 0, 160];
         break;
       case 'population':
-        // Format population numbers with commas
-        labelExpression = `[pop2000]`;
         fontSize = 9;
         textColor = [0, 255, 0, 255];
         backgroundColor = [0, 0, 0, 140];
@@ -245,8 +288,8 @@ const DynamicMapServiceDemo: React.FC = () => {
         break;
     }
 
-    // Apply labels to States layer (id: 2)
-    service.current.setLayerLabels(2, {
+    // Apply labels to the specified layer
+    service.current.setLayerLabels(layerId, {
       labelExpression,
       symbol: {
         type: 'esriTS',
@@ -258,53 +301,61 @@ const DynamicMapServiceDemo: React.FC = () => {
           family: 'Arial',
           size: fontSize,
           style: 'normal',
-          weight: 'bold'
+          weight: 'bold',
         },
         horizontalAlignment: 'center',
-        verticalAlignment: 'middle'
+        verticalAlignment: 'middle',
       },
       minScale: 0,
-      maxScale: 25000000,
-      labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal'
+      maxScale: layerId === 0 ? 10000000 : layerId === 1 ? 15000000 : 25000000, // Different scales for different layers
+      labelPlacement:
+        layerId === 1
+          ? 'esriServerLinePlacementAboveAlong'
+          : 'esriServerPolygonPlacementAlwaysHorizontal',
     });
-    
+
     setSelectedLabelType(labelType);
     setLabelsApplied(true);
   };
 
   const clearLabels = () => {
     if (!service.current) return;
-    service.current.setLayerLabelsVisible(2, false);
+    // Clear labels from all layers
+    [0, 1, 2].forEach(layerId => {
+      service.current!.setLayerLabelsVisible(layerId, false);
+    });
     setSelectedLabelType('none');
     setLabelsApplied(false);
   };
 
   const getLayerStatistics = async () => {
     if (!service.current) return;
-    
+
     try {
       const stats = await service.current.getLayerStatistics(2, [
         {
           statisticType: 'count',
           onStatisticField: 'POP2000',
-          outStatisticFieldName: 'state_count'
+          outStatisticFieldName: 'state_count',
         },
         {
           statisticType: 'sum',
           onStatisticField: 'POP2000',
-          outStatisticFieldName: 'total_population'
+          outStatisticFieldName: 'total_population',
         },
         {
           statisticType: 'avg',
           onStatisticField: 'POP2000',
-          outStatisticFieldName: 'avg_population'
-        }
+          outStatisticFieldName: 'avg_population',
+        },
       ]);
-      
+
       const result = stats[0];
       if (result && result.attributes) {
         const { state_count, total_population, avg_population } = result.attributes;
-        alert(`States Statistics:\n- Total States: ${state_count}\n- Total Population: ${total_population?.toLocaleString()}\n- Average Population: ${avg_population ? Math.round(avg_population as number).toLocaleString() : 'N/A'}`);
+        alert(
+          `States Statistics:\n- Total States: ${state_count}\n- Total Population: ${total_population?.toLocaleString()}\n- Average Population: ${avg_population ? Math.round(avg_population as number).toLocaleString() : 'N/A'}`
+        );
       }
     } catch (error) {
       console.error('Statistics query failed:', error);
@@ -314,15 +365,15 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const queryFeatures = async () => {
     if (!service.current) return;
-    
+
     try {
       const features = await service.current.queryLayerFeatures(2, {
         where: 'POP2000 > 10000000',
         outFields: ['STATE_NAME', 'POP2000', 'SUB_REGION'],
         orderByFields: 'POP2000 DESC',
-        resultRecordCount: 5
+        resultRecordCount: 5,
       });
-      
+
       if (features.features && features.features.length > 0) {
         let message = 'Top 5 Most Populous States (>10M):\n\n';
         features.features.forEach((feature, index) => {
@@ -341,19 +392,19 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const exportMapImage = async () => {
     if (!service.current || !map.current) return;
-    
+
     try {
       const bounds = map.current.getBounds();
       const size = map.current.getContainer().getBoundingClientRect();
-      
+
       const blob = await service.current.exportMapImage({
         bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
         size: [Math.round(size.width), Math.round(size.height)],
         format: 'png',
         dpi: 150,
-        transparent: true
+        transparent: true,
       });
-      
+
       // Download the image
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -363,7 +414,7 @@ const DynamicMapServiceDemo: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       alert('Map exported successfully!');
     } catch (error) {
       console.error('Export failed:', error);
@@ -373,10 +424,10 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const generateLegend = async () => {
     if (!service.current) return;
-    
+
     try {
       const legend = await service.current.generateLegend(selectedLayers);
-      
+
       let message = 'Legend Information:\n\n';
       legend.forEach(layerLegend => {
         message += `Layer ${layerLegend.layerId} - ${layerLegend.layerName}:\n`;
@@ -389,7 +440,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         }
         message += '\n';
       });
-      
+
       alert(message);
     } catch (error) {
       console.error('Legend generation failed:', error);
@@ -399,18 +450,18 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const batchUpdate = () => {
     if (!service.current) return;
-    
+
     // Apply multiple changes at once using batch operations
     service.current.setBulkLayerProperties([
       {
         layerId: 0,
         operation: 'visibility',
-        value: true
+        value: true,
       },
       {
         layerId: 1,
-        operation: 'visibility', 
-        value: true
+        operation: 'visibility',
+        value: true,
       },
       {
         layerId: 2,
@@ -425,10 +476,10 @@ const DynamicMapServiceDemo: React.FC = () => {
               type: 'esriSLS',
               style: 'esriSLSSolid',
               color: [255, 140, 0, 255],
-              width: 2
-            }
-          }
-        }
+              width: 2,
+            },
+          },
+        },
       },
       {
         layerId: 2,
@@ -436,11 +487,11 @@ const DynamicMapServiceDemo: React.FC = () => {
         value: {
           field: 'POP2000',
           op: '>',
-          value: 7000000
-        }
-      }
+          value: 7000000,
+        },
+      },
     ]);
-    
+
     setStyleApplied(true);
     setFilterApplied(true);
     alert('Batch update applied: Orange styling + population filter > 7M');
@@ -479,34 +530,82 @@ const DynamicMapServiceDemo: React.FC = () => {
             Reset Server Style
           </button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button onClick={applyPacificStatesFilter} disabled={filterApplied}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginTop: 8,
+            backgroundColor: '#f0f8ff',
+            padding: '12px',
+            borderRadius: '6px',
+            border: '1px solid #2196F3',
+          }}
+        >
+          <div
+            style={{ fontSize: '14px', fontWeight: 'bold', color: '#1976D2', marginRight: '10px' }}
+          >
+            🔍 Filters:
+          </div>
+          <button
+            onClick={applyPacificStatesFilter}
+            disabled={filterApplied}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: filterApplied ? '#ccc' : '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: filterApplied ? 'not-allowed' : 'pointer',
+            }}
+          >
             Filter: Pacific States Only
           </button>
-          <button onClick={applyPopulationFilter} disabled={filterApplied}>
+          <button
+            onClick={applyPopulationFilter}
+            disabled={filterApplied}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: filterApplied ? '#ccc' : '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: filterApplied ? 'not-allowed' : 'pointer',
+            }}
+          >
             Filter: Pop &gt; 5M States
           </button>
-          <button onClick={clearFilter} disabled={!filterApplied}>
+          <button
+            onClick={clearFilter}
+            disabled={!filterApplied}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: !filterApplied ? '#ccc' : '#f44336',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: !filterApplied ? 'not-allowed' : 'pointer',
+            }}
+          >
             Clear Filter
           </button>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: 'bold' }}>
-            State Labels:
-          </label>
-          <select 
-            value={selectedLabelType} 
-            onChange={(e) => applyLabels(e.target.value)}
-            style={{ padding: '4px 8px', fontSize: '14px', minWidth: '150px' }}
+          <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Layer Labels:</label>
+          <select
+            value={selectedLabelType}
+            onChange={e => applyLabels(e.target.value)}
+            style={{ padding: '4px 8px', fontSize: '14px', minWidth: '200px' }}
           >
             {labelOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {option.value === 'none'
+                  ? option.label
+                  : `${option.label} (Layer ${option.layerId === 0 ? 'Cities' : option.layerId === 1 ? 'Highways' : 'States'})`}
               </option>
             ))}
           </select>
-          <button 
-            onClick={clearLabels} 
+          <button
+            onClick={clearLabels}
             disabled={!labelsApplied}
             style={{ padding: '4px 12px', fontSize: '12px' }}
           >
@@ -514,26 +613,17 @@ const DynamicMapServiceDemo: React.FC = () => {
           </button>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button onClick={getLayerStatistics}>
-            Get Statistics
-          </button>
-          <button onClick={queryFeatures}>
-            Query Features
-          </button>
-          <button onClick={exportMapImage}>
-            Export Map
-          </button>
-          <button onClick={generateLegend}>
-            Show Legend
-          </button>
+          <button onClick={getLayerStatistics}>Get Statistics</button>
+          <button onClick={queryFeatures}>Query Features</button>
+          <button onClick={exportMapImage}>Export Map</button>
+          <button onClick={generateLegend}>Show Legend</button>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button onClick={batchUpdate}>
-            Batch Update Demo
-          </button>
+          <button onClick={batchUpdate}>Batch Update Demo</button>
         </div>
         <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-          Click on the map to identify features. Styling and filtering is applied server-side via dynamicLayers.
+          Click on the map to identify features. Styling and filtering is applied server-side via
+          dynamicLayers.
         </div>
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />

@@ -35,11 +35,11 @@ const mockMap = {
     getWest: () => -100,
     getSouth: () => 30,
     getEast: () => -80,
-    getNorth: () => 50
+    getNorth: () => 50,
   }),
   getContainer: jest.fn().mockReturnValue({
-    getBoundingClientRect: () => ({ width: 800, height: 600 })
-  })
+    getBoundingClientRect: () => ({ width: 800, height: 600 }),
+  }),
 } as unknown as Map;
 
 describe('DynamicMapService Advanced Features', () => {
@@ -76,7 +76,7 @@ describe('DynamicMapService Advanced Features', () => {
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       expect(dynamicLayers).toBeDefined();
       expect(dynamicLayers.length).toBeGreaterThan(0);
-      
+
       const layer = dynamicLayers.find(l => l.id === 1);
       expect(layer).toBeDefined();
       expect(layer.drawingInfo.labelingInfo).toEqual([labelingInfo]);
@@ -120,12 +120,12 @@ describe('DynamicMapService Advanced Features', () => {
     test('should handle time animation', () => {
       const now = new Date();
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      
+
       service.animateTime({
         from: yesterday,
         to: now,
         intervalMs: 5000,
-        loop: false
+        loop: false,
       });
 
       // Should set up animation state
@@ -184,11 +184,13 @@ describe('DynamicMapService Advanced Features', () => {
         json: () => Promise.resolve(mockResponse),
       } as Response);
 
-      const statistics = [{
-        statisticType: 'count' as const,
-        onStatisticField: 'OBJECTID',
-        outStatisticFieldName: 'count',
-      }];
+      const statistics = [
+        {
+          statisticType: 'count' as const,
+          onStatisticField: 'OBJECTID',
+          outStatisticFieldName: 'count',
+        },
+      ];
 
       await service.getLayerStatistics(1, statistics, {
         where: 'STATE = "California"',
@@ -222,9 +224,7 @@ describe('DynamicMapService Advanced Features', () => {
         returnGeometry: true,
       });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/2/query?f=json&where=ID')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/2/query?f=json&where=ID'));
       expect(result).toEqual(mockResponse);
     });
 
@@ -237,14 +237,24 @@ describe('DynamicMapService Advanced Features', () => {
       await service.queryLayerFeatures(1, {
         geometry: {
           type: 'Polygon',
-          coordinates: [[[-100, 30], [-80, 30], [-80, 50], [-100, 50], [-100, 30]]]
+          coordinates: [
+            [
+              [-100, 30],
+              [-80, 30],
+              [-80, 50],
+              [-100, 50],
+              [-100, 30],
+            ],
+          ],
         },
         geometryType: 'esriGeometryPolygon',
         spatialRel: 'esriSpatialRelContains',
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/geometry=.*geometryType=esriGeometryPolygon.*spatialRel=esriSpatialRelContains/)
+        expect.stringMatching(
+          /geometry=.*geometryType=esriGeometryPolygon.*spatialRel=esriSpatialRelContains/
+        )
       );
     });
   });
@@ -268,7 +278,9 @@ describe('DynamicMapService Advanced Features', () => {
       const result = await service.exportMapImage(exportOptions);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/export?f=image&bbox=-100%2C30%2C-80%2C50&size=800%2C600&format=png&transparent=true&dpi=150')
+        expect.stringContaining(
+          '/export?f=image&bbox=-100%2C30%2C-80%2C50&size=800%2C600&format=png&transparent=true&dpi=150'
+        )
       );
       expect(result).toEqual(mockBlob);
     });
@@ -292,9 +304,7 @@ describe('DynamicMapService Advanced Features', () => {
         dynamicLayers: service.esriServiceOptions.dynamicLayers as any,
       });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/dynamicLayers=/)
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/dynamicLayers=/));
     });
   });
 
@@ -321,9 +331,7 @@ describe('DynamicMapService Advanced Features', () => {
 
       const result = await service.generateLegend();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/legend?f=json')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/legend?f=json'));
       expect(result).toEqual(mockResponse.layers);
     });
 
@@ -335,9 +343,7 @@ describe('DynamicMapService Advanced Features', () => {
 
       await service.generateLegend([1, 3]);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('layers=1%2C3')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('layers=1%2C3'));
     });
   });
 
@@ -359,9 +365,7 @@ describe('DynamicMapService Advanced Features', () => {
 
       const result = await service.getLayerInfo(1);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/1?f=json')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/1?f=json'));
       expect(result).toEqual(mockResponse);
     });
 
@@ -379,9 +383,7 @@ describe('DynamicMapService Advanced Features', () => {
 
       const result = await service.discoverLayers();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/MapServer\?f=json$/)
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/MapServer\?f=json$/));
       expect(result).toEqual(mockResponse.layers);
     });
 
@@ -454,7 +456,7 @@ describe('DynamicMapService Advanced Features', () => {
 
       const dynamicLayers = service.esriServiceOptions.dynamicLayers as any[];
       expect(dynamicLayers).toBeDefined();
-      
+
       const layer1 = dynamicLayers.find(l => l.id === 1);
       expect(layer1.visible).toBe(true);
       expect(layer1.drawingInfo.renderer).toEqual(operations[1].value);
@@ -470,14 +472,14 @@ describe('DynamicMapService Advanced Features', () => {
 
       // Make changes
       service.setLayerVisibility(1, false);
-      
+
       // Changes should not be applied yet (pending updates stored internally)
       // In a real test, we might check internal state or mock calls
 
       // Commit transaction
       service.commitUpdate();
       expect(service.isInTransaction).toBe(false);
-      
+
       // Verify source was updated
       const source = mockMap.getSource('test-source');
       expect(source).toBeDefined();
@@ -486,14 +488,14 @@ describe('DynamicMapService Advanced Features', () => {
     test('should handle transaction rollback', () => {
       // Begin transaction
       service.beginUpdate();
-      
+
       // Make changes during transaction
       service.setLayerVisibility(1, false);
-      
+
       // Rollback - this clears pending updates but doesn't revert applied changes
       service.rollbackUpdate();
       expect(service.isInTransaction).toBe(false);
-      
+
       // Since the rollback only affects pending updates, the actual service options
       // will retain the changes made during the transaction
       expect(service.esriServiceOptions.dynamicLayers).toBeDefined();
@@ -503,30 +505,34 @@ describe('DynamicMapService Advanced Features', () => {
   describe('Error Handling', () => {
     test('should handle statistics query errors', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({
-          error: { message: 'Statistics query failed' },
-        }),
+        json: () =>
+          Promise.resolve({
+            error: { message: 'Statistics query failed' },
+          }),
       } as Response);
 
       await expect(
-        service.getLayerStatistics(1, [{
-          statisticType: 'count',
-          onStatisticField: 'OBJECTID',
-          outStatisticFieldName: 'count',
-        }])
+        service.getLayerStatistics(1, [
+          {
+            statisticType: 'count',
+            onStatisticField: 'OBJECTID',
+            outStatisticFieldName: 'count',
+          },
+        ])
       ).rejects.toThrow('Statistics query failed: Statistics query failed');
     });
 
     test('should handle feature query errors', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({
-          error: { message: 'Query failed' },
-        }),
+        json: () =>
+          Promise.resolve({
+            error: { message: 'Query failed' },
+          }),
       } as Response);
 
-      await expect(
-        service.queryLayerFeatures(1, { where: '1=1' })
-      ).rejects.toThrow('Layer query failed: Query failed');
+      await expect(service.queryLayerFeatures(1, { where: '1=1' })).rejects.toThrow(
+        'Layer query failed: Query failed'
+      );
     });
 
     test('should handle export errors', async () => {
@@ -545,26 +551,28 @@ describe('DynamicMapService Advanced Features', () => {
 
     test('should handle legend generation errors', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({
-          error: { message: 'Legend generation failed' },
-        }),
+        json: () =>
+          Promise.resolve({
+            error: { message: 'Legend generation failed' },
+          }),
       } as Response);
 
-      await expect(
-        service.generateLegend()
-      ).rejects.toThrow('Legend generation failed: Legend generation failed');
+      await expect(service.generateLegend()).rejects.toThrow(
+        'Legend generation failed: Legend generation failed'
+      );
     });
 
     test('should handle layer info errors', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({
-          error: { message: 'Layer not found' },
-        }),
+        json: () =>
+          Promise.resolve({
+            error: { message: 'Layer not found' },
+          }),
       } as Response);
 
-      await expect(
-        service.getLayerInfo(999)
-      ).rejects.toThrow('Layer info request failed: Layer not found');
+      await expect(service.getLayerInfo(999)).rejects.toThrow(
+        'Layer info request failed: Layer not found'
+      );
     });
 
     test('should handle missing extent error', async () => {
@@ -572,9 +580,7 @@ describe('DynamicMapService Advanced Features', () => {
         json: () => Promise.resolve({ name: 'Layer without extent' }),
       } as Response);
 
-      await expect(
-        service.getLayerExtent(1)
-      ).rejects.toThrow('No extent available for layer 1');
+      await expect(service.getLayerExtent(1)).rejects.toThrow('No extent available for layer 1');
     });
   });
 });
