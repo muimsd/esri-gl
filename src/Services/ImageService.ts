@@ -37,6 +37,7 @@ export class ImageService {
     this._defaultEsriOptions = {
       layers: false,
       layerDefs: false,
+      dynamicLayers: false,
       format: 'jpgpng',
       dpi: 96,
       transparent: true,

@@ -299,6 +299,227 @@ await styledService.applyClassBreaksStyle('POP2000',
 )
 ```
 
+### Server-side Dynamic Layers
+
+Advanced server-side styling and filtering using ArcGIS MapServer's dynamicLayers parameter:
+
+```typescript
+import { DynamicMapService } from 'esri-gl'
+
+class AdvancedDynamicStyling {
+    private service: DynamicMapService
+    
+    constructor(sourceId: string, map: any, serviceUrl: string) {
+        this.service = new DynamicMapService(sourceId, map, {
+            url: serviceUrl,
+            layers: [0, 1, 2] // Cities, Highways, States
+        })
+    }
+    
+    // Apply thematic styling based on data attributes
+    applyPopulationThemes() {
+        // Style states with population-based coloring
+        this.service.setLayerRenderer(2, {
+            type: 'classBreaks',
+            field: 'POP2000',
+            classBreakInfos: [
+                {
+                    classMaxValue: 1000000,
+                    symbol: {
+                        type: 'esriSFS',
+                        style: 'esriSFSSolid',
+                        color: [255, 245, 240, 200],
+                        outline: { color: [110, 110, 110, 255], width: 0.5 }
+                    }
+                },
+                {
+                    classMaxValue: 5000000,
+                    symbol: {
+                        type: 'esriSFS',
+                        style: 'esriSFSSolid',
+                        color: [254, 224, 210, 200],
+                        outline: { color: [110, 110, 110, 255], width: 0.5 }
+                    }
+                },
+                {
+                    classMaxValue: 10000000,
+                    symbol: {
+                        type: 'esriSFS',
+                        style: 'esriSFSSolid',
+                        color: [252, 187, 161, 200],
+                        outline: { color: [110, 110, 110, 255], width: 0.5 }
+                    }
+                },
+                {
+                    classMaxValue: 50000000,
+                    symbol: {
+                        type: 'esriSFS',
+                        style: 'esriSFSSolid',
+                        color: [252, 146, 114, 200],
+                        outline: { color: [110, 110, 110, 255], width: 0.5 }
+                    }
+                }
+            ]
+        })
+    }
+    
+    // Multi-layer styling with filters
+    applyRegionalAnalysis(region: string) {
+        this.service.setDynamicLayers([
+            {
+                // Cities: Large cities in region
+                id: 0,
+                visible: true,
+                definitionExpression: `REGION = '${region}' AND POP_2000 > 100000`,
+                drawingInfo: {
+                    renderer: {
+                        type: 'simple',
+                        symbol: {
+                            type: 'esriSMS',
+                            style: 'esriSMSCircle',
+                            color: [255, 0, 0, 255],
+                            size: 8,
+                            outline: { color: [255, 255, 255, 255], width: 2 }
+                        }
+                    }
+                }
+            },
+            {
+                // Highways: Major highways only
+                id: 1,
+                visible: true,
+                definitionExpression: "ROUTE_TYPE IN ('Interstate', 'US Highway')",
+                drawingInfo: {
+                    renderer: {
+                        type: 'uniqueValue',
+                        field: 'ROUTE_TYPE',
+                        uniqueValueInfos: [
+                            {
+                                value: 'Interstate',
+                                symbol: {
+                                    type: 'esriSLS',
+                                    style: 'esriSLSSolid',
+                                    color: [0, 112, 255, 255],
+                                    width: 4
+                                }
+                            },
+                            {
+                                value: 'US Highway',
+                                symbol: {
+                                    type: 'esriSLS',
+                                    style: 'esriSLSDash',
+                                    color: [85, 255, 0, 255],
+                                    width: 3
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                // States: Highlight region states
+                id: 2,
+                visible: true,
+                definitionExpression: `REGION = '${region}'`,
+                drawingInfo: {
+                    renderer: {
+                        type: 'simple',
+                        symbol: {
+                            type: 'esriSFS',
+                            style: 'esriSFSSolid',
+                            color: [0, 197, 255, 100],
+                            outline: {
+                                type: 'esriSLS',
+                                color: [0, 112, 255, 255],
+                                width: 3
+                            }
+                        }
+                    },
+                    transparency: 30
+                }
+            }
+        ])
+    }
+    
+    // Dynamic filtering based on user input
+    applyInteractiveFilters(filters: {
+        minPopulation?: number
+        maxPopulation?: number
+        regions?: string[]
+        stateNames?: string[]
+    }) {
+        const filterConditions = []
+        
+        // Population range
+        if (filters.minPopulation && filters.maxPopulation) {
+            this.service.setLayerFilter(2, {
+                field: 'POP2000',
+                op: 'BETWEEN',
+                from: filters.minPopulation,
+                to: filters.maxPopulation
+            })
+        }
+        
+        // Multiple regions
+        if (filters.regions?.length) {
+            this.service.setLayerFilter(2, {
+                field: 'REGION',
+                op: 'IN',
+                values: filters.regions
+            })
+        }
+        
+        // Complex combined filters
+        if (filters.stateNames?.length && filters.minPopulation) {
+            this.service.setLayerFilter(2, {
+                op: 'AND',
+                filters: [
+                    {
+                        field: 'STATE_NAME',
+                        op: 'IN',
+                        values: filters.stateNames
+                    },
+                    {
+                        field: 'POP2000',
+                        op: '>',
+                        value: filters.minPopulation
+                    }
+                ]
+            })
+        }
+    }
+    
+    // Reset all customizations
+    resetToDefaults() {
+        this.service.setDynamicLayers(false)
+    }
+}
+
+// Usage example
+const advancedStyling = new AdvancedDynamicStyling('usa-analysis', map, 
+    'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+)
+
+// Apply population-based thematic styling
+advancedStyling.applyPopulationThemes()
+
+// Interactive filtering
+document.getElementById('region-select').addEventListener('change', (e) => {
+    const region = e.target.value
+    advancedStyling.applyRegionalAnalysis(region)
+})
+
+// Multi-criteria filtering
+document.getElementById('apply-filters').addEventListener('click', () => {
+    advancedStyling.applyInteractiveFilters({
+        minPopulation: 1000000,
+        maxPopulation: 10000000,
+        regions: ['West', 'Pacific'],
+        stateNames: ['California', 'Oregon', 'Washington']
+    })
+})
+```
+
 ## Spatial Analysis
 
 ### Buffer and Intersect Operations

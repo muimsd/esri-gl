@@ -84,6 +84,7 @@ describe('ImageService', () => {
         url: 'https://example.com/ImageServer',
         layers: false,
         layerDefs: false,
+        dynamicLayers: false,
         format: 'jpgpng',
         dpi: 96,
         transparent: true,

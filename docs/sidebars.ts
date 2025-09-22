@@ -40,22 +40,21 @@ const sidebars: SidebarsConfig = {
         'tasks/find',
       ],
     },
-    {
-      type: 'category', 
-      label: 'API Reference',
-      items: [
-        'api/dynamic-map-service',
-        'api/tiled-map-service',
-        'api/image-service',
-        'api/feature-service',
-        'api/vector-tile-service',
-        'api/vector-basemap-style',
-        'api/identify-features',
-        'api/identify-image',
-        'api/query',
-        'api/find',
-      ],
-    },
+        {
+          type: 'category',
+          label: 'API Reference',
+          link: {
+            type: 'doc',
+            id: 'api/index'
+          },
+          collapsed: false,
+          items: [
+            'api/dynamic-map-service',
+            'api/dynamic-layers', 
+            'api/advanced-features',
+            'api/types',
+          ]
+        },
     {
       type: 'category',
       label: 'Examples',
