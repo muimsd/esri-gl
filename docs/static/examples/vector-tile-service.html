@@ -167,10 +167,12 @@
         map.on('load', async () => {
             try {
                 // Create VectorTileService
-                try {
                 service = new VectorTileService('vector-tiles-demo', map, {
                     url: 'https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer'
                 });
+
+                // Auto-add the vector layer on service load
+                await addVectorTileLayerOnLoad();
 
                 // Hide loading, show info panel
                 document.getElementById('loading').style.display = 'none';
@@ -182,6 +184,85 @@
                 document.getElementById('loading').style.color = 'red';
             }
         });
+
+        // Auto-add layer functionality (called on load)
+        async function addVectorTileLayerOnLoad() {
+            if (!service || layerAdded) return;
+            
+            try {
+                // Try to get the style from the service
+                let style = await service.getStyle();
+                
+                if (style && style.type) {
+                    // Use service-provided style
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: style.type,
+                        source: 'vector-tiles-demo',
+                        'source-layer': style['source-layer'],
+                        layout: style.layout || {},
+                        paint: style.paint || {}
+                    });
+                } else {
+                    // Fallback style for parcels
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: 'fill',
+                        source: 'vector-tiles-demo',
+                        'source-layer': 'Santa_Monica_Mountains_Parcels',
+                        paint: {
+                            'fill-color': '#088',
+                            'fill-opacity': 0.8,
+                            'fill-outline-color': '#fff'
+                        }
+                    });
+                }
+                
+                layerAdded = true;
+                // Update button states
+                const addBtn = document.getElementById('addBtn');
+                const removeBtn = document.getElementById('removeBtn');
+                if (addBtn) {
+                    addBtn.innerHTML = 'Add Layer';
+                    addBtn.disabled = true;
+                }
+                if (removeBtn) {
+                    removeBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Error auto-adding layer:', error);
+                
+                // Try fallback style
+                try {
+                    map.addLayer({
+                        id: 'vector-tiles-layer',
+                        type: 'fill',
+                        source: 'vector-tiles-demo',
+                        'source-layer': 'Santa_Monica_Mountains_Parcels',
+                        paint: {
+                            'fill-color': '#088',
+                            'fill-opacity': 0.8,
+                            'fill-outline-color': '#fff'
+                        }
+                    });
+                    
+                    layerAdded = true;
+                    // Update button states
+                    const addBtn = document.getElementById('addBtn');
+                    const removeBtn = document.getElementById('removeBtn');
+                    if (addBtn) {
+                        addBtn.innerHTML = 'Add Layer';
+                        addBtn.disabled = true;
+                    }
+                    if (removeBtn) {
+                        removeBtn.disabled = false;
+                    }
+                } catch (fallbackError) {
+                    console.error('Fallback layer failed:', fallbackError);
+                }
+            }
+        }
 
         // Add layer functionality
         async function addVectorTileLayer() {

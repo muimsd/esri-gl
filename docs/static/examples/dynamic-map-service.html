@@ -162,7 +162,7 @@
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     
     <script type="module">
-        import { DynamicMapService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+        import { DynamicMapService, IdentifyFeatures } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -252,37 +252,52 @@
         });
 
         // Map click for identify
-        map.on('click', (e) => {
+        map.on('click', async (e) => {
             if (identifyMode && service) {
-                service.identify(e.lngLat, true)
-                    .then(results => {
-                        if (results.features.length > 0) {
-                            const feature = results.features[0];
-                            let content = `<strong>Layer ${feature.layerId}</strong><br>`;
-                            Object.entries(feature.attributes).forEach(([key, value]) => {
-                                if (value && key !== 'OBJECTID') {
-                                    content += `${key}: ${value}<br>`;
-                                }
-                            });
-                            
-                            new maplibregl.Popup()
-                                .setLngLat(e.lngLat)
-                                .setHTML(content)
-                                .addTo(map);
-                        } else {
-                            new maplibregl.Popup()
-                                .setLngLat(e.lngLat)
-                                .setHTML('No features found')
-                                .addTo(map);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Identify error:', error);
+                try {
+                    // Create IdentifyFeatures task
+                    const identify = new IdentifyFeatures(service.esriServiceOptions.url);
+                    
+                    // Build layers parameter for visible layers
+                    const layersParam = selectedLayers.length > 0 ? `visible:${selectedLayers.join(',')}` : 'all';
+                    
+                    // Execute identify task
+                    const featureCollection = await identify
+                        .at({ lng: e.lngLat.lng, lat: e.lngLat.lat })
+                        .on(map)
+                        .layers(layersParam)
+                        .tolerance(5)
+                        .run();
+                    
+                    if (featureCollection && featureCollection.features && featureCollection.features.length > 0) {
+                        const feature = featureCollection.features[0];
+                        const properties = feature.properties || {};
+                        
+                        let content = `<div style="max-width: 250px;"><strong>Feature Information</strong><br>`;
+                        Object.entries(properties).forEach(([key, value]) => {
+                            if (value !== null && value !== '' && value !== undefined && key !== 'OBJECTID') {
+                                content += `<strong>${key}:</strong> ${value}<br>`;
+                            }
+                        });
+                        content += `</div>`;
+                        
                         new maplibregl.Popup()
                             .setLngLat(e.lngLat)
-                            .setHTML('Error identifying features')
+                            .setHTML(content)
                             .addTo(map);
-                    });
+                    } else {
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML('No features found')
+                            .addTo(map);
+                    }
+                } catch (error) {
+                    console.error('Identify error:', error);
+                    new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML('Error identifying features')
+                        .addTo(map);
+                }
             }
         });
     </script>

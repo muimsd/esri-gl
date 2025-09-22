@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic FeatureService - esri-gl</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="info">
+        <h3>Basic FeatureService</h3>
+        <p>Displaying Census populated places using <strong>featureService.getStyle()</strong> method</p>
+        <p>Click on any circle to see feature details</p>
+        <small>Note: getStyle() returns geometry-appropriate styling automatically</small>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <script type="module">
+        import { FeatureService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+        
+        // Create map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-98.5795, 39.8282], // Center of USA
+            zoom: 4
+        });
+
+        map.on('load', async () => {
+            try {
+                // Create FeatureService
+                const featureService = new FeatureService('census-source', map, {
+                    url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0'
+                });
+                
+                // Wait for source to be ready
+                await new Promise((resolve) => {
+                    const checkSource = () => {
+                        if (map.getSource('census-source')) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSource, 100);
+                        }
+                    };
+                    checkSource();
+                });
+                
+                // Use getStyle() to get the service's appropriate styling
+                const layerStyle = await featureService.getStyle();
+                console.log('Layer Style:', layerStyle);
+                
+                // Check if source is GeoJSON and remove source-layer if present
+                const source = map.getSource('census-source');
+                if (source && source.type === 'geojson' && layerStyle['source-layer']) {
+                    // Remove source-layer for GeoJSON sources
+                    delete layerStyle['source-layer'];
+                    console.log('Removed source-layer for GeoJSON source');
+                }
+                
+                // Add layer with service styling
+                map.addLayer({
+                    id: 'census-layer',
+                    ...layerStyle
+                });
+                
+                // Click handler
+                map.on('click', 'census-layer', (e) => {
+                    const feature = e.features[0];
+                    const props = feature.properties;
+                    
+                    new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(`
+                            <div>
+                                <strong>${props.NAME || 'Unknown'}</strong><br>
+                                State: ${props.ST || 'N/A'}<br>
+                                Population: ${props.POP_2010 || 'N/A'}
+                            </div>
+                        `)
+                        .addTo(map);
+                });
+                
+                // Hover cursor
+                map.on('mouseenter', 'census-layer', () => {
+                    map.getCanvas().style.cursor = 'pointer';
+                });
+                
+                map.on('mouseleave', 'census-layer', () => {
+                    map.getCanvas().style.cursor = '';
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

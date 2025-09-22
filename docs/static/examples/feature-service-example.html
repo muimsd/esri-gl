@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FeatureService Demo - esri-gl</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 280px;
+        }
+        
+        .controls h4 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .service-group {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .service-group h5 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .service-item {
+            margin-bottom: 6px;
+        }
+        
+        .service-item button {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #007cba;
+            border-radius: 4px;
+            background: #007cba;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .service-item button:hover {
+            background: #005a87;
+        }
+        
+        .service-item button.active {
+            background: #28a745;
+            border-color: #28a745;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            max-width: 350px;
+            font-size: 13px;
+        }
+        
+        .info-panel h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+        
+        .info-panel p {
+            margin: 4px 0;
+            color: #666;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <h4>🎯 FeatureService Examples</h4>
+        
+        <div class="service-group">
+            <h5>Vector Data Sources</h5>
+            <div class="service-item">
+                <button onclick="loadService('trees', 'Trees (Points)')">🌳 Landscape Trees</button>
+            </div>
+            <div class="service-item">
+                <button onclick="loadService('parcels', 'Parcels (Polygons)')">🏘️ Property Parcels</button>
+            </div>
+            <div class="service-item">
+                <button onclick="loadService('roads', 'Roads (Lines)')">🛣️ Transportation</button>
+            </div>
+        </div>
+        
+        <div class="service-group">
+            <h5>Data with Attributes</h5>
+            <div class="service-item">
+                <button onclick="loadService('census', 'Census Data')">📊 Demographics</button>
+            </div>
+            <div class="service-item">
+                <button onclick="loadService('incidents', 'Live Incidents')">🚨 Emergency Data</button>
+            </div>
+        </div>
+        
+        <div class="service-group">
+            <h5>Actions</h5>
+            <div class="service-item">
+                <button onclick="clearService()" style="background: #dc3545; border-color: #dc3545;">🗑️ Clear Layer</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading" id="loading" style="display: none;">Loading FeatureService...</div>
+    
+    <div class="info-panel" id="infoPanel">
+        <h4>🎯 FeatureService Demo</h4>
+        <p><strong>Smart Vector Data:</strong> Automatic vector tile detection with GeoJSON fallback</p>
+        <p><strong>Interactive:</strong> Click on features to see attributes and properties</p>
+        <p><strong>Dynamic:</strong> Server-side filtering and real-time styling</p>
+        <p>Select a service above to see FeatureService in action!</p>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    
+    <script type="module">
+        import { FeatureService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+        
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-118.2437, 34.0522], // Los Angeles
+            zoom: 10
+        });
+
+        let currentService = null;
+        let currentLayerId = null;
+        
+        // Service configurations
+        const services = {
+            trees: {
+                url: 'https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/LA_County_Trees/FeatureServer/0',
+                name: 'Landscape Trees',
+                style: {
+                    type: 'circle',
+                    paint: {
+                        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 6],
+                        'circle-color': '#228B22',
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': 0.8
+                    }
+                },
+                center: [-118.2437, 34.0522],
+                zoom: 11
+            },
+            parcels: {
+                url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Property_Parcels/FeatureServer/0',
+                name: 'Property Parcels',
+                style: {
+                    type: 'fill',
+                    paint: {
+                        'fill-color': 'rgba(0, 124, 191, 0.3)',
+                        'fill-outline-color': '#007cbf'
+                    }
+                },
+                center: [-117.1611, 32.7157],
+                zoom: 13
+            },
+            roads: {
+                url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Transportation/FeatureServer/0',
+                name: 'Transportation Network',
+                style: {
+                    type: 'line',
+                    paint: {
+                        'line-color': '#ff6b35',
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 3]
+                    }
+                },
+                center: [-117.1611, 32.7157],
+                zoom: 12
+            },
+            census: {
+                url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0',
+                name: 'Census Demographics',
+                style: {
+                    type: 'circle',
+                    paint: {
+                        'circle-radius': ['interpolate', ['linear'], ['get', 'POP_2010'], 0, 3, 100000, 12],
+                        'circle-color': ['interpolate', ['linear'], ['get', 'POP_2010'], 
+                            0, '#FED976',
+                            50000, '#FEB24C', 
+                            100000, '#FD8D3C',
+                            500000, '#E31A1C'
+                        ],
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': 0.7
+                    }
+                },
+                center: [-98.5795, 39.8282],
+                zoom: 4
+            },
+            incidents: {
+                url: 'https://services1.arcgis.com/4yjifSiIG17X0gW4/arcgis/rest/services/Emergency_Incidents/FeatureServer/0',
+                name: 'Emergency Incidents',
+                style: {
+                    type: 'circle',
+                    paint: {
+                        'circle-radius': 8,
+                        'circle-color': [
+                            'case',
+                            ['==', ['get', 'PRIORITY'], 'HIGH'], '#ff0000',
+                            ['==', ['get', 'PRIORITY'], 'MEDIUM'], '#ffaa00',
+                            '#00aa00'
+                        ],
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': 0.8
+                    }
+                },
+                center: [-118.2437, 34.0522],
+                zoom: 10
+            }
+        };
+
+        // Load a service
+        window.loadService = async function(serviceKey, displayName) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                
+                // Clear existing service
+                clearService();
+                
+                const config = services[serviceKey];
+                const sourceId = `feature-source-${serviceKey}`;
+                const layerId = `feature-layer-${serviceKey}`;
+                
+                // Create FeatureService
+                currentService = new FeatureService(sourceId, map, {
+                    url: config.url,
+                    maxRecordCount: 1000
+                });
+                
+                currentLayerId = layerId;
+                
+                // Wait for source to be ready before adding layer
+                await new Promise((resolve) => {
+                    const checkSource = () => {
+                        if (map.getSource(sourceId)) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSource, 100);
+                        }
+                    };
+                    checkSource();
+                });
+                
+                // Add layer with appropriate styling
+                map.addLayer({
+                    id: layerId,
+                    source: sourceId,
+                    ...config.style
+                });
+                
+                // Fly to appropriate location
+                map.flyTo({
+                    center: config.center,
+                    zoom: config.zoom,
+                    duration: 2000
+                });
+                
+                // Update active button
+                updateActiveButton(serviceKey, displayName);
+                
+                // Add click handler for feature identification
+                map.on('click', layerId, async (e) => {
+                    try {
+                        const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+                        if (features.length > 0) {
+                            const feature = features[0];
+                            const properties = feature.properties || {};
+                            
+                            let content = `<div style="max-width: 300px;"><strong>${config.name}</strong><br><br>`;
+                            
+                            // Show key properties
+                            Object.entries(properties).forEach(([key, value]) => {
+                                if (value !== null && value !== '' && value !== undefined && 
+                                    !key.toLowerCase().includes('objectid') && 
+                                    typeof value !== 'object') {
+                                    content += `<strong>${key}:</strong> ${value}<br>`;
+                                }
+                            });
+                            
+                            content += `</div>`;
+                            
+                            new maplibregl.Popup()
+                                .setLngLat(e.lngLat)
+                                .setHTML(content)
+                                .addTo(map);
+                        }
+                    } catch (error) {
+                        console.error('Feature identification error:', error);
+                    }
+                });
+                
+                // Change cursor on hover
+                map.on('mouseenter', layerId, () => {
+                    map.getCanvas().style.cursor = 'pointer';
+                });
+                
+                map.on('mouseleave', layerId, () => {
+                    map.getCanvas().style.cursor = '';
+                });
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                // Update info panel
+                document.getElementById('infoPanel').innerHTML = `
+                    <h4>🎯 ${config.name}</h4>
+                    <p><strong>Source:</strong> FeatureService</p>
+                    <p><strong>Format:</strong> Smart detection (Vector Tiles/GeoJSON)</p>
+                    <p><strong>Interactive:</strong> Click features for details</p>
+                    <p><strong>URL:</strong> <small>${config.url}</small></p>
+                `;
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error loading FeatureService:', error);
+                alert('Error loading service: ' + error.message);
+            }
+        };
+
+        // Clear current service
+        window.clearService = function() {
+            if (currentLayerId && map.getLayer(currentLayerId)) {
+                map.removeLayer(currentLayerId);
+            }
+            if (currentService) {
+                // Remove source
+                const sourceId = currentService.sourceId;
+                if (map.getSource(sourceId)) {
+                    map.removeSource(sourceId);
+                }
+                currentService = null;
+            }
+            currentLayerId = null;
+            
+            // Reset active buttons
+            document.querySelectorAll('.service-item button').forEach(btn => {
+                if (!btn.textContent.includes('Clear')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Reset info panel
+            document.getElementById('infoPanel').innerHTML = `
+                <h4>🎯 FeatureService Demo</h4>
+                <p><strong>Smart Vector Data:</strong> Automatic vector tile detection with GeoJSON fallback</p>
+                <p><strong>Interactive:</strong> Click on features to see attributes and properties</p>
+                <p><strong>Dynamic:</strong> Server-side filtering and real-time styling</p>
+                <p>Select a service above to see FeatureService in action!</p>
+            `;
+        };
+
+        // Update active button state
+        function updateActiveButton(serviceKey, displayName) {
+            document.querySelectorAll('.service-item button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(displayName)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

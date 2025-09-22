@@ -24,6 +24,7 @@ const sidebars: SidebarsConfig = {
         'services/dynamic-map-service',
         'services/tiled-map-service',
         'services/image-service',
+        'services/feature-service',
         'services/vector-tile-service',
         'services/vector-basemap-style',
       ],
