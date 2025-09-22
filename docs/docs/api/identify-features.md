@@ -73,57 +73,8 @@ Execute the identify operation with current parameters.
 
 **Returns:** `Promise<FeatureCollection>`
 
-## Basic Example
-
-```typescript
-import { IdentifyFeatures } from 'esri-gl'
-
-// Create and execute identify task
-const identify = new IdentifyFeatures({
-  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
-})
-
-const results = await identify
-  .at({ lng: -95, lat: 37 })
-  .on(map)
-  .layers('visible:0,1,2')
-  .tolerance(5)
-  .run()
+  console.log('Identified features:', results.features);
+});
 ```
 
-## Advanced Usage
-
-```typescript
-// With custom configuration
-const identifyTask = new IdentifyFeatures({
-  url: 'https://services.arcgis.com/my-service/MapServer',
-  tolerance: 10,
-  returnGeometry: true,
-  returnFieldName: true,
-  token: 'your-token'
-})
-
-// Chain multiple configurations
-const result = await identifyTask
-  .layers([0, 2, 4])
-  .tolerance(15)
-  .returnGeometry(true)
-  .at({ lng: -118.2437, lat: 34.0522 }, map)
-```
-
-## Response Format
-
-The identify operation returns a GeoJSON FeatureCollection:
-
-```typescript
-interface IdentifyResponse {
-  type: 'FeatureCollection'
-  features: Array<{
-    type: 'Feature'
-    geometry?: Geometry
-    properties: Record<string, any>
-    layerId?: number
-    layerName?: string
-  }>
-}
-```
+## Advanced Usage Examples

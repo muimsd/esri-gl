@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DynamicMapService with IdentifyFeatures</title>
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+        }
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            max-width: 150px;
+        }
+        .control-panel h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .layer-controls {
+            margin-bottom: 15px;
+        }
+        .layer-controls label {
+            display: block;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .layer-controls input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .identify-control {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .identify-button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .identify-button:hover {
+            background: #005a87;
+        }
+        .identify-button.active {
+            background: #28a745;
+        }
+        .identify-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .status-text {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="control-panel">
+        <h3>USA Map Service</h3>
+        
+        <div class="layer-controls">
+            <label>
+                <input type="checkbox" id="layer-0" checked> Cities
+            </label>
+            <label>
+                <input type="checkbox" id="layer-1" checked> Highways
+            </label>
+            <label>
+                <input type="checkbox" id="layer-2" checked> States
+            </label>
+        </div>
+        
+        <div class="identify-control">
+            <button id="identify-btn" class="identify-button active">Identify: ON</button>
+            <div class="status-text" id="status-text">Click on map features to identify</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { DynamicMapService, IdentifyFeatures } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+
+        // Initialize the map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-100, 40], // Center of USA
+            zoom: 4
+        });
+
+        let dynamicService;
+        let identifyService;
+        let identifyMode = true; // Start with identify enabled by default
+
+        map.on('load', async () => {
+            try {
+                // Initialize Dynamic Map Service
+                dynamicService = new DynamicMapService(
+                    'usa-dynamic',
+                    map,
+                    {
+                        url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+                    }
+                );
+
+                // Add the dynamic map layer
+                map.addLayer({
+                    id: 'usa-dynamic-layer',
+                    type: 'raster',
+                    source: 'usa-dynamic'
+                });
+
+                // Initialize IdentifyFeatures service
+                identifyService = new IdentifyFeatures({
+                    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+                });
+
+                setupLayerControls();
+                setupIdentifyControls();
+
+                console.log('Services initialized successfully');
+                document.getElementById('status-text').textContent = 'Service loaded successfully - Click on map to identify features';
+
+            } catch (error) {
+                console.error('Error initializing services:', error);
+                document.getElementById('status-text').textContent = 'Error loading service: ' + error.message;
+            }
+        });
+
+        function setupLayerControls() {
+            const checkboxes = document.querySelectorAll('.layer-controls input[type="checkbox"]');
+            
+            checkboxes.forEach((checkbox, index) => {
+                checkbox.addEventListener('change', () => {
+                    updateVisibleLayers();
+                });
+            });
+        }
+
+        function updateVisibleLayers() {
+            const visibleLayers = [];
+            const checkboxes = document.querySelectorAll('.layer-controls input[type="checkbox"]');
+            
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    visibleLayers.push(index);
+                }
+            });
+
+            try {
+                dynamicService.setLayers(visibleLayers.join(','));
+            } catch (error) {
+                console.error('Error updating layers:', error);
+                document.getElementById('status-text').textContent = 'Error updating layers: ' + error.message;
+            }
+        }
+
+        function setupIdentifyControls() {
+            const identifyBtn = document.getElementById('identify-btn');
+            const statusText = document.getElementById('status-text');
+
+            identifyBtn.addEventListener('click', () => {
+                identifyMode = !identifyMode;
+                
+                if (identifyMode) {
+                    identifyBtn.textContent = 'Identify: ON';
+                    identifyBtn.classList.add('active');
+                    statusText.textContent = 'Click on map features to identify';
+                    map.getCanvas().style.cursor = 'crosshair';
+                } else {
+                    identifyBtn.textContent = 'Identify: OFF';
+                    identifyBtn.classList.remove('active');
+                    statusText.textContent = 'Identify mode disabled';
+                    map.getCanvas().style.cursor = '';
+                }
+            });
+
+            // Set initial cursor state since identify starts enabled
+            map.getCanvas().style.cursor = 'crosshair';
+
+            // Map click handler for identify
+            map.on('click', async (e) => {
+                if (!identifyMode || !dynamicService) {
+                    console.log('Identify mode disabled or service not ready');
+                    return;
+                }
+
+                try {
+                    console.log('Identifying at:', e.lngLat);
+                    statusText.textContent = 'Identifying features...';
+                    
+                    // Create IdentifyFeatures task using the service URL
+                    const identify = new IdentifyFeatures(dynamicService.esriServiceOptions.url);
+                    
+                    // Get visible layers for identify
+                    const visibleLayers = [];
+                    const checkboxes = document.querySelectorAll('.layer-controls input[type="checkbox"]');
+                    checkboxes.forEach((checkbox, index) => {
+                        if (checkbox.checked) {
+                            visibleLayers.push(index);
+                        }
+                    });
+
+                    console.log('Visible layers:', visibleLayers);
+
+                    // Build layers parameter for visible layers
+                    const layersParam = visibleLayers.length > 0 ? `visible:${visibleLayers.join(',')}` : 'all';
+                    
+                    // Execute identify task
+                    const featureCollection = await identify
+                        .at({ lng: e.lngLat.lng, lat: e.lngLat.lat })
+                        .on(map)
+                        .layers(layersParam)
+                        .tolerance(5)
+                        .run();
+
+                    console.log('Identify results:', featureCollection);
+
+                    if (featureCollection && featureCollection.features && featureCollection.features.length > 0) {
+                        const feature = featureCollection.features[0];
+                        const properties = feature.properties || {};
+                        
+                        console.log('Feature found:', feature);
+                        console.log('Properties:', properties);
+                        
+                        let content = `<div style="max-width: 250px;"><strong>Feature Information</strong><br>`;
+                        Object.entries(properties).forEach(([key, value]) => {
+                            if (value !== null && value !== '' && value !== undefined && key !== 'OBJECTID') {
+                                content += `<strong>${key}:</strong> ${value}<br>`;
+                            }
+                        });
+                        content += `</div>`;
+                        
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML(content)
+                            .addTo(map);
+
+                        statusText.textContent = `Found ${featureCollection.features.length} feature(s) - Click elsewhere to identify more`;
+                    } else {
+                        console.log('No features found');
+                        statusText.textContent = 'No features found at this location';
+                        
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML('No features found')
+                            .addTo(map);
+                        
+                        setTimeout(() => {
+                            statusText.textContent = 'Click on map features to identify';
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error('Identify error:', error);
+                    statusText.textContent = 'Error identifying features: ' + error.message;
+                    
+                    new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML('Error identifying features')
+                        .addTo(map);
+                    
+                    setTimeout(() => {
+                        statusText.textContent = 'Click on map features to identify';
+                    }, 3000);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

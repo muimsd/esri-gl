@@ -1,4 +1,4 @@
-import * as EsriGL from '@/main';
+import * as esrigl from '@/main';
 import {
   // Services
   Service,
@@ -154,37 +154,37 @@ describe('Main Module Exports', () => {
     it('should export types and interfaces', () => {
       // We can't directly test type exports, but we can verify the module exports them
       // by checking that imported types can be used
-      const esriGLKeys = Object.keys(EsriGL);
+      const esriGLKeys = Object.keys(esrigl);
       expect(esriGLKeys.length).toBeGreaterThan(15); // Should have all the service, task, and utility exports
     });
   });
 
   describe('Complete Module Export', () => {
     it('should export all services via star import', () => {
-      expect(EsriGL.Service).toBe(Service);
-      expect(EsriGL.DynamicMapService).toBe(DynamicMapService);
-      expect(EsriGL.TiledMapService).toBe(TiledMapService);
-      expect(EsriGL.ImageService).toBe(ImageService);
-      expect(EsriGL.VectorBasemapStyle).toBe(VectorBasemapStyle);
-      expect(EsriGL.VectorTileService).toBe(VectorTileService);
-      expect(EsriGL.FeatureService).toBe(FeatureService);
+      expect(esrigl.Service).toBe(Service);
+      expect(esrigl.DynamicMapService).toBe(DynamicMapService);
+      expect(esrigl.TiledMapService).toBe(TiledMapService);
+      expect(esrigl.ImageService).toBe(ImageService);
+      expect(esrigl.VectorBasemapStyle).toBe(VectorBasemapStyle);
+      expect(esrigl.VectorTileService).toBe(VectorTileService);
+      expect(esrigl.FeatureService).toBe(FeatureService);
     });
 
     it('should export all tasks via star import', () => {
-      expect(EsriGL.Task).toBe(Task);
-      expect(EsriGL.Query).toBe(Query);
-      expect(EsriGL.query).toBe(query);
-      expect(EsriGL.Find).toBe(Find);
-      expect(EsriGL.find).toBe(find);
-      expect(EsriGL.IdentifyFeatures).toBe(IdentifyFeatures);
-      expect(EsriGL.IdentifyImage).toBe(IdentifyImage);
-      expect(EsriGL.identifyImage).toBe(identifyImage);
+      expect(esrigl.Task).toBe(Task);
+      expect(esrigl.Query).toBe(Query);
+      expect(esrigl.query).toBe(query);
+      expect(esrigl.Find).toBe(Find);
+      expect(esrigl.find).toBe(find);
+      expect(esrigl.IdentifyFeatures).toBe(IdentifyFeatures);
+      expect(esrigl.IdentifyImage).toBe(IdentifyImage);
+      expect(esrigl.identifyImage).toBe(identifyImage);
     });
 
     it('should export all utilities via star import', () => {
-      expect(EsriGL.cleanTrailingSlash).toBe(cleanTrailingSlash);
-      expect(EsriGL.getServiceDetails).toBe(getServiceDetails);
-      expect(EsriGL.updateAttribution).toBe(updateAttribution);
+      expect(esrigl.cleanTrailingSlash).toBe(cleanTrailingSlash);
+      expect(esrigl.getServiceDetails).toBe(getServiceDetails);
+      expect(esrigl.updateAttribution).toBe(updateAttribution);
     });
   });
 
@@ -370,17 +370,17 @@ describe('Main Module Exports', () => {
         'updateAttribution',
       ];
 
-      const actualExports = Object.keys(EsriGL);
+      const actualExports = Object.keys(esrigl);
 
       expectedExports.forEach(exportName => {
         expect(actualExports).toContain(exportName);
-        expect(EsriGL[exportName as keyof typeof EsriGL]).toBeDefined();
+        expect(esrigl[exportName as keyof typeof esrigl]).toBeDefined();
       });
     });
 
     it('should not have unexpected exports', () => {
       const expectedExportCount = 18; // 7 services + 8 tasks + 3 utilities
-      const actualExportCount = Object.keys(EsriGL).length;
+      const actualExportCount = Object.keys(esrigl).length;
 
       // Allow for some variance due to type exports and potential additional exports
       expect(actualExportCount).toBeGreaterThanOrEqual(expectedExportCount);

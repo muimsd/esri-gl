@@ -4,8 +4,6 @@ Integrates ArcGIS Feature Services with MapLibre GL JS and Mapbox GL JS, providi
 
 ## Live Demo
 
-## Live Demo
-
 <iframe 
     src="/examples/feature-service-basic.html"
     width="100%" 
@@ -281,4 +279,3 @@ try {
 - 📚 [API Reference](../api/feature-service) - Complete FeatureService API
 - 🎯 [Query Task](../tasks/query) - Advanced querying capabilities  
 - 🔍 [Find Task](../tasks/find) - Text-based search functionality
-- 📊 [Examples](../examples/feature-service) - More interactive examples

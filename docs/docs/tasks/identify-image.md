@@ -1,6 +1,16 @@
-# IdentifyImage Task
+# IdentifyImage
 
 Query pixel values and analytical information from ArcGIS Image Services at specific geographic locations. Perfect for extracting elevation, temperature, precipitation, and other raster data values.
+
+## Interactive Demo
+
+<iframe 
+  src="/examples/identify-image-task.html" 
+  style={{width: '100%', height: '500px', border: '1px solid #ccc', borderRadius: '4px'}}
+  title="IdentifyImage Task Demo"
+></iframe>
+
+*Click anywhere on the map to query image pixel values. Use the service dropdown to switch between different datasets (elevation, land cover, temperature). The identify mode is enabled by default.*
 
 ## Constructor
 
@@ -71,11 +81,32 @@ task.rendering({
 import { identifyImage } from 'esri-gl';
 
 // Get elevation at a specific point
-const elevation = await identifyImage({
+const result = await identifyImage({
   url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
 }).at({ lng: -118.2437, lat: 34.0522 });
 
-console.log(`Elevation: ${elevation.value} meters`);
+console.log(`Elevation: ${result.results[0].value} meters`);
+```
+
+#### Result Structure
+
+```json
+{
+  "results": [
+    {
+      "value": "327.891",
+      "attributes": {}
+    }
+  ],
+  "location": {
+    "x": -10636501.247989122,
+    "y": 4814618.998974687,
+    "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+    }
+  }
+}
 ```
 
 ### Multi-band Image Analysis
@@ -109,7 +140,7 @@ const temperature = await identifyImage({
   sortValue: '2023-12-01'
 });
 
-console.log(`Temperature: ${temperature.value}°C`);
+console.log(`Temperature: ${temperature.results[0].value}°C`);
 ```
 
 ### Time-Series Analysis
@@ -140,7 +171,7 @@ class TimeSeriesAnalyzer {
       
       results.push({
         date,
-        value: value.value,
+        value: value.results[0].value,
         properties: value.properties
       });
     }
@@ -224,7 +255,7 @@ const batchIdentify = async (locations: Array<[number, number]>, serviceUrl: str
         
         return {
           location: [lng, lat],
-          value: result.value,
+          value: result.results[0].value,
           success: true
         };
       } catch (error) {
@@ -317,7 +348,7 @@ const ElevationTool: React.FC = () => {
       {result && (
         <div>
           <h3>Elevation Data</h3>
-          <p>Value: {result.value} meters</p>
+          <p>Value: {result.results[0].value} meters</p>
           <p>Location: {result.location?.x}, {result.location?.y}</p>
         </div>
       )}
@@ -378,7 +409,7 @@ class ImageIdentifyControl {
         const result = await identifyImage({ url: service.url }).at(lngLat);
         return {
           name: service.name,
-          value: result.value,
+          value: result.results[0].value,
           unit: service.unit || '',
           success: true
         };
@@ -439,7 +470,7 @@ const robustIdentify = async (lngLat: [number, number], serviceUrl: string) => {
       .timeout(10000); // 10 second timeout
 
     // Validate result
-    if (result.value === null || result.value === undefined) {
+    if (!result.results || result.results.length === 0 || result.results[0].value === null || result.results[0].value === undefined) {
       throw new Error('No data available at this location');
     }
 

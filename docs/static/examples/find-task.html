@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Find Task Demo</title>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      .control-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 14px;
+        z-index: 1000;
+        max-width: 320px;
+        max-height: 550px;
+        overflow: scroll;
+      }
+      .control-panel h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 16px;
+        color: #333;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+      .form-group input[type='text'],
+      .form-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+        box-sizing: border-box;
+      }
+      .form-group select {
+        width: 200px;
+      }
+      .hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+        font-style: italic;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+      }
+      .btn-primary {
+        background-color: #4caf50;
+        color: white;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background-color: #45a049;
+      }
+      .btn-primary:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background-color: #545862;
+      }
+      .btn-secondary:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .results-panel {
+        margin-top: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+      }
+      .results-count {
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #4caf50;
+      }
+      .feature-item {
+        margin-bottom: 5px;
+        padding: 8px;
+        background: white;
+        border-radius: 3px;
+        border-left: 3px solid #4caf50;
+      }
+      .feature-item strong {
+        color: #333;
+      }
+      .feature-attributes {
+        margin-left: 10px;
+        font-size: 12px;
+        color: #666;
+      }
+      .error {
+        color: #dc3545;
+      }
+      .loading-text {
+        color: #6c757d;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <div class="control-panel">
+      <h3>Find Task Demo</h3>
+
+      <div class="form-group">
+        <label for="searchText">Search Text:</label>
+        <input
+          type="text"
+          id="searchText"
+          value="CA"
+          placeholder="Try: CA, TX, NY (state codes work better)"
+        />
+        <div class="hint">
+          Tip: Try state abbreviations like "CA", "TX", "NY" instead of full names
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="searchFields">Search Fields (comma-separated):</label>
+        <input
+          type="text"
+          id="searchFields"
+          value="STATE_ABBR"
+          placeholder="STATE_ABBR,STATE_NAME"
+        />
+        <div class="hint">Common fields: STATE_ABBR, STATE_NAME, CITY_NAME</div>
+      </div>
+
+      <div class="form-group">
+        <label for="layers">Layers:</label>
+        <input type="text" id="layers" value="2" placeholder="all or layer IDs (e.g., 0,1,2)" />
+      </div>
+
+      <div class="form-group">
+        <label for="searchType">Search Type:</label>
+        <select id="searchType">
+          <option value="startsWith">Starts With</option>
+          <option value="contains" selected>Contains</option>
+        </select>
+      </div>
+
+      <div class="button-group">
+        <button id="findFeatures" class="btn btn-primary">Find Features</button>
+        <button id="clearResults" class="btn btn-secondary" disabled>Clear Results</button>
+      </div>
+
+      <div id="resultsPanel" class="results-panel" style="display: none"></div>
+    </div>
+
+    <script type="module">
+      import {
+        DynamicMapService,
+        Find,
+      } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+
+      // Initialize map
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: [-98, 39.5],
+        zoom: 4,
+      });
+
+      let findResults = null;
+      let isSearching = false;
+
+      // Get DOM elements
+      const searchTextInput = document.getElementById('searchText');
+      const searchFieldsInput = document.getElementById('searchFields');
+      const layersInput = document.getElementById('layers');
+      const searchTypeSelect = document.getElementById('searchType');
+      const findFeaturesBtn = document.getElementById('findFeatures');
+      const clearResultsBtn = document.getElementById('clearResults');
+      const resultsPanel = document.getElementById('resultsPanel');
+
+      map.on('load', () => {
+        // Add sample dynamic map service
+        new DynamicMapService('usa-service', map, {
+          url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+        });
+
+        // Add layer to display the service
+        map.addLayer({
+          id: 'usa-layer',
+          type: 'raster',
+          source: 'usa-service',
+        });
+
+        // Enable find button
+        findFeaturesBtn.disabled = false;
+        updateUI();
+      });
+
+      // Execute find function
+      async function executeFind() {
+        if (!map || !searchTextInput.value.trim() || isSearching) return;
+
+        isSearching = true;
+        findResults = null;
+        updateUI();
+
+        try {
+          const searchText = searchTextInput.value.trim();
+          const searchFields = searchFieldsInput.value.trim();
+          const layers = layersInput.value.trim() || 'all';
+          const searchType = searchTypeSelect.value;
+
+          console.log('Executing find with options:', {
+            searchText,
+            searchFields,
+            layers,
+            searchType,
+          });
+
+          // The ArcGIS Find API accepts "all" or comma-separated layer IDs
+          const layersParam = layers === 'all' ? 'all' : layers;
+
+          const findTask = new Find({
+            url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+            searchText: searchText,
+            searchFields: searchFields || undefined, // Only set if provided
+            layers: layersParam,
+            contains: searchType === 'contains',
+          });
+
+          const results = await findTask.run();
+          console.log('Find results:', results);
+
+          findResults = { features: results.features };
+
+          // Clear previous results layer
+          if (map.getLayer('find-results')) {
+            map.removeLayer('find-results');
+            map.removeSource('find-results');
+          }
+
+          // Add results to map
+          if (results.features && results.features.length > 0) {
+            map.addSource('find-results', {
+              type: 'geojson',
+              data: results,
+            });
+
+            map.addLayer({
+              id: 'find-results',
+              type: 'fill',
+              source: 'find-results',
+              paint: {
+                'fill-color': '#4CAF50',
+                'fill-opacity': 0.6,
+                'fill-outline-color': '#2E7D32',
+              },
+            });
+
+            // Fit map to results
+            if (results.features.length > 0) {
+              const allCoords = [];
+
+              results.features.forEach(feature => {
+                if (feature.geometry && feature.geometry.type === 'Polygon') {
+                  const coords = feature.geometry.coordinates[0];
+                  coords.forEach(coord => {
+                    if (coord.length >= 2) {
+                      allCoords.push([coord[0], coord[1]]);
+                    }
+                  });
+                } else if (feature.geometry && feature.geometry.type === 'Point') {
+                  const coords = feature.geometry.coordinates;
+                  if (coords.length >= 2) {
+                    allCoords.push([coords[0], coords[1]]);
+                  }
+                }
+              });
+
+              if (allCoords.length > 0) {
+                const bounds = allCoords.reduce((bounds, coord) => {
+                  return bounds.extend(coord);
+                }, new maplibregl.LngLatBounds());
+
+                map.fitBounds(bounds, { padding: 50 });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Find failed:', error);
+          findResults = {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        } finally {
+          isSearching = false;
+          updateUI();
+        }
+      }
+
+      // Clear results function
+      function clearResults() {
+        findResults = null;
+        if (map.getLayer('find-results')) {
+          map.removeLayer('find-results');
+          map.removeSource('find-results');
+        }
+        updateUI();
+      }
+
+      // Update UI function
+      function updateUI() {
+        // Update button states
+        const hasSearchText = searchTextInput.value.trim().length > 0;
+        findFeaturesBtn.disabled = isSearching || !hasSearchText;
+        findFeaturesBtn.textContent = isSearching ? 'Searching...' : 'Find Features';
+        clearResultsBtn.disabled = !findResults;
+
+        // Update results panel
+        if (findResults) {
+          resultsPanel.style.display = 'block';
+
+          if (findResults.error) {
+            resultsPanel.innerHTML = `
+                        <div class="error">
+                            <strong>Error:</strong> ${findResults.error}
+                        </div>
+                    `;
+          } else {
+            const featureCount = findResults.features?.length || 0;
+            let html = `
+                        <div class="results-count">
+                            Results: ${featureCount} features found
+                        </div>
+                    `;
+
+            if (findResults.features && findResults.features.length > 0) {
+              // Show first 5 features
+              const featuresToShow = findResults.features.slice(0, 5);
+              featuresToShow.forEach((feature, index) => {
+                html += `
+                                <div class="feature-item">
+                                    <strong>Feature ${index + 1}:</strong>
+                                    <div class="feature-attributes">
+                            `;
+
+                if (feature.properties) {
+                  Object.entries(feature.properties).forEach(([key, value]) => {
+                    html += `<div><strong>${key}:</strong> ${String(value)}</div>`;
+                  });
+                }
+
+                html += `</div></div>`;
+              });
+
+              if (featureCount > 5) {
+                html += `
+                                <div style="font-style: italic; color: #6c757d; margin-top: 10px;">
+                                    ... and ${featureCount - 5} more features
+                                </div>
+                            `;
+              }
+            }
+
+            resultsPanel.innerHTML = html;
+          }
+        } else if (isSearching) {
+          resultsPanel.style.display = 'block';
+          resultsPanel.innerHTML = '<div class="loading-text">Searching for features...</div>';
+        } else {
+          resultsPanel.style.display = 'none';
+        }
+      }
+
+      // Event listeners
+      findFeaturesBtn.addEventListener('click', executeFind);
+      clearResultsBtn.addEventListener('click', clearResults);
+
+      // Update UI on search text changes
+      searchTextInput.addEventListener('input', updateUI);
+
+      // Allow Enter key in inputs to trigger search
+      [searchTextInput, searchFieldsInput, layersInput].forEach(input => {
+        input.addEventListener('keypress', e => {
+          if (e.key === 'Enter' && !isSearching && searchTextInput.value.trim()) {
+            executeFind();
+          }
+        });
+      });
+
+      // Initialize UI
+      updateUI();
+    </script>
+  </body>
+</html>

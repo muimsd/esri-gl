@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename)
 const output = (file, format, plugins = []) => ({
   input: './src/main.ts',
   output: {
-    name: 'esriGl',
+    name: 'esrigl',
     file,
     format,
     sourcemap: true

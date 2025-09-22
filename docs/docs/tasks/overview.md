@@ -1,6 +1,6 @@
 # Tasks Overview
 
-<iframe src="/examples/dashboard-example.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
+<iframe src="/examples/identify-features-task.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
 
 Tasks provide chainable operations for querying and analyzing Esri services, modeled after Esri Leaflet's task pattern. They offer more flexibility and advanced options compared to direct service methods.
 
@@ -45,6 +45,51 @@ const results = await task.at({ lng: -95, lat: 37 }, map)
 | **Complexity** | ⚠️ More setup | ✅ Simple |
 
 ## Common Patterns
+
+### Basic IdentifyFeatures Example
+
+```typescript
+import { IdentifyFeatures } from 'esri-gl'
+
+// Create map click handler for feature identification
+map.on('click', async (e) => {
+  try {
+    // Create identify task
+    const identifyTask = new IdentifyFeatures({
+      url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+      returnFieldName: true    // Include field names (constructor option)
+    })
+    .layers('all')           // Identify on all layers
+    .tolerance(5)            // 5 pixel tolerance
+    .returnGeometry(true)    // Include feature geometry
+
+    // Execute identification at click point
+    const results = await identifyTask.at(e.lngLat, map)
+    
+    if (results.length > 0) {
+      // Show popup with first result
+      const feature = results[0]
+      const properties = feature.attributes
+      
+      let content = `<div><strong>${feature.layerName}</strong><br><br>`
+      
+      Object.entries(properties).forEach(([key, value]) => {
+        if (value !== null && value !== '') {
+          content += `<strong>${key}:</strong> ${value}<br>`
+        }
+      })
+      content += '</div>'
+      
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(content)
+        .addTo(map)
+    }
+  } catch (error) {
+    console.error('Identify failed:', error)
+  }
+})
+```
 
 ### Task Chaining
 

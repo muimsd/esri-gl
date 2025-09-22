@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Task Demo</title>
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif;
+        }
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 14px;
+            z-index: 1000;
+            max-width: 320px;
+            /* max-height: 300px; */
+        }
+        .control-panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+        .form-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .checkbox-label {
+            font-weight: normal !important;
+            display: inline-flex !important;
+            align-items: center;
+            cursor: pointer;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #007cba;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #005a87;
+        }
+        .btn-primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #545862;
+        }
+        .btn-secondary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .results-panel {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+        .results-count {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #007cba;
+        }
+        .feature-item {
+            margin-bottom: 5px;
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #007cba;
+        }
+        .feature-item strong {
+            color: #333;
+        }
+        .feature-attributes {
+            margin-left: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .loading-text {
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="control-panel">
+        <h3>Query Task Demo</h3>
+        
+        <div class="form-group">
+            <label for="whereClause">WHERE Clause:</label>
+            <input type="text" id="whereClause" value="pop2000 > 1000000" placeholder="pop2000 > 1000000">
+        </div>
+        
+        <div class="form-group">
+            <label for="outFields">Output Fields (comma-separated):</label>
+            <input type="text" id="outFields" value="state_name,pop2000,state_abbr" placeholder="state_name,pop2000,state_abbr">
+        </div>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="returnGeometry" checked>
+                Return Geometry
+            </label>
+        </div>
+        
+        <div class="button-group">
+            <button id="executeQuery" class="btn btn-primary">Execute Query</button>
+            <button id="clearResults" class="btn btn-secondary" disabled>Clear Results</button>
+        </div>
+        
+        <div id="resultsPanel" class="results-panel"style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        import { DynamicMapService, Query } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+
+        // Initialize map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-98, 39.5],
+            zoom: 4
+        });
+
+        let queryResults = null;
+        let isQuerying = false;
+
+        // Get DOM elements
+        const whereClauseInput = document.getElementById('whereClause');
+        const outFieldsInput = document.getElementById('outFields');
+        const returnGeometryCheckbox = document.getElementById('returnGeometry');
+        const executeQueryBtn = document.getElementById('executeQuery');
+        const clearResultsBtn = document.getElementById('clearResults');
+        const resultsPanel = document.getElementById('resultsPanel');
+
+        map.on('load', () => {
+            // Add sample dynamic map service
+            new DynamicMapService('usa-service', map, {
+                url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+            });
+
+            // Add layer to display the service
+            map.addLayer({
+                id: 'usa-layer',
+                type: 'raster',
+                source: 'usa-service'
+            });
+
+            // Enable query button
+            executeQueryBtn.disabled = false;
+        });
+
+        // Execute query function
+        async function executeQuery() {
+            if (!map || isQuerying) return;
+
+            isQuerying = true;
+            queryResults = null;
+            updateUI();
+
+            try {
+                const whereClause = whereClauseInput.value.trim() || '1=1';
+                const outFields = outFieldsInput.value.trim() || '*';
+                const returnGeometry = returnGeometryCheckbox.checked;
+
+                // Create basic query
+                const queryTask = new Query({
+                    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2',
+                    where: whereClause,
+                    outFields: outFields.split(',').map(f => f.trim()),
+                    returnGeometry
+                });
+
+                console.log('Executing query with options:', { whereClause, outFields, returnGeometry });
+
+                const results = await queryTask.run();
+                console.log('Query results:', results);
+
+                // Ensure we have a proper FeatureCollection structure
+                queryResults = {
+                    features: results.features || []
+                };
+
+                // Clear previous results layer
+                if (map.getLayer('query-results')) {
+                    map.removeLayer('query-results');
+                    map.removeSource('query-results');
+                }
+
+                // Add results to map if geometry is returned
+                if (queryResults.features && queryResults.features.length > 0 && returnGeometry) {
+                    map.addSource('query-results', {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: queryResults.features
+                        }
+                    });
+
+                    // Add fill layer for polygons/states
+                    map.addLayer({
+                        id: 'query-results',
+                        type: 'fill',
+                        source: 'query-results',
+                        paint: {
+                            'fill-color': '#ff6b6b',
+                            'fill-opacity': 0.3
+                        }
+                    });
+
+                    // Add stroke layer for better visibility
+                    map.addLayer({
+                        id: 'query-results-stroke',
+                        type: 'line',
+                        source: 'query-results',
+                        paint: {
+                            'line-color': '#e74c3c',
+                            'line-width': 2
+                        }
+                    });
+
+                    // Fit map to results bounds
+                    if (queryResults.features.length > 0) {
+                        const allCoords = [];
+                        queryResults.features.forEach(feature => {
+                            if (feature.geometry && feature.geometry.type === 'Polygon') {
+                                feature.geometry.coordinates[0].forEach(coord => {
+                                    allCoords.push(coord);
+                                });
+                            } else if (feature.geometry && feature.geometry.type === 'MultiPolygon') {
+                                feature.geometry.coordinates.forEach(polygon => {
+                                    polygon[0].forEach(coord => {
+                                        allCoords.push(coord);
+                                    });
+                                });
+                            }
+                        });
+
+                        if (allCoords.length > 0) {
+                            const bounds = allCoords.reduce((bounds, coord) => {
+                                return bounds.extend(coord);
+                            }, new maplibregl.LngLatBounds());
+
+                            map.fitBounds(bounds, { padding: 50 });
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error('Query failed:', error);
+                queryResults = { 
+                    error: error instanceof Error ? error.message : 'Unknown error' 
+                };
+            } finally {
+                isQuerying = false;
+                updateUI();
+            }
+        }
+
+        // Clear results function
+        function clearResults() {
+            queryResults = null;
+            if (map.getLayer('query-results-stroke')) {
+                map.removeLayer('query-results-stroke');
+            }
+            if (map.getLayer('query-results')) {
+                map.removeLayer('query-results');
+                map.removeSource('query-results');
+            }
+            updateUI();
+        }
+
+        // Update UI function
+        function updateUI() {
+            // Update button states
+            executeQueryBtn.disabled = isQuerying;
+            executeQueryBtn.textContent = isQuerying ? 'Querying...' : 'Execute Query';
+            clearResultsBtn.disabled = !queryResults;
+
+            // Update results panel
+            if (queryResults) {
+                resultsPanel.style.display = 'block';
+                
+                if (queryResults.error) {
+                    resultsPanel.innerHTML = `
+                        <div class="error">
+                            <strong>Error:</strong> ${queryResults.error}
+                        </div>
+                    `;
+                } else {
+                    const featureCount = queryResults.features?.length || 0;
+                    let html = `
+                        <div class="results-count">
+                            Results: ${featureCount} features found
+                        </div>
+                    `;
+                    
+                    if (queryResults.features && queryResults.features.length > 0) {
+                        // Show first 5 features
+                        const featuresToShow = queryResults.features.slice(0, 5);
+                        featuresToShow.forEach((feature, index) => {
+                            html += `
+                                <div class="feature-item">
+                                    <strong>Feature ${index + 1}:</strong>
+                                    <div class="feature-attributes">
+                            `;
+                            
+                            if (feature.properties) {
+                                Object.entries(feature.properties).forEach(([key, value]) => {
+                                    html += `<div><strong>${key}:</strong> ${String(value)}</div>`;
+                                });
+                            }
+                            
+                            html += `</div></div>`;
+                        });
+                        
+                        if (featureCount > 5) {
+                            html += `
+                                <div style="font-style: italic; color: #6c757d; margin-top: 10px;">
+                                    ... and ${featureCount - 5} more features
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    resultsPanel.innerHTML = html;
+                }
+            } else if (isQuerying) {
+                resultsPanel.style.display = 'block';
+                resultsPanel.innerHTML = '<div class="loading-text">Executing query...</div>';
+            } else {
+                resultsPanel.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        executeQueryBtn.addEventListener('click', executeQuery);
+        clearResultsBtn.addEventListener('click', clearResults);
+
+        // Allow Enter key in inputs to trigger query
+        [whereClauseInput, outFieldsInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isQuerying) {
+                    executeQuery();
+                }
+            });
+        });
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>

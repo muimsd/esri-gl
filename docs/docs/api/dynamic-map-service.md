@@ -1,7 +1,5 @@
 # DynamicMapService
 
-<iframe src="/examples/basic-viewer.html" width="100%" height="400" frameBorder="0" style={{border: '1px solid #ccc', borderRadius: '8px', marginBottom: '20px'}}></iframe>
-
 For accessing [ArcGIS Dynamic Map Services](https://developers.arcgis.com/rest/services-reference/map-service.htm) as raster tile sources.
 
 ## Constructor
@@ -34,59 +32,3 @@ For accessing [ArcGIS Dynamic Map Services](https://developers.arcgis.com/rest/s
 | `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResponse>` | Identify features at a point |
 | `setLayers(layers)` | `void` | Update which layers are visible |
 | `setLayerDefs(layerDefs)` | `void` | Update layer definition filters |
-
-## Basic Example
-
-```typescript
-import { DynamicMapService } from 'esri-gl'
-
-// Create the service
-const service = new DynamicMapService('usa-source', map, {
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-    layers: [0, 1, 2],
-    format: 'png32',
-    transparent: true
-})
-
-// Add a layer to display the service
-map.addLayer({
-    id: 'usa-layer',
-    type: 'raster', 
-    source: 'usa-source'
-})
-```
-
-## Identify Features
-
-```typescript
-// Identify features at a point
-const results = await service.identify({
-    lng: -95.7129,
-    lat: 37.0902  
-}, true) // returnGeometry = true
-
-console.log('Identified features:', results.results)
-```
-
-## Layer Filtering
-
-```typescript
-// Filter specific layers with SQL
-service.setLayerDefs({
-    0: "POP2000 > 100000",
-    1: "STATE_NAME IN ('California', 'Texas', 'Florida')"
-})
-
-// Show only specific layers
-service.setLayers([0, 2])
-```
-
-## Time-Enabled Services
-
-```typescript
-const timeService = new DynamicMapService('time-source', map, {
-    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer',
-    from: new Date('2020-01-01'),
-    to: new Date('2020-12-31')
-})
-```

@@ -44,7 +44,7 @@ map.setStyle(style);
 ### Basic Implementation
 ```javascript
 // Initialize with default Streets style
-const vectorStyle = new EsriGL.VectorBasemapStyle('ArcGIS:Streets', apiKey);
+const vectorStyle = new VectorBasemapStyle('ArcGIS:Streets', apiKey);
 const response = await fetch(vectorStyle.styleUrl);
 const style = await response.json();
 map.setStyle(style);
@@ -53,7 +53,7 @@ map.setStyle(style);
 ### Dynamic Style Switching
 ```javascript
 async function switchBasemap(styleId) {
-  const vectorStyle = new EsriGL.VectorBasemapStyle(styleId, apiKey);
+  const vectorStyle = new VectorBasemapStyle(styleId, apiKey);
   const response = await fetch(vectorStyle.styleUrl);
   const style = await response.json();
   map.setStyle(style);
@@ -67,7 +67,7 @@ await switchBasemap('ArcGIS:Topographic');
 ```javascript
 async function loadBasemap(styleId, apiKey) {
   try {
-    const vectorStyle = new EsriGL.VectorBasemapStyle(styleId, apiKey);
+    const vectorStyle = new VectorBasemapStyle(styleId, apiKey);
     const response = await fetch(vectorStyle.styleUrl);
     
     if (!response.ok) {

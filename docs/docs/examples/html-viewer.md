@@ -217,7 +217,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
                 
                 switch (serviceType) {
                     case 'dynamic':
-                        currentService = new esrigl.DynamicMapService(sourceId, map, {
+                        currentService = new DynamicMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -232,7 +232,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
                         break;
 
                     case 'feature':
-                        currentService = new esrigl.FeatureService(sourceId, map, {
+                        currentService = new FeatureService(sourceId, map, {
                             url: serviceUrl,
                             useVectorTiles: true,
                             useBoundingBox: true
@@ -247,7 +247,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
                         break;
 
                     case 'tiled':
-                        currentService = new esrigl.TiledMapService(sourceId, map, {
+                        currentService = new TiledMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -262,7 +262,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
                         break;
 
                     case 'vector':
-                        currentService = new esrigl.VectorTileService(sourceId, map, {
+                        currentService = new VectorTileService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -604,7 +604,7 @@ A complete HTML page using esri-gl with Mapbox GL JS:
 
         map.on('load', () => {
             // Add Dynamic Map Service
-            const dynamicService = new esrigl.DynamicMapService('usa-service', map, {
+            const dynamicService = new DynamicMapService('usa-service', map, {
                 url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
             });
 
@@ -616,7 +616,7 @@ A complete HTML page using esri-gl with Mapbox GL JS:
             });
 
             // Add Feature Service
-            const featureService = new esrigl.FeatureService('cities-service', map, {
+            const featureService = new FeatureService('cities-service', map, {
                 url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0',
                 useVectorTiles: false
             });
@@ -676,7 +676,7 @@ A minimal HTML example for quick testing:
 
         map.on('load', () => {
             // Add ArcGIS Dynamic Map Service
-            new esrigl.DynamicMapService('esri-service', map, {
+            new DynamicMapService('esri-service', map, {
                 url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
             });
 
@@ -887,7 +887,7 @@ A more advanced dashboard-style HTML example:
                 let service;
                 switch (type) {
                     case 'dynamic':
-                        service = new esrigl.DynamicMapService(serviceId, map, { url });
+                        service = new DynamicMapService(serviceId, map, { url });
                         map.addLayer({
                             id: layerId,
                             type: 'raster',
@@ -896,7 +896,7 @@ A more advanced dashboard-style HTML example:
                         break;
 
                     case 'tiled':
-                        service = new esrigl.TiledMapService(serviceId, map, { url });
+                        service = new TiledMapService(serviceId, map, { url });
                         map.addLayer({
                             id: layerId,
                             type: 'raster',
@@ -905,7 +905,7 @@ A more advanced dashboard-style HTML example:
                         break;
 
                     case 'feature':
-                        service = new esrigl.FeatureService(serviceId, map, {
+                        service = new FeatureService(serviceId, map, {
                             url,
                             useVectorTiles: true
                         });
@@ -952,7 +952,7 @@ A more advanced dashboard-style HTML example:
                         break;
 
                     case 'vector':
-                        service = new esrigl.VectorTileService(serviceId, map, { url });
+                        service = new VectorTileService(serviceId, map, { url });
                         break;
                 }
 

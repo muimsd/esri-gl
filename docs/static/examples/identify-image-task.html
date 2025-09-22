@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IdentifyImage Task Demo</title>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      .control-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        z-index: 1000;
+        max-width: 200px;
+      }
+      .control-panel h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+      .service-controls {
+        margin-bottom: 15px;
+      }
+      .service-controls label {
+        display: block;
+        margin-bottom: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .service-controls select {
+        width: 100%;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+      .identify-control {
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+      }
+      .identify-button {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        width: 100%;
+      }
+      .identify-button:hover {
+        background: #218838;
+      }
+      .identify-button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      .status-text {
+        margin-top: 10px;
+        font-style: italic;
+        color: #666;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="control-panel">
+      <h3>World Elevation Query</h3>
+
+      <div class="identify-control">
+        <button id="identify-btn" class="identify-button">Identify: ON</button>
+        <div class="status-text" id="status-text">Click on map to query elevation values</div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        ImageService,
+        IdentifyImage,
+      } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+
+      // Image service configurations
+      const services = {
+        elevation: {
+          url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
+          name: 'World Elevation',
+          unit: 'meters',
+          format: value => `${Math.round(value)} m`,
+        },
+      };
+
+      // Initialize the map
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: [-95, 39], // Center of USA
+        zoom: 4,
+      });
+
+      let currentImageService;
+      let currentIdentifyTask;
+      let identifyMode = true;
+      let currentServiceKey = 'elevation';
+
+      map.on('load', async () => {
+        try {
+          await initializeService(currentServiceKey);
+          setupControls();
+
+          document.getElementById('status-text').textContent =
+            'Elevation service loaded - Click on map to query elevation';
+        } catch (error) {
+          console.error('Error initializing service:', error);
+          document.getElementById('status-text').textContent =
+            'Error loading service: ' + error.message;
+        }
+      });
+
+      async function initializeService(serviceKey) {
+        const serviceConfig = services[serviceKey];
+
+        // Remove existing service if any
+        if (currentImageService && map.getSource('image-source')) {
+          map.removeLayer('image-layer');
+          map.removeSource('image-source');
+        }
+
+        try {
+          // Initialize Image Service
+          currentImageService = new ImageService('image-source', map, {
+            url: serviceConfig.url,
+          });
+
+          // Add the image layer
+          map.addLayer({
+            id: 'image-layer',
+            type: 'raster',
+            source: 'image-source',
+            paint: { 'raster-opacity': 0.8 },
+          });
+
+          // Initialize IdentifyImage task
+          currentIdentifyTask = new IdentifyImage({
+            url: serviceConfig.url,
+          });
+
+          console.log(`${serviceConfig.name} service initialized`);
+        } catch (error) {
+          console.error(`Error initializing ${serviceConfig.name}:`, error);
+          throw error;
+        }
+      }
+
+      function setupControls() {
+        // Identify button
+        const identifyBtn = document.getElementById('identify-btn');
+        const statusText = document.getElementById('status-text');
+
+        identifyBtn.addEventListener('click', () => {
+          identifyMode = !identifyMode;
+
+          if (identifyMode) {
+            identifyBtn.textContent = 'Identify: ON';
+            identifyBtn.style.background = '#28a745';
+            statusText.textContent = 'Click on map to query elevation';
+            map.getCanvas().style.cursor = 'crosshair';
+          } else {
+            identifyBtn.textContent = 'Identify: OFF';
+            identifyBtn.style.background = '#6c757d';
+            statusText.textContent = 'Identify mode disabled';
+            map.getCanvas().style.cursor = '';
+          }
+        });
+
+        // Set initial cursor state
+        map.getCanvas().style.cursor = 'crosshair';
+
+        // Map click handler for identify
+        map.on('click', async e => {
+          if (!identifyMode || !currentIdentifyTask) {
+            console.log('Identify mode disabled or task not ready');
+            return;
+          }
+
+          try {
+            console.log('Identifying at:', e.lngLat);
+            statusText.textContent = 'Querying elevation...';
+
+            const serviceConfig = services[currentServiceKey];
+
+            // Execute identify task
+            const result = await currentIdentifyTask.at(e.lngLat).run();
+            
+            console.log('Identify result:', result);
+
+            if (result && result.results && result.results.length > 0 && result.results[0].value !== undefined && result.results[0].value !== null) {
+              const formattedValue = serviceConfig.format(result.results[0].value);
+              let popupContent = `<div style="max-width: 200px;">
+                            <strong>${serviceConfig.name}</strong><br><br>
+                            <strong>Elevation:</strong> ${formattedValue}<br>
+                            <strong>Location:</strong><br>
+                            Lng: ${Math.round(e.lngLat.lng * 10000) / 10000}°<br>
+                            Lat: ${Math.round(e.lngLat.lat * 10000) / 10000}°
+                        </div>`;
+
+              new maplibregl.Popup().setLngLat(e.lngLat).setHTML(popupContent).addTo(map);
+
+              statusText.textContent = `Elevation: ${formattedValue} - Click elsewhere to query more`;
+            } else {
+              console.log('No elevation data at this location');
+              statusText.textContent = 'No elevation data available at this location';
+
+              new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML('<div>No elevation data available at this location</div>')
+                .addTo(map);
+
+              setTimeout(() => {
+                statusText.textContent = 'Click on map to query elevation';
+              }, 2000);
+            }
+          } catch (error) {
+            console.error('Identify error:', error);
+            statusText.textContent = 'Error querying elevation: ' + error.message;
+
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`<div style="color: red;">Error: ${error.message}</div>`)
+              .addTo(map);
+
+            setTimeout(() => {
+              statusText.textContent = 'Click on map to query elevation';
+            }, 3000);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

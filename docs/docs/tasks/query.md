@@ -4,7 +4,13 @@ Perform advanced queries against ArcGIS Feature Services with spatial filters, a
 
 ## Interactive Demo
 
-*Note: Demo would show query functionality with filters and attribute conditions - implementation pending*
+<iframe 
+  src="/examples/query-task.html" 
+  style={{width: '100%', height: '600px', border: '1px solid #ccc', borderRadius: '4px'}}
+  title="Query Task Demo"
+></iframe>
+
+*Execute SQL-like queries against the USA states layer. Modify the WHERE clause to filter by population, state name, or other attributes. Toggle "Return Geometry" to show/hide results on the map. Example queries: `pop2000 > 5000000`, `state_name LIKE '%A%'`, `state_abbr IN ('CA','TX','NY')`.*
 
 ## Quick Start
 
@@ -89,7 +95,7 @@ Execute the query and return results.
 
 ### Basic Attribute Query
 ```javascript
-const queryTask = new EsriGL.Query({
+const queryTask = new Query({
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2'
 });
 
@@ -102,7 +108,7 @@ const results = await queryTask
 
 ### Spatial Query
 ```javascript
-const queryTask = new EsriGL.Query({
+const queryTask = new Query({
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/1'
 });
 
@@ -121,7 +127,7 @@ const results = await queryTask
 
 ### Statistical Query
 ```javascript
-const queryTask = new EsriGL.Query({
+const queryTask = new Query({
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2'
 });
 
@@ -144,7 +150,7 @@ const stats = await queryTask
 
 ### Paginated Query
 ```javascript
-const queryTask = new EsriGL.Query({
+const queryTask = new Query({
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/1'
 });
 
@@ -164,7 +170,7 @@ const page2 = await queryTask
 
 ### Complex Query with Multiple Filters
 ```javascript
-const queryTask = new EsriGL.Query({
+const queryTask = new Query({
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2'
 });
 
