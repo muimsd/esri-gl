@@ -1,42 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Minimal esri-gl Example</title>
-    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet">
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
-        body { margin: 0; padding: 0; }
-        #map { width: 100vw; height: 100vh; }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+        cursor: crosshair;
+      }
+      .maplibregl-popup-content {
+        padding: 15px;
+        max-width: 300px;
+      }
+      .popup-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+      .popup-info {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+      .coordinates {
+        font-family: monospace;
+        background: #f5f5f5;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="map"></div>
-    
+
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
+
     <script type="module">
-        import { DynamicMapService } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: 'https://demotiles.maplibre.org/style.json',
-            center: [-95, 40],
-            zoom: 4
+      import {
+        DynamicMapService,
+        IdentifyFeatures,
+      } from 'https://unpkg.com/esri-gl@latest/dist/esri-gl.esm.js';
+
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: [-95, 40],
+        zoom: 4,
+      });
+      let nav = new maplibregl.NavigationControl();
+      map.addControl(nav, 'top-right');
+
+      let service = null;
+
+      map.on('load', () => {
+        // Add ArcGIS Dynamic Map Service
+        service = new DynamicMapService('esri-service', map, {
+          url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+          layers: [0, 1, 2], // Show specific layers
+          format: 'png32',
+          transparent: true,
         });
 
-        map.on('load', () => {
-            // Add ArcGIS Dynamic Map Service
-            new DynamicMapService('esri-service', map, {
-                url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
+        // Add the layer
+        map.addLayer({
+          id: 'esri-layer',
+          type: 'raster',
+          source: 'esri-service',
+        });
+      });
+
+      // Add click functionality
+      map.on('click', async e => {
+        if (!service) return;
+
+        const { lng, lat } = e.lngLat;
+
+        try {
+          // Show loading cursor
+          map.getContainer().style.cursor = 'wait';
+
+          // Create IdentifyFeatures task with the service URL
+          const identify = new IdentifyFeatures(service.esriServiceOptions.url);
+
+          // Use the task pattern with chaining
+          const featureCollection = await identify
+            .at({ lng, lat })
+            .on(map)
+            .layers('visible:0,1,2') // Specify visible layers
+            .tolerance(5)
+            .run();
+
+          // Reset cursor
+          map.getContainer().style.cursor = 'crosshair';
+
+          if (
+            featureCollection &&
+            featureCollection.features &&
+            featureCollection.features.length > 0
+          ) {
+            // Show results in popup
+            const feature = featureCollection.features[0];
+            const properties = feature.properties || {};
+
+            // Create popup content
+            let content = `<div class="popup-title">📍 Feature Information</div>`;
+            content += `<div style="max-width: 280px;">`;
+
+            // Show properties
+            Object.keys(properties).forEach(key => {
+              const value = properties[key];
+              if (
+                value !== null &&
+                value !== '' &&
+                value !== undefined &&
+                typeof value !== 'object'
+              ) {
+                content += `<div style="font-size: 12px; margin: 2px 0;"><strong>${key}:</strong> ${value}</div>`;
+              }
             });
 
-            // Add the layer
-            map.addLayer({
-                id: 'esri-layer',
-                type: 'raster',
-                source: 'esri-service'
-            });
-        });
+            content += `</div>`;
+            content += `<div class="coordinates">📍 ${lng.toFixed(4)}, ${lat.toFixed(4)}</div>`;
+
+            new maplibregl.Popup().setLngLat([lng, lat]).setHTML(content).addTo(map);
+          } else {
+            // No features found - show coordinates only
+            const content = `
+                        <div class="popup-title">📍 Location</div>
+                        <div class="popup-info">No features found at this location</div>
+                        <div class="coordinates">📍 ${lng.toFixed(4)}, ${lat.toFixed(4)}</div>
+                    `;
+
+            new maplibregl.Popup().setLngLat([lng, lat]).setHTML(content).addTo(map);
+          }
+        } catch (error) {
+          // Reset cursor and show error
+          map.getContainer().style.cursor = 'crosshair';
+          console.error('IdentifyFeatures error:', error);
+
+          const content = `
+                    <div class="popup-title">❌ Error</div>
+                    <div class="popup-info">Unable to identify features: ${error.message}</div>
+                    <div class="coordinates">📍 ${lng.toFixed(4)}, ${lat.toFixed(4)}</div>
+                `;
+
+          new maplibregl.Popup().setLngLat([lng, lat]).setHTML(content).addTo(map);
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
