@@ -49,9 +49,39 @@ const sidebars: SidebarsConfig = {
           },
           collapsed: false,
           items: [
-            'api/dynamic-map-service',
-            'api/dynamic-layers', 
-            'api/advanced-features',
+            {
+              type: 'category',
+              label: 'Services',
+              collapsed: false,
+              items: [
+                'api/dynamic-map-service',
+                'api/tiled-map-service',
+                'api/image-service',
+                'api/feature-service',
+                'api/vector-tile-service',
+                'api/vector-basemap-style',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Tasks',
+              collapsed: false,
+              items: [
+                'api/identify-features',
+                'api/identify-image',
+                'api/query',
+                'api/find',
+              ]
+            },
+            {
+              type: 'category',
+              label: 'Advanced Features',
+              collapsed: false,
+              items: [
+                'api/dynamic-layers', 
+                'api/advanced-features',
+              ]
+            },
             'api/types',
           ]
         },
