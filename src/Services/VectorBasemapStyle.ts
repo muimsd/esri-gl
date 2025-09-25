@@ -1,16 +1,44 @@
 /**
  * VectorBasemapStyle supports both modern slash form (arcgis/streets) and legacy colon form (ArcGIS:Streets).
  * The URL always uses the slash form expected by the Basemap Styles Service.
+ *
+ * Note: MapLibre GL v5+ may show vector tile parsing warnings with some Esri tiles.
+ * These warnings are expected and do not affect map rendering functionality.
  */
+
+// Available Esri basemap style names
+export type EsriBasemapStyleName = 
+  | 'arcgis/streets'
+  | 'arcgis/topographic'
+  | 'arcgis/navigation'
+  | 'arcgis/streets-relief'
+  | 'arcgis/dark-gray'
+  | 'arcgis/light-gray'
+  | 'arcgis/oceans'
+  | 'arcgis/imagery'
+  | 'arcgis/streets-night'
+  // Legacy colon form (for backwards compatibility)
+  | 'arcgis:streets'
+  | 'arcgis:topographic'
+  | 'arcgis:navigation'
+  | 'arcgis:streetsrelief'
+  | 'arcgis:darkgray'
+  | 'arcgis:lightgray'
+  | 'arcgis:oceans'
+  | 'arcgis:imagery'
+  | 'arcgis:streetsnight'
+  // Allow custom enterprise styles
+  | string;
+
 export interface VectorBasemapStyleAuthOptions {
-  apiKey?: string;          // API key for v1 host (basemaps-api)
-  token?: string;           // OAuth / user token for v2 host (basemapstyles-api)
-  version?: 'v1' | 'v2';    // Force version; inferred if not supplied
-  host?: string;            // Override host (useful for enterprise / future domains)
-  echoToken?: boolean;      // Only for v2 token endpoints (default false)
-  format?: 'json' | 'style';// Output format (v2 default json, v1 uses style semantics)
-  language?: string;        // Optional locale
-  worldview?: string;       // Optional worldview parameter
+  apiKey?: string; // API key for v1 host (basemaps-api)
+  token?: string; // OAuth / user token for v2 host (basemapstyles-api)
+  version?: 'v1' | 'v2'; // Force version; inferred if not supplied
+  host?: string; // Override host (useful for enterprise / future domains)
+  echoToken?: boolean; // Only for v2 token endpoints (default false)
+  format?: 'json' | 'style'; // Output format (v2 default json, v1 uses style semantics)
+  language?: string; // Optional locale
+  worldview?: string; // Optional worldview parameter
 }
 
 export class VectorBasemapStyle {
@@ -38,7 +66,7 @@ export class VectorBasemapStyle {
   };
 
   // Overload signature: (styleName, apiKeyString) or (styleName, options)
-  constructor(styleName?: string, auth?: string | VectorBasemapStyleAuthOptions) {
+  constructor(styleName?: EsriBasemapStyleName, auth?: string | VectorBasemapStyleAuthOptions) {
     const provided = styleName && styleName.trim() ? styleName : 'arcgis/streets';
     this.styleName = provided;
     this._canonical = VectorBasemapStyle._toCanonical(provided);
@@ -58,7 +86,11 @@ export class VectorBasemapStyle {
     // Infer version: token => v2, else apiKey => v1
     this._version = opts.version || (this._token ? 'v2' : 'v1');
     // Determine host based on version if not overridden
-    this._host = opts.host || (this._version === 'v2' ? 'https://basemapstyles-api.arcgis.com' : 'https://basemaps-api.arcgis.com');
+    this._host =
+      opts.host ||
+      (this._version === 'v2'
+        ? 'https://basemapstyles-api.arcgis.com'
+        : 'https://basemaps-api.arcgis.com');
     // For v2 we default to 'style' so the response is directly consumable by map.setStyle
     this._format = opts.format || (this._version === 'v2' ? 'style' : 'style');
 
@@ -75,8 +107,6 @@ export class VectorBasemapStyle {
       const params = new URLSearchParams();
       params.set('f', this._format); // usually 'style'
       if (this._token) params.set('token', this._token);
-      // Always include echoToken=false to mirror sample URL pattern
-      params.set('echoToken', 'false');
       if (this._language) params.set('language', this._language);
       if (this._worldview) params.set('worldview', this._worldview);
       return `${this._host}/arcgis/rest/services/styles/v2/styles/${this._canonical}?${params.toString()}`;
@@ -87,10 +117,10 @@ export class VectorBasemapStyle {
     if (this._apiKey) params.set('apiKey', this._apiKey);
     if (this._language) params.set('language', this._language);
     if (this._worldview) params.set('worldview', this._worldview);
-    return `${this._host}/arcgis/rest/services/styles/${this._canonical}?${params.toString()}`;
+    return `${this._host}/arcgis/rest/services/styles/v1/styles/${this._canonical}?${params.toString()}`;
   }
 
-  setStyle(styleName: string): void {
+  setStyle(styleName: EsriBasemapStyleName): void {
     if (!styleName) return;
     this.styleName = styleName;
     this._canonical = VectorBasemapStyle._toCanonical(styleName);
@@ -98,6 +128,29 @@ export class VectorBasemapStyle {
 
   update(): void {}
   remove(): void {}
+
+  /**
+   * Simple wrapper to apply a basemap style to a MapLibre/Mapbox map.
+   * 
+   * @param map - MapLibre GL or Mapbox GL map instance with setStyle method
+   * @param styleName - Esri style name (e.g., 'arcgis/streets', 'arcgis/topographic')
+   * @param auth - Authentication options (API key or token)
+   * 
+   * @example
+   * // Using API key
+   * VectorBasemapStyle.applyStyle(map, 'arcgis/streets', { apiKey: 'your-api-key' });
+   * 
+   * // Using token
+   * VectorBasemapStyle.applyStyle(map, 'arcgis/topographic', { token: 'your-token' });
+   */
+  static applyStyle(
+    map: { setStyle: (style: string) => void },
+    styleName: EsriBasemapStyleName,
+    auth: VectorBasemapStyleAuthOptions
+  ): void {
+    const vectorStyle = new VectorBasemapStyle(styleName, auth);
+    map.setStyle(vectorStyle.styleUrl);
+  }
 
   private static _toCanonical(name: string): string {
     if (!name) return 'arcgis/streets';

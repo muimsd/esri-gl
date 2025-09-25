@@ -39,7 +39,7 @@ describe('VectorBasemapStyle', () => {
       const service = new VectorBasemapStyle('arcgis/streets', 'test-api-key');
 
       expect(service.styleUrl).toBe(
-        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/arcgis/streets?type=style&apiKey=test-api-key'
+        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/v1/styles/arcgis/streets?type=style&apiKey=test-api-key'
       );
     });
 
@@ -96,6 +96,65 @@ describe('VectorBasemapStyle', () => {
 
       // Should not throw error
       expect(() => service.remove()).not.toThrow();
+    });
+  });
+
+  describe('applyStyle Static Method', () => {
+    let mockMap: { setStyle: jest.Mock };
+
+    beforeEach(() => {
+      mockMap = {
+        setStyle: jest.fn(),
+      };
+    });
+
+    it('should apply style using API key', () => {
+      VectorBasemapStyle.applyStyle(mockMap, 'arcgis/streets', { apiKey: 'test-api-key' });
+
+      expect(mockMap.setStyle).toHaveBeenCalledWith(
+        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/v1/styles/arcgis/streets?type=style&apiKey=test-api-key'
+      );
+    });
+
+    it('should apply style using token', () => {
+      VectorBasemapStyle.applyStyle(mockMap, 'arcgis/topographic', { token: 'test-token' });
+
+      expect(mockMap.setStyle).toHaveBeenCalledWith(
+        'https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/arcgis/topographic?f=style&token=test-token'
+      );
+    });
+
+    it('should apply style with language and worldview options', () => {
+      VectorBasemapStyle.applyStyle(mockMap, 'arcgis/navigation', {
+        apiKey: 'test-api-key',
+        language: 'es',
+        worldview: 'es'
+      });
+
+      expect(mockMap.setStyle).toHaveBeenCalledWith(
+        'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/v1/styles/arcgis/navigation?type=style&apiKey=test-api-key&language=es&worldview=es'
+      );
+    });
+
+    it('should call setStyle only once', () => {
+      VectorBasemapStyle.applyStyle(mockMap, 'arcgis/imagery', { apiKey: 'test-api-key' });
+
+      expect(mockMap.setStyle).toHaveBeenCalledTimes(1);
+    });
+
+    it('should work with different style names', () => {
+      const styles = [
+        'arcgis/streets',
+        'arcgis/topographic',
+        'arcgis/dark-gray',
+        'arcgis/imagery'
+      ];
+
+      styles.forEach(styleName => {
+        VectorBasemapStyle.applyStyle(mockMap, styleName, { apiKey: 'test-key' });
+      });
+
+      expect(mockMap.setStyle).toHaveBeenCalledTimes(styles.length);
     });
   });
 
