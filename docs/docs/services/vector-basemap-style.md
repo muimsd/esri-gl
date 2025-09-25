@@ -18,13 +18,12 @@ The `VectorBasemapStyle` class provides easy access to Esri's professionally des
 ```typescript
 import { VectorBasemapStyle } from 'esri-gl';
 
-// Create basemap style instance
-const basemapStyle = new VectorBasemapStyle('ArcGIS:Streets', 'YOUR_API_KEY');
+// Simple way - using the applyStyle wrapper
+VectorBasemapStyle.applyStyle(map, 'arcgis/streets', { apiKey: 'YOUR_API_KEY' });
 
-// Load and apply to map
-const response = await fetch(basemapStyle.styleUrl);
-const style = await response.json();
-map.setStyle(style);
+// Advanced way - create instance and manage manually
+const basemapStyle = new VectorBasemapStyle('arcgis/streets', { apiKey: 'YOUR_API_KEY' });
+map.setStyle(basemapStyle.styleUrl);
 ```
 
 ## Available Styles
@@ -91,5 +90,82 @@ async function loadBasemap(styleId, apiKey) {
 - **Style URL Generation** - Automatically constructs proper style URLs
 
 ## API Reference
+
+## Available Style Names
+
+The service supports full TypeScript type safety with these available styles:
+
+```typescript
+type EsriBasemapStyleName = 
+  | 'arcgis/streets'
+  | 'arcgis/topographic'
+  | 'arcgis/navigation'
+  | 'arcgis/streets-relief'
+  | 'arcgis/dark-gray'
+  | 'arcgis/light-gray'
+  | 'arcgis/oceans'
+  | 'arcgis/imagery'
+  | 'arcgis/streets-night'
+  // Legacy colon form (for backwards compatibility)
+  | 'arcgis:streets'
+  | 'arcgis:topographic'
+  | 'arcgis:navigation'
+  | 'arcgis:streetsrelief'
+  | 'arcgis:darkgray'
+  | 'arcgis:lightgray'
+  | 'arcgis:oceans'
+  | 'arcgis:imagery'
+  | 'arcgis:streetsnight'
+  // Custom enterprise styles also supported
+  | string
+```
+
+## Advanced Examples
+
+### Using the Simple Wrapper (Recommended)
+
+```typescript
+// Basic usage with API key
+VectorBasemapStyle.applyStyle(map, 'arcgis/streets', { apiKey: 'YOUR_API_KEY' });
+
+// With language and worldview options
+VectorBasemapStyle.applyStyle(map, 'arcgis/navigation', {
+  apiKey: 'YOUR_API_KEY',
+  language: 'es',
+  worldview: 'FRA'
+});
+
+// Using token authentication
+VectorBasemapStyle.applyStyle(map, 'arcgis/dark-gray', { token: 'YOUR_TOKEN' });
+
+// Using legacy colon format (backwards compatibility)
+VectorBasemapStyle.applyStyle(map, 'arcgis:streets', { apiKey: 'YOUR_API_KEY' });
+```
+
+### Using the Full Service API
+
+```typescript
+// Create service instance
+const basemap = new VectorBasemapStyle('arcgis/streets', { apiKey: 'YOUR_API_KEY' });
+
+// Apply to map
+map.setStyle(basemap.styleUrl);
+
+// Change style later
+basemap.setStyle('arcgis/dark-gray-canvas');
+map.setStyle(basemap.styleUrl);
+```
+
+### Dynamic Style Switching
+
+```typescript
+const styles = ['arcgis/streets', 'arcgis/imagery', 'arcgis/topographic', 'arcgis/dark-gray'];
+let currentIndex = 0;
+
+function switchStyle() {
+  VectorBasemapStyle.applyStyle(map, styles[currentIndex], { apiKey: 'YOUR_API_KEY' });
+  currentIndex = (currentIndex + 1) % styles.length;
+}
+```
 
 For detailed API documentation, see [VectorBasemapStyle API Reference](../api/vector-basemap-style).

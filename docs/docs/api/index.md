@@ -1,150 +1,120 @@
-# Advanced Features Overview
+# API Reference
 
-The esri-gl library provides extensive advanced capabilities for ArcGIS Dynamic Map Services beyond basic map rendering. This overview helps you navigate the full feature set.
+Complete API documentation for esri-gl library classes, interfaces, and type definitions.
 
-## 🎨 Server-Side Styling & Labeling
+## Services
 
-### Dynamic Layer Configuration
-- **[Dynamic Layers](./dynamic-layers.md)** - Complete guide to server-side layer styling, symbols, and rendering
-- **[Advanced Labeling](./advanced-features.md#server-side-labeling)** - Text labels with Arcade expressions, custom fonts, and placement
-- **[Type Definitions](./types.md#labeling-types)** - Full TypeScript interfaces for styling configuration
+Services create and manage MapLibre/Mapbox GL sources for different types of ArcGIS services.
 
-### Key Features
-- Custom symbology with colors, sizes, and patterns
-- Smart label placement with collision detection  
-- Field-based and expression-based styling
-- Multi-symbol classification and categorization
+### [Dynamic Map Service](./dynamic-map-service.md)
+Server-rendered raster tiles with advanced styling, labeling, and filtering capabilities.
+- **Class**: `DynamicMapService`
+- **Use case**: ArcGIS Map Services with real-time server-side rendering
+- **Features**: Dynamic styling, labeling, time animation, statistical queries
 
-## ⏰ Time-Aware Mapping
+### [Tiled Map Service](./tiled-map-service.md)
+Pre-cached tile services for optimal performance.
+- **Class**: `TiledMapService`
+- **Use case**: ArcGIS Tiled Map Services and cached basemaps
+- **Features**: Fast tile loading, attribution management
 
-### Temporal Analysis
-- **[Time Animation](./advanced-features.md#time-aware-layer-management)** - Animated time series visualization
-- **[Time Filtering](./advanced-features.md#time-aware-layer-management)** - Filter data by time ranges
-- **[Type Definitions](./types.md#time-aware-types)** - Temporal configuration interfaces
+### [Image Service](./image-service.md)
+Raster imagery and analysis services with band manipulation.
+- **Class**: `ImageService`
+- **Use case**: Satellite imagery, elevation data, scientific rasters
+- **Features**: Band visualization, pixel identification, dynamic processing
 
-### Key Features
-- Smooth time-based animations
-- Configurable time intervals and loops
-- Time offset support for different time zones
-- Frame-by-frame animation control
+### [Feature Service](./feature-service.md)
+Vector data services returning GeoJSON-compatible features.
+- **Class**: `FeatureService`
+- **Use case**: Points, lines, polygons from ArcGIS Feature Services
+- **Features**: Real-time updates, attribute queries, spatial filtering
 
-## 📊 Data Analysis & Queries
+### [Vector Tile Service](./vector-tile-service.md)
+Vector tile services with client-side styling capabilities.
+- **Class**: `VectorTileService`
+- **Use case**: Mapbox/MapLibre vector tiles from ArcGIS
+- **Features**: Fast rendering, interactive styling, scalable display
 
-### Statistical Analysis  
-- **[Layer Statistics](./advanced-features.md#statistical-analysis)** - Aggregate calculations (sum, average, count, etc.)
-- **[Feature Queries](./advanced-features.md#statistical-analysis)** - Spatial and attribute-based data retrieval
-- **[Type Definitions](./types.md#query--statistics-types)** - Query and result type definitions
+### [Vector Basemap Style](./vector-basemap-style.md)
+Esri's vector basemap styles with complete styling definitions.
+- **Class**: `VectorBasemapStyle`
+- **Use case**: Esri's designed basemap styles (Streets, Satellite, etc.)
+- **Features**: Complete style sheets, consistent branding
 
-### Key Features
-- SQL-based filtering and queries
-- Spatial relationship queries (intersects, contains, within)
-- Statistical aggregation functions
-- Paginated result handling
+## Tasks
 
-## 🗺️ Map Export & Visualization
+Task classes provide functionality for interacting with ArcGIS services through REST API operations.
 
-### Image Generation
-- **[Map Export](./advanced-features.md#high-resolution-map-export)** - High-resolution map image generation
-- **[Custom Formats](./advanced-features.md#supported-export-formats)** - PNG, JPG, PDF, SVG export options
-- **[Type Definitions](./types.md#export-types)** - Export configuration interfaces
+### [Identify Features](./identify-features.md)
+Identify and retrieve feature information at specific map locations.
+- **Class**: `IdentifyFeatures`
+- **Use case**: Click-to-identify, popup content, feature inspection
+- **Features**: Multi-layer identification, tolerance settings, geometry options
 
-### Key Features
-- Print-quality image generation
-- Custom resolution and DPI control
-- Multiple output formats
-- Transparent background support
+### [Identify Image](./identify-image.md)
+Retrieve pixel values and metadata from raster imagery services.
+- **Class**: `IdentifyImage`
+- **Use case**: Pixel value extraction, raster analysis, scientific data
+- **Features**: Band value extraction, coordinate transformation
 
-## 📖 Metadata & Discovery
+### [Query](./query.md)
+Execute spatial and attribute queries against feature services.
+- **Class**: `Query`
+- **Use case**: Data filtering, spatial analysis, attribute searches
+- **Features**: SQL queries, spatial relationships, result pagination
 
-### Layer Information
-- **[Service Metadata](./advanced-features.md#metadata-discovery)** - Layer definitions, fields, and capabilities  
-- **[Legend Generation](./advanced-features.md#metadata-discovery)** - Dynamic symbology legends
-- **[Type Definitions](./types.md#metadata-types)** - Metadata structure definitions
+### [Find](./find.md)
+Search for features containing specific text values.
+- **Class**: `Find`
+- **Use case**: Text-based search, feature discovery, content lookup
+- **Features**: Multi-field search, case-insensitive matching
 
-### Key Features
-- Automatic field discovery
-- Dynamic legend creation
-- Layer capability detection
-- Service extent and scale information
+## Advanced Features
 
-## ⚡ Performance & Efficiency
+### [Dynamic Layers](./dynamic-layers.md)
+Server-side layer configuration for advanced rendering and styling.
 
-### Batch Operations
-- **[Bulk Updates](./advanced-features.md#batch-operations--transactions)** - Apply multiple changes in single requests
-- **[Transaction Management](./advanced-features.md#transaction-management)** - Atomic change groups with rollback
-- **[Type Definitions](./types.md#batch-operation-types)** - Batch operation interfaces
+### [Advanced Features Guide](./advanced-features.md)
+Comprehensive guide to time animation, statistics, export, and other advanced capabilities.
 
-### Key Features
-- Reduced network requests
-- Atomic change transactions
-- Optimized bulk styling updates
-- Progress tracking for large operations
+## Type Definitions
 
-## 🛠️ Development Tools
+### [Types](./types.md)
+Complete TypeScript interface definitions for all classes, options, and return types.
 
-### TypeScript Support
-- **[Complete Type Safety](./types.md)** - Full TypeScript interfaces for all features
-- **[API Reference](./dynamic-map-service.md)** - Method signatures and examples
-- **[Demo Components](https://github.com/your-repo/tree/main/src/demo)** - React examples for all features
+## Type Definitions
 
-### Integration
-- Works with MapLibre GL JS and Mapbox GL JS
-- Server-side rendering reduces client processing
-- Maintains map performance with complex styling
-- Compatible with all ArcGIS MapServer versions
+### [Types](./types.md)
+Complete TypeScript interface definitions for all classes, options, and return types.
 
-## Quick Start Examples
+## Quick Reference
 
-### Basic Server-Side Styling
-```typescript
-import { DynamicMapService } from 'esri-gl';
+### Services
+- **DynamicMapService** - Server-rendered maps with advanced styling
+- **TiledMapService** - Pre-cached tiles for performance
+- **ImageService** - Raster imagery and analysis  
+- **FeatureService** - Vector data as GeoJSON
+- **VectorTileService** - Vector tiles with client styling
+- **VectorBasemapStyle** - Esri's designed basemap styles
 
-const service = new DynamicMapService('my-source', map, { 
-  url: 'https://server.com/MapServer' 
-});
+### Tasks
+- **IdentifyFeatures** - Click-to-identify feature information
+- **IdentifyImage** - Extract pixel values from imagery
+- **Query** - Spatial and attribute queries
+- **Find** - Text-based feature search
 
-// Apply custom styling
-await service.setLayerStyle(2, {
-  renderer: {
-    type: 'simple',
-    symbol: {
-      type: 'esriSFS',
-      color: [51, 51, 204, 128],
-      outline: { color: [255, 255, 255, 255], width: 1 }
-    }
-  }
-});
-```
+### Key Concepts
+- **Services** create and manage map data sources
+- **Tasks** perform operations against ArcGIS REST APIs
+- **Dynamic Layers** enable server-side styling and rendering
+- **TypeScript interfaces** provide complete type safety
 
-### Statistical Analysis
-```typescript
-// Get population statistics
-const stats = await service.getLayerStatistics(2, [{
-  statisticType: 'sum',
-  onStatisticField: 'pop2000',  // Use actual field name (lowercase)
-  outStatisticFieldName: 'total_pop'
-}]);
+## Getting Started
 
-console.log(`Total Population: ${stats[0].attributes.total_pop}`);
-```
+1. Choose the appropriate **Service** class for your data type
+2. Use **Task** classes for analysis and interaction
+3. Reference **Type Definitions** for TypeScript development
+4. Explore **Advanced Features** for complex scenarios
 
-### Time Animation
-```typescript
-// Animate time-enabled data
-await service.animateTime(1, {
-  from: new Date('2020-01-01'),
-  to: new Date('2020-12-31'),
-  intervalMs: 1000,
-  loop: true
-});
-```
-
-## Need Help?
-
-1. **Start with [Dynamic Layers](./dynamic-layers.md)** for basic styling concepts
-2. **Check [Advanced Features](./advanced-features.md)** for complex scenarios  
-3. **Reference [Type Definitions](./types.md)** for TypeScript development
-4. **Browse [API Methods](./dynamic-map-service.md)** for complete method reference
-5. **See [Demo Components](https://github.com/your-repo/tree/main/src/demo)** for working examples
-
-The esri-gl advanced features enable sophisticated GIS applications with minimal client-side complexity by leveraging ArcGIS Server's powerful rendering and analysis capabilities.
+Each API page includes complete method documentation, usage examples, and TypeScript interfaces.

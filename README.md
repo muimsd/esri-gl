@@ -453,3 +453,15 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **MapLibre GL JS** & **Mapbox GL JS** - Incredible WebGL mapping libraries
 - **Esri ArcGIS Platform** - Comprehensive GIS services and APIs
 - **[mapbox-gl-esri-sources](https://github.com/frontiersi/mapbox-gl-esri-sources/)** - Reference implementation for Esri service integration patterns
+
+## Fork Notice
+
+This project originated as a fork of **[frontiersi/mapbox-gl-esri-sources](https://github.com/frontiersi/mapbox-gl-esri-sources/)**. It has been substantially refactored and expanded:
+
+- Migrated to a service + task architecture similar to Esri Leaflet
+- Added unified TypeScript typing and consolidated build outputs (ESM + UMD)
+- Introduced additional services (Dynamic, Image, Vector Basemap Styles, Identify / Query tasks, smart FeatureService vector tile detection, etc.)
+- Implemented a React/Vite demo suite and extended test coverage
+
+All original credit for the foundational concept and early integration patterns goes to the maintainers of the upstream repository. If you need the simpler original implementation, or want to compare behavior, please visit the upstream project.
+
