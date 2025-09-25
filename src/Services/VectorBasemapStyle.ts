@@ -7,7 +7,7 @@
  */
 
 // Available Esri basemap style names
-export type EsriBasemapStyleName = 
+export type EsriBasemapStyleName =
   | 'arcgis/streets'
   | 'arcgis/topographic'
   | 'arcgis/navigation'
@@ -131,15 +131,15 @@ export class VectorBasemapStyle {
 
   /**
    * Simple wrapper to apply a basemap style to a MapLibre/Mapbox map.
-   * 
+   *
    * @param map - MapLibre GL or Mapbox GL map instance with setStyle method
    * @param styleName - Esri style name (e.g., 'arcgis/streets', 'arcgis/topographic')
    * @param auth - Authentication options (API key or token)
-   * 
+   *
    * @example
    * // Using API key
    * VectorBasemapStyle.applyStyle(map, 'arcgis/streets', { apiKey: 'your-api-key' });
-   * 
+   *
    * // Using token
    * VectorBasemapStyle.applyStyle(map, 'arcgis/topographic', { token: 'your-token' });
    */

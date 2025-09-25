@@ -128,7 +128,7 @@ describe('VectorBasemapStyle', () => {
       VectorBasemapStyle.applyStyle(mockMap, 'arcgis/navigation', {
         apiKey: 'test-api-key',
         language: 'es',
-        worldview: 'es'
+        worldview: 'es',
       });
 
       expect(mockMap.setStyle).toHaveBeenCalledWith(
@@ -143,12 +143,7 @@ describe('VectorBasemapStyle', () => {
     });
 
     it('should work with different style names', () => {
-      const styles = [
-        'arcgis/streets',
-        'arcgis/topographic',
-        'arcgis/dark-gray',
-        'arcgis/imagery'
-      ];
+      const styles = ['arcgis/streets', 'arcgis/topographic', 'arcgis/dark-gray', 'arcgis/imagery'];
 
       styles.forEach(styleName => {
         VectorBasemapStyle.applyStyle(mockMap, styleName, { apiKey: 'test-key' });

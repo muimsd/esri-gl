@@ -261,10 +261,11 @@ const VectorBasemapStyleDemo: React.FC = () => {
 
         setIsLoading(false);
         const mode = determineMode();
-        const errorMessage = errObj.message?.includes('404') || errObj.message?.includes('494')
-          ? `Authentication failed. Please verify your ${mode === 'token' ? 'token' : 'API key'} is valid.`
-          : `Error loading style: ${errObj.message || 'Unknown error'}`;
-        
+        const errorMessage =
+          errObj.message?.includes('404') || errObj.message?.includes('494')
+            ? `Authentication failed. Please verify your ${mode === 'token' ? 'token' : 'API key'} is valid.`
+            : `Error loading style: ${errObj.message || 'Unknown error'}`;
+
         setError(errorMessage);
         map.current?.off('styledata', handleStyleLoad);
         map.current?.off('error', handleStyleError);
@@ -284,7 +285,6 @@ const VectorBasemapStyleDemo: React.FC = () => {
           map.current?.off('error', handleStyleError);
         }
       }, 5000);
-
     } catch (error) {
       setIsLoading(false);
       setError(`Error loading style: ${error instanceof Error ? error.message : 'Unknown error'}`);
