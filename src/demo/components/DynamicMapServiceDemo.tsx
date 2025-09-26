@@ -499,14 +499,7 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div
-        style={{
-          padding: '10px',
-          backgroundColor: '#f5f5f5',
-          borderBottom: '1px solid #ddd',
-          fontSize: '14px',
-        }}
-      >
+      <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
         <div style={{ marginBottom: '10px' }}>
           <strong>Dynamic Map Service Demo</strong> - USA MapServer with layer controls and identify
         </div>
@@ -522,7 +515,7 @@ const DynamicMapServiceDemo: React.FC = () => {
             </label>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
           <button onClick={applyBlueStatesStyle} disabled={styleApplied}>
             Apply "Blue States" Style (server)
           </button>
@@ -530,66 +523,18 @@ const DynamicMapServiceDemo: React.FC = () => {
             Reset Server Style
           </button>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: 8,
-            backgroundColor: '#f0f8ff',
-            padding: '12px',
-            borderRadius: '6px',
-            border: '1px solid #2196F3',
-          }}
-        >
-          <div
-            style={{ fontSize: '14px', fontWeight: 'bold', color: '#1976D2', marginRight: '10px' }}
-          >
-            🔍 Filters:
-          </div>
-          <button
-            onClick={applyPacificStatesFilter}
-            disabled={filterApplied}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: filterApplied ? '#ccc' : '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: filterApplied ? 'not-allowed' : 'pointer',
-            }}
-          >
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+          <button onClick={applyPacificStatesFilter} disabled={filterApplied}>
             Filter: Pacific States Only
           </button>
-          <button
-            onClick={applyPopulationFilter}
-            disabled={filterApplied}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: filterApplied ? '#ccc' : '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: filterApplied ? 'not-allowed' : 'pointer',
-            }}
-          >
+          <button onClick={applyPopulationFilter} disabled={filterApplied}>
             Filter: Pop &gt; 5M States
           </button>
-          <button
-            onClick={clearFilter}
-            disabled={!filterApplied}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: !filterApplied ? '#ccc' : '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: !filterApplied ? 'not-allowed' : 'pointer',
-            }}
-          >
+          <button onClick={clearFilter} disabled={!filterApplied}>
             Clear Filter
           </button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
           <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Layer Labels:</label>
           <select
             value={selectedLabelType}
@@ -612,18 +557,17 @@ const DynamicMapServiceDemo: React.FC = () => {
             Clear All Labels
           </button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button onClick={getLayerStatistics}>Get Statistics</button>
           <button onClick={queryFeatures}>Query Features</button>
           <button onClick={exportMapImage}>Export Map</button>
           <button onClick={generateLegend}>Show Legend</button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button onClick={batchUpdate}>Batch Update Demo</button>
         </div>
         <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-          Click on the map to identify features. Styling and filtering is applied server-side via
-          dynamicLayers.
+          Click on the map to identify features. Styling and filtering is applied server-side via dynamicLayers.
         </div>
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
