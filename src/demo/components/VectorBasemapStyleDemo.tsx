@@ -231,9 +231,9 @@ const VectorBasemapStyleDemo: React.FC = () => {
           ? { token: cleaned, language: language || undefined, worldview: worldview || undefined }
           : { apiKey: cleaned, language: language || undefined, worldview: worldview || undefined };
 
-      // Create a VectorBasemapStyle instance to get the resolved URL for display
-      const vectorStyle = new VectorBasemapStyle(styleId, auth);
-      setResolvedUrl(vectorStyle.styleUrl);
+      // Use static method to get the resolved URL for display
+      const resolvedUrl = VectorBasemapStyle.getStyleUrl(styleId, auth);
+      setResolvedUrl(resolvedUrl);
 
       // Use the simple applyStyle wrapper
       VectorBasemapStyle.applyStyle(map.current, styleId, auth);
