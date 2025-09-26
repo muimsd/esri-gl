@@ -8,7 +8,7 @@ const DynamicMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const service = useRef<DynamicMapService | null>(null);
-  const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2]);
+  const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1]);
   const [styleApplied, setStyleApplied] = useState<boolean>(false);
   const [filterApplied, setFilterApplied] = useState<boolean>(false);
   const [labelsApplied, setLabelsApplied] = useState<boolean>(false);
@@ -135,23 +135,28 @@ const DynamicMapServiceDemo: React.FC = () => {
     { id: 0, name: 'Cities' },
     { id: 1, name: 'Highways' },
     { id: 2, name: 'States' },
-    { id: 3, name: 'Counties' },
   ];
 
-  const applyBlueStatesStyle = () => {
+  const layerNameById: Record<number, string> = {
+    0: 'Cities',
+    1: 'Highways',
+    2: 'States',
+  };
+
+  const applyStatesStyle = () => {
     if (!service.current) return;
-    // Apply a simple fill renderer to the States sublayer (id: 2)
+    // Apply a simple fill renderer to the States layer (id: 2)
     service.current.setLayerRenderer(2, {
       type: 'simple',
       symbol: {
         type: 'esriSFS',
         style: 'esriSFSSolid',
-        color: [0, 122, 255, 90], // RGBA
+        color: [255, 200, 100, 120], // Light orange with transparency
         outline: {
           type: 'esriSLS',
           style: 'esriSLSSolid',
-          color: [0, 82, 204, 255],
-          width: 1,
+          color: [255, 140, 0, 255], // Orange outline
+          width: 2,
         },
       },
     });
@@ -170,7 +175,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     if (!service.current) return;
     // Filter States layer (id: 2) to only show Pacific region states
     service.current.setLayerFilter(2, {
-      field: 'SUB_REGION',
+      field: 'sub_region',
       op: '=',
       value: 'Pacific',
     });
@@ -181,7 +186,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     if (!service.current) return;
     // Filter States layer (id: 2) to only show states with population > 5 million
     service.current.setLayerFilter(2, {
-      field: 'POP2000',
+      field: 'pop2000',
       op: '>',
       value: 5000000,
     });
@@ -202,6 +207,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     { value: 'city_names', label: 'City Names', field: 'areaname', layerId: 0 },
     { value: 'city_states', label: 'City States', field: 'st', layerId: 0 },
     { value: 'city_class', label: 'City Classification', field: 'class', layerId: 0 },
+    { value: 'city_population', label: 'City Population (2000)', field: 'pop2000', layerId: 0 },
     // Highways layer (1) options
     { value: 'highway_routes', label: 'Highway Routes', field: 'route', layerId: 1 },
     { value: 'highway_numbers', label: 'Route Numbers', field: 'rte_num1', layerId: 1 },
@@ -210,7 +216,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     { value: 'state_name', label: 'State Names', field: 'state_name', layerId: 2 },
     { value: 'state_abbr', label: 'State Abbreviations', field: 'state_abbr', layerId: 2 },
     { value: 'sub_region', label: 'Geographic Regions', field: 'sub_region', layerId: 2 },
-    { value: 'population', label: 'State Population (2000)', field: 'pop2000', layerId: 2 },
+    { value: 'state_population', label: 'State Population (2000)', field: 'pop2000', layerId: 2 },
     { value: 'pop_density', label: 'Population per sq mi', field: 'pop00_sqmi', layerId: 2 },
   ];
 
@@ -227,7 +233,7 @@ const DynamicMapServiceDemo: React.FC = () => {
     let fontSize = 10;
     let textColor: [number, number, number, number] = [255, 255, 255, 255];
     let backgroundColor: [number, number, number, number] = [0, 0, 0, 128];
-    const layerId = labelOption.layerId || 2;
+    const layerId = labelOption.layerId ?? 2;
 
     // Customize formatting based on layer and label type
     switch (labelType) {
@@ -247,6 +253,11 @@ const DynamicMapServiceDemo: React.FC = () => {
         textColor = [255, 255, 0, 255]; // Yellow text
         backgroundColor = [128, 0, 128, 140]; // Purple background
         break;
+      case 'city_population':
+        fontSize = 8;
+        textColor = [0, 255, 0, 255]; // Green text
+        backgroundColor = [0, 0, 0, 160];
+        break;
 
       // Highways layer styling
       case 'highway_routes':
@@ -265,7 +276,12 @@ const DynamicMapServiceDemo: React.FC = () => {
         backgroundColor = [0, 0, 0, 160];
         break;
 
-      // States layer styling (existing)
+      // States layer styling
+      case 'state_name':
+        fontSize = 14;
+        textColor = [0, 0, 0, 255];
+        backgroundColor = [255, 255, 255, 200];
+        break;
       case 'state_abbr':
         fontSize = 12;
         textColor = [0, 0, 0, 255];
@@ -276,7 +292,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         textColor = [255, 255, 0, 255];
         backgroundColor = [0, 0, 0, 160];
         break;
-      case 'population':
+      case 'state_population':
         fontSize = 9;
         textColor = [0, 255, 0, 255];
         backgroundColor = [0, 0, 0, 140];
@@ -288,7 +304,18 @@ const DynamicMapServiceDemo: React.FC = () => {
         break;
     }
 
+    if (!selectedLayers.includes(layerId)) {
+      setSelectedLayers(prev => {
+        if (prev.includes(layerId)) return prev;
+        const next = [...prev, layerId].sort((a, b) => a - b);
+        service.current!.setLayers(next);
+        return next;
+      });
+    }
+
     // Apply labels to the specified layer
+    console.log(`Applying labels for layer ${layerId} with field ${labelOption.field}`);
+    
     service.current.setLayerLabels(layerId, {
       labelExpression,
       symbol: {
@@ -311,8 +338,16 @@ const DynamicMapServiceDemo: React.FC = () => {
       labelPlacement:
         layerId === 1
           ? 'esriServerLinePlacementAboveAlong'
+          : layerId === 0
+          ? 'esriServerPointLabelPlacementAboveRight'
           : 'esriServerPolygonPlacementAlwaysHorizontal',
     });
+
+    // Ensure the target layer is visible and labels are enabled
+    service.current.setLayerVisibility(layerId, true);
+    service.current.setLayerLabelsVisible(layerId, true);
+    
+    console.log(`Labels applied for layer ${layerId}`);
 
     setSelectedLabelType(labelType);
     setLabelsApplied(true);
@@ -321,7 +356,7 @@ const DynamicMapServiceDemo: React.FC = () => {
   const clearLabels = () => {
     if (!service.current) return;
     // Clear labels from all layers
-    [0, 1, 2].forEach(layerId => {
+    [0, 1, 2, 3].forEach(layerId => {
       service.current!.setLayerLabelsVisible(layerId, false);
     });
     setSelectedLabelType('none');
@@ -335,17 +370,17 @@ const DynamicMapServiceDemo: React.FC = () => {
       const stats = await service.current.getLayerStatistics(2, [
         {
           statisticType: 'count',
-          onStatisticField: 'POP2000',
+          onStatisticField: 'pop2000',
           outStatisticFieldName: 'state_count',
         },
         {
           statisticType: 'sum',
-          onStatisticField: 'POP2000',
+          onStatisticField: 'pop2000',
           outStatisticFieldName: 'total_population',
         },
         {
           statisticType: 'avg',
-          onStatisticField: 'POP2000',
+          onStatisticField: 'pop2000',
           outStatisticFieldName: 'avg_population',
         },
       ]);
@@ -368,9 +403,9 @@ const DynamicMapServiceDemo: React.FC = () => {
 
     try {
       const features = await service.current.queryLayerFeatures(2, {
-        where: 'POP2000 > 10000000',
-        outFields: ['STATE_NAME', 'POP2000', 'SUB_REGION'],
-        orderByFields: 'POP2000 DESC',
+        where: 'pop2000 > 10000000',
+        outFields: ['state_name', 'pop2000', 'sub_region'],
+        orderByFields: 'pop2000 DESC',
         resultRecordCount: 5,
       });
 
@@ -378,7 +413,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         let message = 'Top 5 Most Populous States (>10M):\n\n';
         features.features.forEach((feature, index) => {
           const attrs = feature.attributes;
-          message += `${index + 1}. ${attrs.STATE_NAME}: ${(attrs.POP2000 as number).toLocaleString()} (${attrs.SUB_REGION})\n`;
+          message += `${index + 1}. ${attrs.state_name}: ${(attrs.pop2000 as number).toLocaleString()} (${attrs.sub_region})\n`;
         });
         alert(message);
       } else {
@@ -430,7 +465,9 @@ const DynamicMapServiceDemo: React.FC = () => {
 
       let message = 'Legend Information:\n\n';
       legend.forEach(layerLegend => {
-        message += `Layer ${layerLegend.layerId} - ${layerLegend.layerName}:\n`;
+        const readableName =
+          layerNameById[layerLegend.layerId] || layerLegend.layerName || `Layer ${layerLegend.layerId}`;
+        message += `${readableName} (Layer ${layerLegend.layerId}):\n`;
         if (layerLegend.legend && layerLegend.legend.length > 0) {
           layerLegend.legend.forEach(item => {
             message += `  - ${item.label || 'Symbol'}\n`;
@@ -446,6 +483,91 @@ const DynamicMapServiceDemo: React.FC = () => {
       console.error('Legend generation failed:', error);
       alert('Failed to generate legend');
     }
+  };
+
+  const testStateNames = () => {
+    if (!service.current) return;
+    
+    console.log('Testing state name labels...');
+    
+    // First, ensure States layer is visible
+    if (!selectedLayers.includes(2)) {
+      setSelectedLayers(prev => {
+        const next = [...prev, 2].sort((a, b) => a - b);
+        service.current!.setLayers(next);
+        return next;
+      });
+    }
+    
+    // Wait a moment for layer to be added, then apply labels
+    setTimeout(() => {
+      if (!service.current) return;
+      
+      console.log('Applying labels to States layer (ID: 2)');
+      
+      // Apply simple state name labels
+      service.current.setLayerLabels(2, {
+        labelExpression: '[state_name]',
+        symbol: {
+          type: 'esriTS',
+          color: [0, 0, 0, 255],
+          backgroundColor: [255, 255, 255, 180],
+          font: {
+            family: 'Arial',
+            size: 12,
+          },
+        },
+        minScale: 0,
+        maxScale: 50000000,
+        labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal',
+      });
+      
+      console.log('Basic state labels applied');
+      alert('Applied basic state name labels to layer 2 - check console for details');
+    }, 500);
+  };
+
+  const testStateAbbr = () => {
+    if (!service.current) return;
+    
+    console.log('Testing state abbreviation labels...');
+    
+    // First, ensure States layer is visible
+    if (!selectedLayers.includes(2)) {
+      setSelectedLayers(prev => {
+        const next = [...prev, 2].sort((a, b) => a - b);
+        service.current!.setLayers(next);
+        return next;
+      });
+    }
+    
+    // Wait a moment for layer to be added, then apply labels
+    setTimeout(() => {
+      if (!service.current) return;
+      
+      console.log('Applying abbreviation labels to States layer (ID: 2)');
+      
+      // Apply state abbreviation labels
+      service.current.setLayerLabels(2, {
+        labelExpression: '[state_abbr]',
+        symbol: {
+          type: 'esriTS',
+          color: [255, 0, 0, 255], // Red text to distinguish from names
+          backgroundColor: [255, 255, 255, 200],
+          font: {
+            family: 'Arial',
+            size: 14,
+            weight: 'bold',
+          },
+        },
+        minScale: 0,
+        maxScale: 50000000,
+        labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal',
+      });
+      
+      console.log('State abbreviation labels applied');
+      alert('Applied state abbreviation labels to layer 2 - check console for details');
+    }, 500);
   };
 
   const batchUpdate = () => {
@@ -485,12 +607,19 @@ const DynamicMapServiceDemo: React.FC = () => {
         layerId: 2,
         operation: 'filter',
         value: {
-          field: 'POP2000',
+          field: 'pop2000',
           op: '>',
           value: 7000000,
         },
       },
     ]);
+
+    setSelectedLayers(prev => {
+      const needed = [0, 1, 2];
+      const next = Array.from(new Set([...prev, ...needed])).sort((a, b) => a - b);
+      service.current!.setLayers(next);
+      return next;
+    });
 
     setStyleApplied(true);
     setFilterApplied(true);
@@ -516,8 +645,8 @@ const DynamicMapServiceDemo: React.FC = () => {
           ))}
         </div>
         <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-          <button onClick={applyBlueStatesStyle} disabled={styleApplied}>
-            Apply "Blue States" Style (server)
+          <button onClick={applyStatesStyle} disabled={styleApplied}>
+            Apply "Orange States" Style (server)
           </button>
           <button onClick={resetServerStyle} disabled={!styleApplied && !filterApplied}>
             Reset Server Style
@@ -543,9 +672,7 @@ const DynamicMapServiceDemo: React.FC = () => {
           >
             {labelOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.value === 'none'
-                  ? option.label
-                  : `${option.label} (Layer ${option.layerId === 0 ? 'Cities' : option.layerId === 1 ? 'Highways' : 'States'})`}
+                {option.value === 'none' ? option.label : `${option.label} (${layerNameById[option.layerId ?? 2] || 'Layer'})`}
               </option>
             ))}
           </select>
@@ -565,6 +692,8 @@ const DynamicMapServiceDemo: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button onClick={batchUpdate}>Batch Update Demo</button>
+          <button onClick={() => testStateNames()}>Test State Names</button>
+          <button onClick={() => testStateAbbr()}>Test State Abbr</button>
         </div>
         <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
           Click on the map to identify features. Styling and filtering is applied server-side via dynamicLayers.

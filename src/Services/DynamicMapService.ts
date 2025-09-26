@@ -46,6 +46,9 @@ export class DynamicMapService {
   private _map: Map;
   private _defaultEsriOptions: Omit<Required<EsriServiceOptions>, 'url' | 'time'>;
   private _serviceMetadata: ServiceMetadata | null = null;
+  private _pendingUpdate: number | null = null;
+  private _lastUpdateTime = 0;
+  private _updateDelay = 50; // ms debounce to avoid rapid successive aborts
 
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: DynamicMapServiceOptions;
@@ -131,7 +134,9 @@ export class DynamicMapService {
         }
         return withSource;
       });
-      return JSON.stringify(normalized);
+      const result = JSON.stringify(normalized);
+      console.log('DynamicMapService: Generated dynamicLayers JSON:', result);
+      return result;
     } catch {
       return false;
     }
@@ -155,9 +160,12 @@ export class DynamicMapService {
     if (this._layerDefs) params.append('layerDefs', this._layerDefs);
     if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
 
+    const tileUrl = `${this.options.url}/export?bbox={bbox-epsg-3857}&${params.toString()}`;
+    console.log('DynamicMapService: Generated tile URL:', tileUrl);
+
     return {
       type: 'raster',
-      tiles: [`${this.options.url}/export?bbox={bbox-epsg-3857}&${params.toString()}`],
+      tiles: [tileUrl],
       tileSize,
       ...this.rasterSrcOptions,
     };
@@ -169,27 +177,53 @@ export class DynamicMapService {
 
   // This requires hooking into some undocumented methods
   private _updateSource(): void {
+    // Simple debounce: collapse multiple rapid calls (e.g., visibility + labels in same tick)
+    const now = performance.now();
+    if (now - this._lastUpdateTime < this._updateDelay) {
+      if (this._pendingUpdate) cancelAnimationFrame(this._pendingUpdate);
+      this._pendingUpdate = requestAnimationFrame(() => this._updateSourceInternal());
+      return;
+    }
+    this._lastUpdateTime = now;
+    this._updateSourceInternal();
+  }
+
+  private _updateSourceInternal(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const src = this._map.getSource(this._sourceId) as any;
-    src.tiles[0] = this._source.tiles[0];
-    src._options = this._source;
+    if (!src) return;
 
-    if (src.setTiles) {
-      // New MapboxGL >= 2.13.0
-      src.setTiles(this._source.tiles);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } else if ((this._map as any).style.sourceCaches) {
-      // Old MapboxGL and MaplibreGL
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } else if ((this._map as any).style._otherSourceCaches) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+    try {
+      src.tiles[0] = this._source.tiles[0];
+      src._options = this._source;
+
+      if (src.setTiles) {
+        // New MapboxGL >= 2.13.0
+        src.setTiles(this._source.tiles);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } else if ((this._map as any).style.sourceCaches) {
+        // Old MapboxGL and MaplibreGL
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } else if ((this._map as any).style._otherSourceCaches) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        // Ignore aborted tile refresh; map will request new tiles on next frame
+        return;
+      }
+      // Swallow occasional transient errors that can happen during style reloads
+      if (error && (error as Error).message?.includes('Source') && (error as Error).message?.includes('not found')) {
+        return;
+      }
+      throw error;
     }
   }
 
