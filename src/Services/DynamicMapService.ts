@@ -220,7 +220,11 @@ export class DynamicMapService {
         return;
       }
       // Swallow occasional transient errors that can happen during style reloads
-      if (error && (error as Error).message?.includes('Source') && (error as Error).message?.includes('not found')) {
+      if (
+        error &&
+        (error as Error).message?.includes('Source') &&
+        (error as Error).message?.includes('not found')
+      ) {
         return;
       }
       throw error;

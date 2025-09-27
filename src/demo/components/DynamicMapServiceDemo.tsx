@@ -315,7 +315,7 @@ const DynamicMapServiceDemo: React.FC = () => {
 
     // Apply labels to the specified layer
     console.log(`Applying labels for layer ${layerId} with field ${labelOption.field}`);
-    
+
     service.current.setLayerLabels(layerId, {
       labelExpression,
       symbol: {
@@ -339,14 +339,14 @@ const DynamicMapServiceDemo: React.FC = () => {
         layerId === 1
           ? 'esriServerLinePlacementAboveAlong'
           : layerId === 0
-          ? 'esriServerPointLabelPlacementAboveRight'
-          : 'esriServerPolygonPlacementAlwaysHorizontal',
+            ? 'esriServerPointLabelPlacementAboveRight'
+            : 'esriServerPolygonPlacementAlwaysHorizontal',
     });
 
     // Ensure the target layer is visible and labels are enabled
     service.current.setLayerVisibility(layerId, true);
     service.current.setLayerLabelsVisible(layerId, true);
-    
+
     console.log(`Labels applied for layer ${layerId}`);
 
     setSelectedLabelType(labelType);
@@ -466,7 +466,9 @@ const DynamicMapServiceDemo: React.FC = () => {
       let message = 'Legend Information:\n\n';
       legend.forEach(layerLegend => {
         const readableName =
-          layerNameById[layerLegend.layerId] || layerLegend.layerName || `Layer ${layerLegend.layerId}`;
+          layerNameById[layerLegend.layerId] ||
+          layerLegend.layerName ||
+          `Layer ${layerLegend.layerId}`;
         message += `${readableName} (Layer ${layerLegend.layerId}):\n`;
         if (layerLegend.legend && layerLegend.legend.length > 0) {
           layerLegend.legend.forEach(item => {
@@ -487,9 +489,9 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const testStateNames = () => {
     if (!service.current) return;
-    
+
     console.log('Testing state name labels...');
-    
+
     // First, ensure States layer is visible
     if (!selectedLayers.includes(2)) {
       setSelectedLayers(prev => {
@@ -498,13 +500,13 @@ const DynamicMapServiceDemo: React.FC = () => {
         return next;
       });
     }
-    
+
     // Wait a moment for layer to be added, then apply labels
     setTimeout(() => {
       if (!service.current) return;
-      
+
       console.log('Applying labels to States layer (ID: 2)');
-      
+
       // Apply simple state name labels
       service.current.setLayerLabels(2, {
         labelExpression: '[state_name]',
@@ -521,7 +523,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         maxScale: 50000000,
         labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal',
       });
-      
+
       console.log('Basic state labels applied');
       alert('Applied basic state name labels to layer 2 - check console for details');
     }, 500);
@@ -529,9 +531,9 @@ const DynamicMapServiceDemo: React.FC = () => {
 
   const testStateAbbr = () => {
     if (!service.current) return;
-    
+
     console.log('Testing state abbreviation labels...');
-    
+
     // First, ensure States layer is visible
     if (!selectedLayers.includes(2)) {
       setSelectedLayers(prev => {
@@ -540,13 +542,13 @@ const DynamicMapServiceDemo: React.FC = () => {
         return next;
       });
     }
-    
+
     // Wait a moment for layer to be added, then apply labels
     setTimeout(() => {
       if (!service.current) return;
-      
+
       console.log('Applying abbreviation labels to States layer (ID: 2)');
-      
+
       // Apply state abbreviation labels
       service.current.setLayerLabels(2, {
         labelExpression: '[state_abbr]',
@@ -564,7 +566,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         maxScale: 50000000,
         labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal',
       });
-      
+
       console.log('State abbreviation labels applied');
       alert('Applied state abbreviation labels to layer 2 - check console for details');
     }, 500);
@@ -672,7 +674,9 @@ const DynamicMapServiceDemo: React.FC = () => {
           >
             {labelOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.value === 'none' ? option.label : `${option.label} (${layerNameById[option.layerId ?? 2] || 'Layer'})`}
+                {option.value === 'none'
+                  ? option.label
+                  : `${option.label} (${layerNameById[option.layerId ?? 2] || 'Layer'})`}
               </option>
             ))}
           </select>
@@ -696,7 +700,8 @@ const DynamicMapServiceDemo: React.FC = () => {
           <button onClick={() => testStateAbbr()}>Test State Abbr</button>
         </div>
         <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-          Click on the map to identify features. Styling and filtering is applied server-side via dynamicLayers.
+          Click on the map to identify features. Styling and filtering is applied server-side via
+          dynamicLayers.
         </div>
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
