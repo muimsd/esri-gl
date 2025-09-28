@@ -37,6 +37,8 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 - **Layer Definitions** - Filter data server-side using SQL-like expressions
 - **Time-aware Services** - Support for temporal data visualization
 - **Attribution Management** - Automatic service attribution handling
+- **React Integration** - Hooks and components for React applications
+- **React Map GL Support** - Direct integration with react-map-gl
 - **TypeScript Support** - Full type safety with comprehensive interfaces
 
 ## Installation
@@ -290,6 +292,65 @@ const results = await query({
 })
 .run();
 ```
+
+## React Integration
+
+esri-gl provides comprehensive React support with hooks and components for both vanilla React and react-map-gl.
+
+### React Hooks
+
+```typescript
+import { useDynamicMapService, useIdentifyFeatures } from 'esri-gl/react';
+
+function MapComponent() {
+  const [map, setMap] = useState<Map | null>(null);
+  
+  const { service, loading, error } = useDynamicMapService({
+    sourceId: 'usa-service',
+    map,
+    options: {
+      url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+      layers: [0, 1, 2]
+    }
+  });
+
+  const { identify } = useIdentifyFeatures({
+    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+    tolerance: 3
+  });
+
+  return <div>/* Your map component */</div>;
+}
+```
+
+### React Map GL Components
+
+```typescript
+import { Map } from 'react-map-gl';
+import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
+
+function MapWithEsriLayers() {
+  return (
+    <Map
+      initialViewState={{ longitude: -95, latitude: 37, zoom: 4 }}
+      mapStyle="mapbox://styles/mapbox/streets-v11"
+    >
+      <EsriDynamicLayer
+        id="usa-layer"
+        url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer"
+        layers={[0, 1, 2]}
+      />
+      <EsriFeatureLayer
+        id="states-layer"
+        url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_States/FeatureServer/0"
+        paint={{ 'fill-color': '#627BC1', 'fill-opacity': 0.5 }}
+      />
+    </Map>
+  );
+}
+```
+
+See [REACT.md](REACT.md) for complete React integration documentation.
 
 ## Advanced Features
 

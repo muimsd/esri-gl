@@ -295,7 +295,7 @@ describe('Integration Tests', () => {
       expect(map.removeSource).toHaveBeenCalledWith(sourceId);
     });
 
-    it('should maintain service state during map updates', () => {
+    it('should maintain service state during map updates', async () => {
       const service = new DynamicMapService('persistent', map as Map, {
         url: 'https://example.com/MapServer',
       });
@@ -310,9 +310,21 @@ describe('Integration Tests', () => {
 
       // Service should survive multiple updates
       service.update();
+      
+      // Wait for debounced update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       service.update();
+      
+      // Wait for second debounced update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       service.update();
+      
+      // Wait for third debounced update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
 
+      // Each update should trigger getSource once (due to debouncing, rapid calls are collapsed)
       expect(map.getSource).toHaveBeenCalledTimes(3);
     });
   });

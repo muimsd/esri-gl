@@ -5,7 +5,7 @@
     "rootDir": "src",
     "noEmit": false,
     "declaration": true,
-    "jsx": "react-jsx",
+    "jsx": "react",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowImportingTsExtensions": false,

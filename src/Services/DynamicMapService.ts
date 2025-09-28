@@ -161,7 +161,6 @@ export class DynamicMapService {
     if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
 
     const tileUrl = `${this.options.url}/export?bbox={bbox-epsg-3857}&${params.toString()}`;
-    console.log('DynamicMapService: Generated tile URL:', tileUrl);
 
     return {
       type: 'raster',
