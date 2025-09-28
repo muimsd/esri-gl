@@ -135,7 +135,6 @@ export class DynamicMapService {
         return withSource;
       });
       const result = JSON.stringify(normalized);
-      console.log('DynamicMapService: Generated dynamicLayers JSON:', result);
       return result;
     } catch {
       return false;

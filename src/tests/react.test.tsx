@@ -24,8 +24,12 @@ jest.mock('maplibre-gl', () => ({
 // Mock fetch for service requests
 global.fetch = jest.fn().mockResolvedValue({
   json: () => Promise.resolve({
-    features: [
+    results: [
       {
+        layerId: 0,
+        layerName: 'Test Layer',
+        value: '1',
+        displayFieldName: 'STATE_NAME',
         attributes: { OBJECTID: 1, STATE_NAME: 'California' },
         geometry: null
       }
@@ -100,6 +104,7 @@ describe('React Hooks', () => {
     });
 
     it('should update service when options change', async () => {
+      // Test that the service updates its options when props change
       const { result, rerender } = renderHook(
         ({ layers }: { layers: number[] }) =>
           useDynamicMapService({
@@ -160,7 +165,7 @@ describe('React Hooks', () => {
 
       expect(identifyResult).toBeDefined();
       expect(identifyResult!.features).toHaveLength(1);
-      expect(identifyResult!.features[0].attributes.STATE_NAME).toBe('California');
+      expect(identifyResult!.features[0].properties!.STATE_NAME).toBe('California');
     });
 
     it('should handle identify errors', async () => {

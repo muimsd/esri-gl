@@ -16,7 +16,9 @@ export default {
         paths: {
           '@/*': ['src/*'],
           '@/types': ['src/types.ts']
-        }
+        },
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true
       }
     }]
   },

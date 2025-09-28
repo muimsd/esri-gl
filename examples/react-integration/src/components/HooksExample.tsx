@@ -53,7 +53,7 @@ export default function HooksExample() {
     error: dynamicError 
   } = useDynamicMapService({
     sourceId: 'usa-dynamic',
-    map: activeService === 'dynamic' ? (map as any) : null,
+    map: activeService === 'dynamic' ? (map as unknown as import('esri-gl').Map) : null,
     options: {
       url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
       layers: [0, 1, 2],
@@ -68,7 +68,7 @@ export default function HooksExample() {
     error: tiledError 
   } = useTiledMapService({
     sourceId: 'world-tiled',
-    map: activeService === 'tiled' ? (map as any) : null,
+    map: activeService === 'tiled' ? (map as unknown as import('esri-gl').Map) : null,
     options: {
       url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
     }
@@ -81,7 +81,7 @@ export default function HooksExample() {
     error: imageError 
   } = useImageService({
     sourceId: 'elevation-image',
-    map: activeService === 'image' ? (map as any) : null,
+    map: activeService === 'image' ? (map as unknown as import('esri-gl').Map) : null,
     options: {
       url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
       format: 'jpgpng'

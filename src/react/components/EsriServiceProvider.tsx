@@ -14,7 +14,7 @@ const EsriServiceContext = createContext<EsriServiceContextValue>({
  * Context provider for sharing map instance across Esri components
  */
 export function EsriServiceProvider({ children, map = null }: EsriServiceProviderProps) {
-  return <EsriServiceContext.Provider value={{ map }}>{children}</EsriServiceContext.Provider>;
+  return React.createElement(EsriServiceContext.Provider, { value: { map } }, children);
 }
 
 /**

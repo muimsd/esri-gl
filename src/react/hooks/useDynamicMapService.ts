@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useEsriService } from './useEsriService';
 import { DynamicMapService } from '@/Services/DynamicMapService';
 import type { UseDynamicMapServiceOptions, UseEsriServiceResult } from '../types';
@@ -13,10 +13,31 @@ export function useDynamicMapService({
   options,
   sourceOptions,
 }: UseDynamicMapServiceOptions): UseEsriServiceResult<DynamicMapService> {
+  const optionsRef = useRef(options);
+  
   const createService = useCallback(
     (mapInstance: Map) => new DynamicMapService(sourceId, mapInstance, options, sourceOptions),
-    [sourceId, options, sourceOptions]
+    [sourceId, sourceOptions] // Remove options from dependencies to prevent service recreation
   );
 
-  return useEsriService(createService, map);
+  const result = useEsriService(createService, map);
+  
+  // Update service options when they change
+  useEffect(() => {
+    if (result.service && options !== optionsRef.current) {
+      // Check for specific option changes that we can handle without recreation
+      if (options.layers !== optionsRef.current.layers) {
+        result.service.setLayers(options.layers || []);
+      }
+      
+      if (options.layerDefs !== optionsRef.current.layerDefs) {
+        result.service.setLayerDefs(options.layerDefs || {});
+      }
+      
+      // Update the ref to track current options
+      optionsRef.current = options;
+    }
+  }, [result.service, options]);
+
+  return result;
 }

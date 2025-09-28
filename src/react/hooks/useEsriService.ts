@@ -18,11 +18,9 @@ export function useEsriService<T extends RemovableService>(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Track the previous createService function to detect changes
-  const prevCreateServiceRef = useRef(createService);
   const isCreatingService = useRef(false);
 
-  const createNewService = () => {
+  const reload = () => {
     if (!map || isCreatingService.current) return;
 
     isCreatingService.current = true;
@@ -46,11 +44,7 @@ export function useEsriService<T extends RemovableService>(
     }
   };
 
-  const reload = () => {
-    createNewService();
-  };
-
-  // Effect for map changes
+  // Initialize service when map becomes available
   useEffect(() => {
     if (!map) {
       if (service) {
@@ -60,18 +54,18 @@ export function useEsriService<T extends RemovableService>(
       return;
     }
 
-    // Create service when map becomes available
-    createNewService();
+    reload();
   }, [map]); // Only depend on map
 
-  // Effect for createService function changes (options changes)
+  // Cleanup on unmount
   useEffect(() => {
-    // Check if createService function actually changed
-    if (prevCreateServiceRef.current !== createService && map) {
-      prevCreateServiceRef.current = createService;
-      createNewService();
-    }
-  }, [createService]); // Only depend on createService function // Only depend on map and reload
+    return () => {
+      // This cleanup function runs on unmount
+      if (service) {
+        service.remove();
+      }
+    };
+  }, [service]); // Run cleanup when service changes // Only depend on map and reload
 
   // Cleanup on unmount
   useEffect(() => {

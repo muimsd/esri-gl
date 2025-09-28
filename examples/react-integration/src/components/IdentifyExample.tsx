@@ -7,7 +7,7 @@ export default function IdentifyExample() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [clickPoint, setClickPoint] = useState<{ lng: number; lat: number } | null>(null);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<{ features: Array<{ type: string; properties: Record<string, unknown>; geometry?: unknown }> } | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function IdentifyExample() {
                 padding: '10px',
                 background: '#f9f9f9'
               }}>
-                {results.features.map((feature: any, index: number) => (
+                {results.features.map((feature: { type: string; properties: Record<string, unknown>; geometry?: unknown }, index: number) => (
                   <div key={index} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                     <strong>Feature {index + 1}:</strong>
                     {feature.properties && (

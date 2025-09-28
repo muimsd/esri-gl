@@ -10,9 +10,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/index.umd.js",
       "import": "./dist/index.js",
-      "require": "./dist/index.umd.js",
-      "browser": "./dist/index.umd.js"
+      "require": "./dist/index.umd.js"
     },
     "./react": {
       "types": "./dist/react.d.ts",

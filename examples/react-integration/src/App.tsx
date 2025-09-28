@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import HooksExample from './components/HooksExample';
-import ReactMapGLExample from './components/ReactMapGLExample';
-import IdentifyExample from './components/IdentifyExample';
+import HooksExample from './components/HooksExample.tsx';
+import ReactMapGLExample from './components/ReactMapGLExample.tsx';
+import IdentifyExample from './components/IdentifyExample.tsx';
 import MapLibreIntegrationExample from './components/MapLibreIntegrationExample';
 import AdvancedFeaturesExample from './components/AdvancedFeaturesExample';
 
