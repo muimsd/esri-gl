@@ -54,7 +54,24 @@ export function useEsriService<T extends RemovableService>(
       return;
     }
 
-    reload();
+    // Add a small delay to ensure map is fully initialized
+    const timeoutId = setTimeout(() => {
+      // Check if map is still valid and loaded
+      if (map && typeof map.addSource === 'function' && map.isStyleLoaded?.() !== false) {
+        reload();
+      } else {
+        // If map is not ready, try again after a short delay
+        const retryTimeoutId = setTimeout(() => {
+          if (map && typeof map.addSource === 'function') {
+            reload();
+          }
+        }, 100);
+        
+        return () => clearTimeout(retryTimeoutId);
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
   }, [map]); // Only depend on map
 
   // Cleanup on unmount

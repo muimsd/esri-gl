@@ -27,11 +27,23 @@ export function useDynamicMapService({
     if (result.service && options !== optionsRef.current) {
       // Check for specific option changes that we can handle without recreation
       if (options.layers !== optionsRef.current.layers) {
-        result.service.setLayers(options.layers || []);
+        const layers = options.layers || [];
+        if (Array.isArray(layers) || typeof layers === 'number') {
+          try {
+            result.service.setLayers(layers);
+          } catch (error) {
+            console.warn('useDynamicMapService: Error setting layers:', error);
+          }
+        }
       }
       
       if (options.layerDefs !== optionsRef.current.layerDefs) {
-        result.service.setLayerDefs(options.layerDefs || {});
+        const layerDefs = options.layerDefs || {};
+        try {
+          result.service.setLayerDefs(layerDefs);
+        } catch (error) {
+          console.warn('useDynamicMapService: Error setting layer definitions:', error);
+        }
       }
       
       // Update the ref to track current options

@@ -4,7 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { EsriDynamicLayer, EsriFeatureLayer, EsriTiledLayer, EsriImageLayer } from 'esri-gl/react-map-gl';
 
 // Demo token for examples - replace with your own in production
-const DEMO_TOKEN = process.env.VITE_MAPBOX_TOKEN || 'your-mapbox-token-here';
+const DEMO_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'your-mapbox-token-here';
 
 export default function ReactMapGLExample() {
   const [viewState, setViewState] = useState({
