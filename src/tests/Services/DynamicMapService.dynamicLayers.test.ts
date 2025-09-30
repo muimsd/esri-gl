@@ -83,10 +83,10 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     });
 
     svc.setLayerFilter(1, { field: 'STATE_ABBR', op: 'IN', values: ['CA', 'OR', 'WA'] });
-    
+
     // Wait for async update to complete
     await new Promise(resolve => setTimeout(resolve, 50));
-    
+
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
     expect(encoded).toContain("STATE_ABBR+IN+('CA',+'OR',+'WA')");
@@ -99,10 +99,10 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     });
 
     svc.setLayerFilter(3, { field: 'POP2000', op: 'BETWEEN', from: 1000000, to: 5000000 });
-    
+
     // Wait for async update to complete
     await new Promise(resolve => setTimeout(resolve, 50));
-    
+
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
     expect(encoded).toContain('POP2000+BETWEEN+1000000+AND+5000000');

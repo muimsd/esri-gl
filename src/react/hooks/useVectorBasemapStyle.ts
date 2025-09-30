@@ -18,10 +18,13 @@ export function useVectorBasemapStyle({
     setError(null);
 
     try {
-      // Clean up existing service if it exists
-      if (service) {
-        service.remove();
-      }
+      // Clean up existing service using functional state update to avoid stale closure
+      setService(prevService => {
+        if (prevService) {
+          prevService.remove();
+        }
+        return null;
+      });
 
       // Create new service
       const newService = new VectorBasemapStyle(options.basemapEnum, {
@@ -35,19 +38,22 @@ export function useVectorBasemapStyle({
     } finally {
       setLoading(false);
     }
-  }, [options, service]);
+  }, [options]); // Remove service from dependencies to prevent infinite loop
 
-  // Initialize service when dependencies change
+  // Initialize service when options change
   useEffect(() => {
     reload();
 
-    // Cleanup on unmount or dependency change
+    // Cleanup on unmount or options change
     return () => {
-      if (service) {
-        service.remove();
-      }
+      setService(prevService => {
+        if (prevService) {
+          prevService.remove();
+        }
+        return null;
+      });
     };
-  }, [reload]);
+  }, [options]); // Depend on options directly, not on reload
 
   return {
     service,

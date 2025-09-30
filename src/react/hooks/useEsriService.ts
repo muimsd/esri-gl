@@ -17,7 +17,7 @@ export function useEsriService<T extends RemovableService>(
   const [service, setService] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const isCreatingService = useRef(false);
 
   const reload = () => {
@@ -66,7 +66,7 @@ export function useEsriService<T extends RemovableService>(
             reload();
           }
         }, 100);
-        
+
         return () => clearTimeout(retryTimeoutId);
       }
     }, 10);

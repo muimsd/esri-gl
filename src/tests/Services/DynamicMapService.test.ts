@@ -233,7 +233,7 @@ describe('DynamicMapService', () => {
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -261,7 +261,7 @@ describe('DynamicMapService', () => {
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -292,7 +292,7 @@ describe('DynamicMapService', () => {
 
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -323,7 +323,7 @@ describe('DynamicMapService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
 
       service.setLayerDefs({ '0': 'POPULATION > 100000', '1': 'STATE_NAME = "California"' });
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -344,7 +344,7 @@ describe('DynamicMapService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
 
       service.setLayers([0, 1, 2]);
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -364,7 +364,7 @@ describe('DynamicMapService', () => {
       const from = new Date('2020-01-01');
       const to = new Date('2020-12-31');
       service.setDate(from, to);
-      
+
       // Wait for async update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 

@@ -14,14 +14,14 @@ export function useDynamicMapService({
   sourceOptions,
 }: UseDynamicMapServiceOptions): UseEsriServiceResult<DynamicMapService> {
   const optionsRef = useRef(options);
-  
+
   const createService = useCallback(
     (mapInstance: Map) => new DynamicMapService(sourceId, mapInstance, options, sourceOptions),
     [sourceId, sourceOptions] // Remove options from dependencies to prevent service recreation
   );
 
   const result = useEsriService(createService, map);
-  
+
   // Update service options when they change
   useEffect(() => {
     if (result.service && options !== optionsRef.current) {
@@ -36,7 +36,7 @@ export function useDynamicMapService({
           }
         }
       }
-      
+
       if (options.layerDefs !== optionsRef.current.layerDefs) {
         const layerDefs = options.layerDefs || {};
         try {
@@ -45,7 +45,7 @@ export function useDynamicMapService({
           console.warn('useDynamicMapService: Error setting layer definitions:', error);
         }
       }
-      
+
       // Update the ref to track current options
       optionsRef.current = options;
     }

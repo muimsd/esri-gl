@@ -10,9 +10,9 @@ export { useIdentifyFeatures } from './react/hooks/useIdentifyFeatures';
 export { useQuery } from './react/hooks/useQuery';
 export { useFind } from './react/hooks/useFind';
 
-// React components - TODO: Implement these components
-// export { EsriServiceProvider, useEsriMap } from './react/components/EsriServiceProvider';
-// export { EsriLayer } from './react/components/EsriLayer';
+// React components
+export { EsriServiceProvider, useEsriMap } from './react/components/EsriServiceProvider';
+export { EsriLayer } from './react/components/EsriLayer';
 
 // Types
 export type * from './react/types';

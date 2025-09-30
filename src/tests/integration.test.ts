@@ -310,17 +310,17 @@ describe('Integration Tests', () => {
 
       // Service should survive multiple updates
       service.update();
-      
+
       // Wait for debounced update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
-      
+
       service.update();
-      
+
       // Wait for second debounced update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
-      
+
       service.update();
-      
+
       // Wait for third debounced update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
