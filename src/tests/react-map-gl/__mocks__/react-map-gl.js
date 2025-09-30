@@ -9,7 +9,7 @@ const mockUseMap = jest.fn(() => ({
       removeLayer: jest.fn(),
       getSource: jest.fn(() => ({
         setTiles: jest.fn(),
-        setUrl: jest.fn()
+        setUrl: jest.fn(),
       })),
       getLayer: jest.fn(),
       setLayoutProperty: jest.fn(),
@@ -18,11 +18,14 @@ const mockUseMap = jest.fn(() => ({
       off: jest.fn(),
       getCanvas: jest.fn(() => document.createElement('canvas')),
       getBounds: jest.fn(() => ({
-        toArray: () => [[-180, -85], [180, 85]],
+        toArray: () => [
+          [-180, -85],
+          [180, 85],
+        ],
         getNorth: () => 85,
         getSouth: () => -85,
         getEast: () => 180,
-        getWest: () => -180
+        getWest: () => -180,
       })),
       getZoom: jest.fn(() => 10),
       getCenter: jest.fn(() => ({ lng: 0, lat: 0 })),
@@ -35,9 +38,9 @@ const mockUseMap = jest.fn(() => ({
       resize: jest.fn(),
       redraw: jest.fn(),
       triggerRepaint: jest.fn(),
-      getContainer: jest.fn(() => document.createElement('div'))
-    })
-  }
+      getContainer: jest.fn(() => document.createElement('div')),
+    }),
+  },
 }));
 
 module.exports = {
@@ -51,5 +54,5 @@ module.exports = {
   GeolocateControl: jest.fn(() => null),
   AttributionControl: jest.fn(() => null),
   ScaleControl: jest.fn(() => null),
-  FullscreenControl: jest.fn(() => null)
+  FullscreenControl: jest.fn(() => null),
 };

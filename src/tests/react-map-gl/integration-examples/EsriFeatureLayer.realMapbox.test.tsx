@@ -37,7 +37,7 @@ const TestWrapper = ({ children, onMapLoad }: TestWrapperProps) => {
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/light-v9"
-        onLoad={evt => {
+        onLoad={(evt: any) => {
           if (onMapLoad) {
             onMapLoad(evt.target);
           }

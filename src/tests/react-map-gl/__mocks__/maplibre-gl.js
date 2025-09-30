@@ -7,7 +7,7 @@ const mockMap = {
   removeLayer: jest.fn(),
   getSource: jest.fn(() => ({
     setTiles: jest.fn(),
-    setUrl: jest.fn()
+    setUrl: jest.fn(),
   })),
   getLayer: jest.fn(),
   setLayoutProperty: jest.fn(),
@@ -16,11 +16,14 @@ const mockMap = {
   off: jest.fn(),
   getCanvas: jest.fn(() => document.createElement('canvas')),
   getBounds: jest.fn(() => ({
-    toArray: () => [[-180, -85], [180, 85]],
+    toArray: () => [
+      [-180, -85],
+      [180, 85],
+    ],
     getNorth: () => 85,
     getSouth: () => -85,
     getEast: () => 180,
-    getWest: () => -180
+    getWest: () => -180,
   })),
   getZoom: jest.fn(() => 10),
   getCenter: jest.fn(() => ({ lng: 0, lat: 0 })),
@@ -33,7 +36,7 @@ const mockMap = {
   resize: jest.fn(),
   redraw: jest.fn(),
   triggerRepaint: jest.fn(),
-  getContainer: jest.fn(() => document.createElement('div'))
+  getContainer: jest.fn(() => document.createElement('div')),
 };
 
 module.exports = {
@@ -44,5 +47,5 @@ module.exports = {
   ScaleControl: jest.fn(),
   FullscreenControl: jest.fn(),
   Marker: jest.fn(),
-  Popup: jest.fn()
+  Popup: jest.fn(),
 };

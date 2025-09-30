@@ -139,5 +139,13 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off'
     }
+  },
+
+  // Global type declarations - allow any types
+  {
+    files: ['global.d.ts', '**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off'
+    }
   }
 ];

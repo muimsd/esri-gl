@@ -26,7 +26,13 @@ const basePlugins = [
     declaration: false,
     outDir: 'dist',
     rootDir: 'src',
-    jsx: 'react'
+    jsx: 'react-jsx',
+    noEmitOnError: false,
+    compilerOptions: {
+      skipLibCheck: true,
+      moduleResolution: 'bundler',
+      allowImportingTsExtensions: false
+    }
   }),
   babel({
     babelHelpers: 'bundled',

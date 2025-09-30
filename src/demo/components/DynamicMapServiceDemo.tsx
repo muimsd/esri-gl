@@ -700,7 +700,8 @@ const DynamicMapServiceDemo: React.FC = () => {
           <button onClick={() => testStateAbbr()}>Test State Abbr</button>
         </div>
         <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-          Click on the map to identify features. Styling and filtering is applied server-side via dynamicLayers.
+          Click on the map to identify features. Styling and filtering is applied server-side via
+          dynamicLayers.
         </div>
       </div>
       <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
