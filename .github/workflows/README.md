@@ -5,7 +5,7 @@ This repository includes GitHub Actions workflows for automated publishing to NP
 ## Workflows
 
 ### 1. CI Workflow (`ci.yml`)
-- **Triggers**: Push to `master`/`main`/`develop`, Pull Requests
+- **Triggers**: Push to `main`/`develop`, Pull Requests
 - **Purpose**: Run tests, linting, type checking, and build validation
 - **Node versions**: Tests on Node 16, 18, and 20
 
@@ -26,7 +26,7 @@ This repository includes GitHub Actions workflows for automated publishing to NP
 
 ### 4. Publish GitHub Packages (`publish-github-packages.yml`)
 - **Triggers**:
-  - Push to `master`/`main` branches
+  - Push to `main` branch
   - Git tags matching `v*.*.*` pattern  
   - Manual workflow dispatch
 - **Purpose**: Publish to GitHub Packages npm registry
@@ -83,9 +83,9 @@ git push --tags
 
 ### 4. Publishing to GitHub Packages
 
-**Option A: Push to master/main** (automatic)
+**Option A: Push to main** (automatic)
 ```bash
-git push origin master
+git push origin main
 ```
 
 **Option B: Manual workflow dispatch**
