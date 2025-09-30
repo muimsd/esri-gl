@@ -73,9 +73,69 @@ export default [
     }
   },
   
+  // Jest setup and mock files configuration
+  {
+    files: ['**/setup.js', '**/mapbox-setup.js', '**/*setup*.js', '**/__mocks__/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        exports: 'writable',
+        global: 'readonly',
+        module: 'writable',
+        require: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        fetch: 'readonly',
+        // Jest globals
+        jest: 'readonly',
+        expect: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        describe: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly',
+        // Browser globals commonly used in Jest setup
+        HTMLCanvasElement: 'readonly',
+        HTMLElement: 'readonly',
+        Element: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly'
+      }
+    },
+    rules: {
+      'no-unused-vars': 'warn', // More permissive for setup files
+      'no-undef': 'error'
+    }
+  },
+
   // Test files configuration - more permissive for any types
   {
     files: ['**/*.test.{ts,tsx}', '**/tests/**/*.{ts,tsx}', '**/test/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        // Jest globals for test files
+        jest: 'readonly',
+        expect: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        describe: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly'
+      }
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off'
     }
