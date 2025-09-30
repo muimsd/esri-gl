@@ -9,7 +9,11 @@
     "moduleResolution": "node",
     "noEmit": false,
     "declaration": false,
-    "emitDeclarationOnly": false
+    "emitDeclarationOnly": false,
+    "paths": {
+      "@/*": ["src/*"],
+      "@/types": ["src/types.ts"]
+    }
   },
   "include": ["src/**/*", "src/__tests__/**/*", "src/test-setup.ts"],
   "exclude": ["src/demo/**/*"]

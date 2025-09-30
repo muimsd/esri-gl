@@ -588,7 +588,8 @@ describe('Find Task', () => {
 
       const result = await find.text('Chain').run();
 
-      expect(result.features[0].geometry.type).toBe('Polygon');
+      expect(result.features[0].geometry).toBeDefined();
+      expect(result.features[0].geometry!.type).toBe('Polygon');
       expect((result.features[0].geometry as any).coordinates).toHaveLength(2);
     });
 

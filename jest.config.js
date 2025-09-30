@@ -10,16 +10,7 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
-      tsconfig: {
-        moduleResolution: 'node',
-        baseUrl: '.',
-        paths: {
-          '@/*': ['src/*'],
-          '@/types': ['src/types.ts']
-        },
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true
-      }
+      tsconfig: 'tsconfig.test.json'
     }]
   },
   moduleNameMapper: {
@@ -46,6 +37,6 @@ export default {
     'lcov',
     'html'
   ],
-  extensionsToTreatAsEsm: ['.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
 }

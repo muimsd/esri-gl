@@ -386,7 +386,7 @@ const service = new FeatureService('optimized-source', map, {
 - **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
 - **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 77.78% with 583 comprehensive test cases
+- **Test Coverage**: 80.71% with 583 comprehensive test cases
 
 ### Development Commands
 
