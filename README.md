@@ -37,6 +37,8 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 - **Layer Definitions** - Filter data server-side using SQL-like expressions
 - **Time-aware Services** - Support for temporal data visualization
 - **Attribution Management** - Automatic service attribution handling
+- **React Integration** - Hooks and components for React applications
+- **React Map GL Support** - Direct integration with react-map-gl
 - **TypeScript Support** - Full type safety with comprehensive interfaces
 
 ## Installation
@@ -46,30 +48,7 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 npm install esri-gl
 ```
 
-### Alpha/Beta Releases
-```bash
-# Latest alpha release (current: v0.1.0-alpha.2)
-npm install esri-gl@alpha
 
-# Specific alpha version
-npm install esri-gl@0.1.0-alpha.2
-
-# Latest beta release  
-npm install esri-gl@beta
-```
-
-### GitHub Packages (Alternative Registry)
-```bash
-# Configure npm to use GitHub Packages for @muimsd scope
-npm config set @muimsd:registry https://npm.pkg.github.com/
-
-# Install from GitHub Packages
-npm install @muimsd/esri-gl
-
-# Or use the setup script
-./scripts/github-packages.sh configure
-./scripts/github-packages.sh install
-```
 
 ## Quick Start
 
@@ -291,6 +270,241 @@ const results = await query({
 .run();
 ```
 
+## React Integration
+
+esri-gl provides first-class React.js support with comprehensive hooks, components, and seamless integration with **react-map-gl**. Whether you're building with vanilla React + MapLibre/Mapbox or using the react-map-gl wrapper, esri-gl has you covered.
+
+### Installation for React Projects
+
+```bash
+# Core library
+npm install esri-gl
+
+# For React hooks and components
+npm install react react-dom @types/react @types/react-dom
+
+# For react-map-gl integration (recommended)
+npm install react-map-gl mapbox-gl
+# OR for MapLibre
+npm install react-map-gl maplibre-gl
+```
+
+### React Hooks Pattern
+
+Perfect for custom React components with full control over map lifecycle:
+
+```typescript
+import React, { useState, useRef, useEffect } from 'react';
+import { Map } from 'maplibre-gl';
+import { useDynamicMapService, useIdentifyFeatures, useFeatureService } from 'esri-gl/react';
+
+function CustomMapComponent() {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<Map | null>(null);
+  
+  // Initialize MapLibre map
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const mapInstance = new Map({
+      container: mapRef.current,
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [-95, 37],
+      zoom: 4
+    });
+    setMap(mapInstance);
+    return () => mapInstance.remove();
+  }, []);
+
+  // Use esri-gl React hooks
+  const { service: dynamicService, loading, error } = useDynamicMapService({
+    sourceId: 'usa-service',
+    map,
+    options: {
+      url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+      layers: [0, 1, 2],
+      transparent: true
+    }
+  });
+
+  const { service: featureService } = useFeatureService({
+    sourceId: 'states-service',
+    map,
+    options: {
+      url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_States/FeatureServer/0',
+      useVectorTiles: true,
+      useBoundingBox: true
+    }
+  });
+
+  const { identify } = useIdentifyFeatures({
+    url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+    tolerance: 3
+  });
+
+  // Handle map clicks for identify
+  useEffect(() => {
+    if (!map) return;
+    const handleClick = async (e: any) => {
+      const results = await identify({ lng: e.lngLat.lng, lat: e.lngLat.lat }, map);
+      console.log('Identify results:', results);
+    };
+    map.on('click', handleClick);
+    return () => map.off('click', handleClick);
+  }, [map, identify]);
+
+  return (
+    <div>
+      <div ref={mapRef} style={{ width: '100%', height: '500px' }} />
+      {loading && <div>Loading Esri services...</div>}
+      {error && <div>Error: {error.message}</div>}
+    </div>
+  );
+}
+```
+
+### React Map GL Components (Recommended)
+
+For the smoothest React experience with declarative layer management:
+
+```typescript
+import React, { useState } from 'react';
+import { Map } from 'react-map-gl';
+import { 
+  EsriDynamicLayer, 
+  EsriFeatureLayer, 
+  EsriVectorTileLayer,
+  EsriImageLayer 
+} from 'esri-gl/react-map-gl';
+
+function MapWithEsriLayers() {
+  const [viewState, setViewState] = useState({
+    longitude: -95,
+    latitude: 37,
+    zoom: 4
+  });
+
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+
+  return (
+    <Map
+      {...viewState}
+      onMove={evt => setViewState(evt.viewState)}
+      mapStyle="mapbox://styles/mapbox/streets-v11"
+      style={{ width: '100%', height: '600px' }}
+    >
+      {/* Dynamic Map Service Layer */}
+      <EsriDynamicLayer
+        id="usa-demographics"
+        url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer"
+        layers={[0, 1, 2]}
+        layerDefs={{
+          0: "POP2000 > 100000",
+          1: "STATE_NAME IN ('California', 'Texas', 'New York')"
+        }}
+        opacity={0.8}
+        beforeId="waterway-label"
+      />
+
+      {/* Feature Service with Vector Tiles */}
+      <EsriFeatureLayer
+        id="us-states"
+        url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_States/FeatureServer/0"
+        useVectorTiles={true}
+        useBoundingBox={true}
+        where={selectedStates.length > 0 ? `STATE_NAME IN ('${selectedStates.join("','")}')` : undefined}
+        paint={{
+          'fill-color': [
+            'case',
+            ['in', ['get', 'STATE_NAME'], ['literal', selectedStates]],
+            '#ff6b6b',
+            '#627BC1'
+          ],
+          'fill-opacity': 0.6,
+          'fill-outline-color': '#ffffff'
+        }}
+        onClick={(feature) => {
+          const stateName = feature.properties?.STATE_NAME;
+          if (stateName) {
+            setSelectedStates(prev => 
+              prev.includes(stateName) 
+                ? prev.filter(s => s !== stateName)
+                : [...prev, stateName]
+            );
+          }
+        }}
+      />
+
+      {/* Vector Tile Service */}
+      <EsriVectorTileLayer
+        id="world-imagery-labels"
+        url="https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/VectorTileServer"
+        beforeId="usa-demographics"
+      />
+
+      {/* Image Service for Analytical Data */}
+      <EsriImageLayer
+        id="elevation-hillshade"
+        url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/ImageServer"
+        renderingRule={{
+          rasterFunction: "Hillshade",
+          rasterFunctionArguments: {
+            Azimuth: 315,
+            Altitude: 45
+          }
+        }}
+        opacity={0.5}
+      />
+    </Map>
+  );
+}
+```
+
+### Why Choose React Integration?
+
+#### React Hooks Benefits
+- **🎛️ Full Control** - Direct access to map instance and service lifecycle
+- **🔄 State Management** - Seamless integration with React state and effects
+- **🎯 Custom Logic** - Perfect for complex interactions and custom components
+- **📦 Lightweight** - Use only what you need
+
+#### React Map GL Benefits  
+- **📋 Declarative** - Define layers as JSX components
+- **🔄 Automatic Updates** - Props changes automatically update layers
+- **🎨 Built-in Styling** - Direct paint and layout prop support
+- **👆 Event Handling** - onClick, onHover events built-in
+- **🏗️ Component Ecosystem** - Works with all react-map-gl features
+
+### TypeScript Support
+
+Full TypeScript support with comprehensive type definitions:
+
+```typescript
+import type { 
+  DynamicMapServiceOptions,
+  FeatureServiceOptions,
+  IdentifyResult,
+  EsriLayerProps 
+} from 'esri-gl';
+import type { MapRef } from 'react-map-gl';
+
+// Fully typed component props
+interface MapComponentProps {
+  serviceUrl: string;
+  initialLayers?: number[];
+  onFeatureClick?: (feature: IdentifyResult) => void;
+}
+
+const TypedMapComponent: React.FC<MapComponentProps> = ({ 
+  serviceUrl, 
+  initialLayers = [0], 
+  onFeatureClick 
+}) => {
+  // Component implementation with full type safety
+};
+```
+
+See [REACT.md](REACT.md) for complete React integration documentation and advanced patterns.
+
 ## Advanced Features
 
 ### Dynamic Layer Management
@@ -344,11 +558,11 @@ const service = new FeatureService('optimized-source', map, {
 ## Development
 
 ### Build System
-- **Library Build**: Rollup with `@rollup/plugin-typescript` (UMD + ESM outputs)
-- **Type Declarations**: Consolidated in `dist/types/` directory
-- **Demo Development**: Vite dev server  
+- **Library Build**: Rollup with TypeScript, Babel, and Terser (UMD + ESM outputs)
+- **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
+- **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 92.94% with 651 focused test cases
+- **Test Coverage**: 83.46% with 609 comprehensive test cases
 
 ### Development Commands
 
@@ -400,9 +614,13 @@ src/
 └── types.ts           # TypeScript interfaces
 
 dist/
-├── types/             # Consolidated TypeScript declarations
-├── esri-gl.js         # UMD build
-├── esri-gl.esm.js     # ESM build  
+├── index.d.ts         # Main TypeScript declarations
+├── react.d.ts         # React integration declarations
+├── react-map-gl.d.ts  # React Map GL declarations
+├── index.js           # ESM build
+├── index.umd.js       # UMD build
+├── esri-gl.esm.js     # ESM build (legacy)
+├── esri-gl.js         # UMD build (legacy)
 └── esri-gl.min.js     # Minified UMD build
 ```
 
@@ -431,7 +649,7 @@ const options: FeatureServiceOptions = {
 };
 ```
 
-All type declarations are available in the `dist/types/` directory after building.
+All type declarations are available in the `dist/` directory after building.
 
 ## Contributing
 

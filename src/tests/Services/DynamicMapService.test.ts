@@ -216,13 +216,15 @@ describe('DynamicMapService', () => {
       });
     });
 
-    it('should update source', () => {
+    it('should update source', async () => {
       service.update();
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
       // Update calls internal _updateSource which uses getSource
       expect(mockMap.getSource).toHaveBeenCalledWith('test-source');
     });
 
-    it('should handle update when source supports setTiles (modern MapboxGL)', () => {
+    it('should handle update when source supports setTiles (modern MapboxGL)', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         setTiles: jest.fn(),
@@ -232,11 +234,14 @@ describe('DynamicMapService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
 
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       expect(mockSource.setTiles).toHaveBeenCalled();
       expect(mockSource.tiles[0]).toContain('export');
     });
 
-    it('should handle update when using legacy sourceCaches (old MapboxGL/MaplibreGL)', () => {
+    it('should handle update when using legacy sourceCaches (old MapboxGL/MaplibreGL)', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         _options: {},
@@ -257,11 +262,14 @@ describe('DynamicMapService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
 
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       expect(mockSourceCache.clearTiles).toHaveBeenCalled();
       expect(mockSourceCache.update).toHaveBeenCalledWith((mockMap as any).transform);
     });
 
-    it('should handle update when using _otherSourceCaches fallback', () => {
+    it('should handle update when using _otherSourceCaches fallback', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         _options: {},
@@ -285,6 +293,9 @@ describe('DynamicMapService', () => {
       (mockMap.getSource as jest.Mock).mockReturnValue(mockSource);
       service.update();
 
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       expect(mockSourceCache.clearTiles).toHaveBeenCalled();
       expect(mockSourceCache.update).toHaveBeenCalledWith((mockMap as any).transform);
     });
@@ -302,7 +313,7 @@ describe('DynamicMapService', () => {
       });
     });
 
-    it('should set layer definitions and update source', () => {
+    it('should set layer definitions and update source', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         setTiles: jest.fn(),
@@ -313,6 +324,9 @@ describe('DynamicMapService', () => {
 
       service.setLayerDefs({ '0': 'POPULATION > 100000', '1': 'STATE_NAME = "California"' });
 
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       expect(service.esriServiceOptions.layerDefs).toEqual({
         '0': 'POPULATION > 100000',
         '1': 'STATE_NAME = "California"',
@@ -320,7 +334,7 @@ describe('DynamicMapService', () => {
       expect(mockSource.setTiles).toHaveBeenCalled();
     });
 
-    it('should set layers and update source', () => {
+    it('should set layers and update source', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         setTiles: jest.fn(),
@@ -331,11 +345,14 @@ describe('DynamicMapService', () => {
 
       service.setLayers([0, 1, 2]);
 
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       expect(service.esriServiceOptions.layers).toEqual([0, 1, 2]);
       expect(mockSource.setTiles).toHaveBeenCalled();
     });
 
-    it('should set date range and update source', () => {
+    it('should set date range and update source', async () => {
       const mockSource = {
         tiles: ['old-tile-url'],
         setTiles: jest.fn(),
@@ -347,6 +364,9 @@ describe('DynamicMapService', () => {
       const from = new Date('2020-01-01');
       const to = new Date('2020-12-31');
       service.setDate(from, to);
+
+      // Wait for async update to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(service.esriServiceOptions.from).toEqual(from);
       expect(service.esriServiceOptions.to).toEqual(to);

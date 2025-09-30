@@ -237,4 +237,161 @@ describe('VectorBasemapStyle', () => {
       expect(service.styleUrl).toContain(`apiKey=${apiKey}`);
     });
   });
+
+  describe('Edge Cases and Private Method Coverage', () => {
+    it('should handle empty string style name (defaults to arcgis/streets)', () => {
+      const service = new VectorBasemapStyle('', 'test-api-key');
+      expect(service.styleName).toBe('arcgis/streets');
+    });
+
+    it('should preserve original legacy colon syntax in styleName', () => {
+      const service = new VectorBasemapStyle('arcgis:imagery', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:imagery'); // Original format preserved
+    });
+
+    it('should preserve original CamelCase legacy styles in styleName', () => {
+      const service = new VectorBasemapStyle('arcgis:streetsnight', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:streetsnight'); // Original format preserved
+    });
+
+    it('should preserve original underscore legacy styles in styleName', () => {
+      const service = new VectorBasemapStyle('arcgis:streetsrelief', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:streetsrelief'); // Original format preserved
+    });
+
+    it('should leave unknown legacy colon syntax unchanged', () => {
+      const service = new VectorBasemapStyle('ArcGIS:CustomStyle', 'test-api-key');
+      expect(service.styleName).toBe('ArcGIS:CustomStyle'); // Should remain unchanged
+    });
+
+    it('should preserve original unknown arcgis: patterns in styleName', () => {
+      // styleName should preserve original input format
+      const service = new VectorBasemapStyle('arcgis:MyCustomStyle', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:MyCustomStyle'); // Original preserved
+    });
+
+    it('should preserve original CamelCase in styleName', () => {
+      const service = new VectorBasemapStyle('arcgis:StreetsReliefCustom', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:StreetsReliefCustom'); // Original preserved
+    });
+
+    it('should preserve original underscores in styleName', () => {
+      const service = new VectorBasemapStyle('arcgis:custom_style_name', 'test-api-key');
+      expect(service.styleName).toBe('arcgis:custom_style_name'); // Original preserved
+    });
+
+    it('should leave already slash format style names unchanged', () => {
+      const service = new VectorBasemapStyle('arcgis/custom-enterprise-style', 'test-api-key');
+      expect(service.styleName).toBe('arcgis/custom-enterprise-style');
+    });
+
+    it('should leave non-ArcGIS style names unchanged for enterprise', () => {
+      const service = new VectorBasemapStyle('enterprise/custom-style', 'test-api-key');
+      expect(service.styleName).toBe('enterprise/custom-style');
+    });
+
+    it('should handle colon syntax without token part', () => {
+      const service = new VectorBasemapStyle('ArcGIS:', 'test-api-key');
+      expect(service.styleName).toBe('ArcGIS:'); // Should leave unchanged when no token
+    });
+
+    it('should handle setStyle with null/empty name', () => {
+      const service = new VectorBasemapStyle('arcgis/streets', 'test-api-key');
+      service.setStyle('' as any);
+      // setStyle with empty string should not change the style
+      const urlBefore = service.styleUrl;
+      service.setStyle(null as any);
+      expect(service.styleUrl).toBe(urlBefore);
+    });
+
+    it('should preserve original input in styleName for legacy formats', () => {
+      const testCases = [
+        { input: 'arcgis:streets', expected: 'arcgis:streets' },
+        { input: 'arcgis:topographic', expected: 'arcgis:topographic' },
+        { input: 'arcgis:imagery', expected: 'arcgis:imagery' },
+        { input: 'arcgis:oceans', expected: 'arcgis:oceans' },
+        { input: 'arcgis:streetsnight', expected: 'arcgis:streetsnight' },
+        { input: 'arcgis:darkgray', expected: 'arcgis:darkgray' },
+        { input: 'arcgis:lightgray', expected: 'arcgis:lightgray' },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const service = new VectorBasemapStyle(input, 'test-api-key');
+        expect(service.styleName).toBe(expected); // styleName preserves original input
+      });
+    });
+
+    it('should convert legacy formats to canonical in styleUrl', () => {
+      const testCases = [
+        { input: 'arcgis:streets', canonical: 'arcgis/streets' },
+        { input: 'arcgis:topographic', canonical: 'arcgis/topographic' },
+        { input: 'arcgis:imagery', canonical: 'arcgis/imagery' },
+        { input: 'arcgis:oceans', canonical: 'arcgis/oceans' },
+        { input: 'arcgis:streetsnight', canonical: 'arcgis/streets-night' },
+        { input: 'arcgis:darkgray', canonical: 'arcgis/dark-gray' },
+        { input: 'arcgis:lightgray', canonical: 'arcgis/light-gray' },
+      ];
+
+      testCases.forEach(({ input, canonical }) => {
+        const service = new VectorBasemapStyle(input, 'test-api-key');
+        expect(service.styleUrl).toContain(canonical); // URL uses canonical format
+      });
+    });
+
+    it('should apply smart conversion for unknown arcgis patterns in URL', () => {
+      const testCases = [
+        { input: 'arcgis:MyCustomStyle', canonical: 'arcgis/my-custom-style' },
+        { input: 'arcgis:StreetsReliefCustom', canonical: 'arcgis/streets-relief-custom' },
+        { input: 'arcgis:custom_style_name', canonical: 'arcgis/custom-style-name' },
+      ];
+
+      testCases.forEach(({ input, canonical }) => {
+        const service = new VectorBasemapStyle(input, 'test-api-key');
+        expect(service.styleName).toBe(input); // Original preserved
+        expect(service.styleUrl).toContain(canonical); // URL uses converted format
+      });
+    });
+
+    it('should handle constructor with token-based options', () => {
+      const service = new VectorBasemapStyle('arcgis/streets', {
+        token: 'test-token',
+        language: 'es',
+        worldview: 'GCS_WGS_1984',
+      });
+
+      expect(service.styleUrl).toContain('token=test-token');
+      expect(service.styleUrl).toContain('language=es');
+      expect(service.styleUrl).toContain('worldview=GCS_WGS_1984');
+    });
+
+    it('should handle constructor with API key options object', () => {
+      const service = new VectorBasemapStyle('arcgis/streets', {
+        apiKey: 'test-api-key',
+        language: 'fr',
+      });
+
+      expect(service.styleUrl).toContain('apiKey=test-api-key');
+      expect(service.styleUrl).toContain('language=fr');
+    });
+
+    it('should throw error when neither apiKey nor token provided in options', () => {
+      expect(() => {
+        new VectorBasemapStyle('arcgis/streets', {
+          language: 'en',
+        } as any);
+      }).toThrow('An Esri API Key must be supplied to consume vector basemap styles');
+    });
+
+    it('should handle version determination correctly', () => {
+      // v1 with API key
+      const v1Service = new VectorBasemapStyle('arcgis/streets', 'test-api-key');
+      expect(v1Service.styleUrl).toContain('basemaps-api.arcgis.com');
+      expect(v1Service.styleUrl).toContain('v1/styles');
+
+      // v2 with token
+      const v2Service = new VectorBasemapStyle('arcgis/streets', { token: 'test-token' });
+      expect(v2Service.styleUrl).toContain('basemapstyles-api.arcgis.com');
+      expect(v2Service.styleUrl).toContain('v2/styles');
+    });
+  });
 });

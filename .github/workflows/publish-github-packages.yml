@@ -3,7 +3,6 @@ name: Publish to GitHub Packages
 on:
   push:
     branches:
-      - master
       - main
   workflow_dispatch:
     inputs:
@@ -130,7 +129,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
             echo "tag=alpha" >> $GITHUB_OUTPUT

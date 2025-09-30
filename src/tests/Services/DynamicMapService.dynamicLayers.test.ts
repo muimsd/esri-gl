@@ -32,7 +32,7 @@ class StubMap {
 }
 
 describe('DynamicMapService dynamicLayers and filters', () => {
-  test('appends dynamicLayers param when set', () => {
+  test('appends dynamicLayers param when set', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -45,6 +45,9 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     // Set dynamic layers - one visible layer with empty renderer
     svc.setDynamicLayers([{ id: 3, visible: true, drawingInfo: { renderer: { type: 'simple' } } }]);
 
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const src = (map as any).getSource('dyn-src') as any;
     expect(src.tiles[0]).toContain('dynamicLayers=');
     // Ensure value is encoded JSON
@@ -53,7 +56,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     expect(encoded).toContain('"renderer"');
   });
 
-  test('builds and applies filter as definitionExpression', () => {
+  test('builds and applies filter as definitionExpression', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -61,6 +64,9 @@ describe('DynamicMapService dynamicLayers and filters', () => {
 
     // Apply a comparison filter
     svc.setLayerFilter(2, { field: 'STATE_NAME', op: '=', value: 'California' });
+
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const src = (map as any).getSource('dyn-src') as any;
     expect(src.tiles[0]).toContain('dynamicLayers=');
@@ -70,7 +76,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     expect(encoded).toContain('"source":{"type":"mapLayer","mapLayerId":2}');
   });
 
-  test('builds IN filter correctly', () => {
+  test('builds IN filter correctly', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -78,25 +84,31 @@ describe('DynamicMapService dynamicLayers and filters', () => {
 
     svc.setLayerFilter(1, { field: 'STATE_ABBR', op: 'IN', values: ['CA', 'OR', 'WA'] });
 
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
     expect(encoded).toContain("STATE_ABBR+IN+('CA',+'OR',+'WA')");
   });
 
-  test('builds BETWEEN filter correctly', () => {
+  test('builds BETWEEN filter correctly', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
-    svc.setLayerFilter(2, { field: 'POP2000', op: 'BETWEEN', from: 1000000, to: 5000000 });
+    svc.setLayerFilter(3, { field: 'POP2000', op: 'BETWEEN', from: 1000000, to: 5000000 });
+
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
     expect(encoded).toContain('POP2000+BETWEEN+1000000+AND+5000000');
   });
 
-  test('builds grouped AND filter correctly', () => {
+  test('builds grouped AND filter correctly', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -110,18 +122,24 @@ describe('DynamicMapService dynamicLayers and filters', () => {
       ],
     });
 
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
     expect(encoded).toContain("(POP2000+>+1000000+AND+SUB_REGION+=+'Pacific')");
   });
 
-  test('maps visible to visibility and adds default source', () => {
+  test('maps visible to visibility and adds default source', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
     });
 
     svc.setDynamicLayers([{ id: 5, visible: false }]);
+
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
@@ -130,7 +148,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     expect(encoded).toContain('"source":{"type":"mapLayer","mapLayerId":5}');
   });
 
-  test('preserves all visible layers when applying style to one layer', () => {
+  test('preserves all visible layers when applying style to one layer', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -142,6 +160,9 @@ describe('DynamicMapService dynamicLayers and filters', () => {
       type: 'simple',
       symbol: { type: 'esriSFS', color: [0, 122, 255, 90] },
     });
+
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);
@@ -156,7 +177,7 @@ describe('DynamicMapService dynamicLayers and filters', () => {
     expect(encoded).toContain('"visibility":true');
   });
 
-  test('preserves all visible layers when applying filter to one layer', () => {
+  test('preserves all visible layers when applying filter to one layer', async () => {
     const map = new StubMap() as unknown as Map;
     const svc = new DynamicMapService('dyn-src', map, {
       url: 'https://example.com/ArcGIS/rest/services/Test/MapServer',
@@ -169,6 +190,9 @@ describe('DynamicMapService dynamicLayers and filters', () => {
       op: '=',
       value: 'California',
     });
+
+    // Wait for async update to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const src = (map as any).getSource('dyn-src') as any;
     const encoded = decodeURIComponent(src.tiles[0]);

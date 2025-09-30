@@ -6,25 +6,25 @@ export default {
     '**/tests/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
-  testPathIgnorePatterns: ['<rootDir>/src/__tests__/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/src/__tests__/',
+    '/__mocks__/',
+    '/setup\\.js$',
+    '/mapbox-setup\\.js$',
+    '/integration-examples/',
+    '/react-map-gl/'
+  ],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
-      tsconfig: {
-        moduleResolution: 'node',
-        baseUrl: '.',
-        paths: {
-          '@/*': ['src/*'],
-          '@/types': ['src/types.ts']
-        }
-      }
+      tsconfig: 'tsconfig.test.json'
     }]
   },
   moduleNameMapper: {
     '^@/types$': '<rootDir>/src/types.ts',
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/react-map-gl/setup.js', '<rootDir>/src/tests/react-map-gl/mapbox-setup.js'],
   testEnvironment: 'jsdom',
   globals: {
     'process.env.NODE_ENV': 'test'
@@ -44,6 +44,6 @@ export default {
     'lcov',
     'html'
   ],
-  extensionsToTreatAsEsm: ['.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
 }

@@ -10,19 +10,25 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@/types": ["src/types.ts"]
-    }
+    },
+    "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "global.d.ts"
   ],
   "exclude": [
     "src/demo/**/*",
     "src/**/*.test.ts",
+    "src/**/*.test.tsx",
     "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/tests/**/*",
     "**/*.d.ts"
   ]
 }
