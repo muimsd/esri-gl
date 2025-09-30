@@ -1,1 +1,94 @@
-# esri-gl Examples\n\nThis directory contains example applications demonstrating how to use the `esri-gl` library with different mapping frameworks and build tools.\n\n## Available Examples\n\n### MapLibre + React + TypeScript\n📁 **[maplibre-react-dynamic](./maplibre-react-dynamic/)**\n- Framework: React 18 with TypeScript\n- Mapping Library: MapLibre GL JS\n- Build Tool: Vite\n- Features: Dynamic layers, server-side labeling, styling, filtering, and feature identification\n\n## Running Examples\n\nEach example is a standalone project with its own dependencies:\n\n`bash\n# Navigate to an example\ncd examples/maplibre-react-dynamic\n\n# Install dependencies\nnpm install\n\n# Start development server\nnpm run dev\n`\n\n## Local Development with esri-gl\n\nIf you're developing esri-gl locally and want to test with these examples:\n\n### Option 1: npm link (Recommended)\n\n1. In the main esri-gl directory:\n `bash\n   npm run build\n   npm link\n   `\n\n2. In the example directory:\n `bash\n   npm link esri-gl\n   npm run dev\n   `\n\n### Option 2: File Path Dependency\n\nModify the example's `package.json`:\n\n`json\n{\n  \"dependencies\": {\n    \"esri-gl\": \"file:../../\",\n    // ... other dependencies\n  }\n}\n`\n\nThen run `npm install` in the example directory.\n\n## Contributing Examples\n\nWe welcome additional examples! When contributing:\n\n1. Create a new directory under `examples/`\n2. Use a descriptive name format: `{mapping-library}-{framework}-{feature}`\n3. Include a comprehensive README.md\n4. Ensure the example runs with `npm install && npm run dev`\n5. Use the latest stable versions of dependencies\n6. Add TypeScript support when possible\n7. Include proper error handling and loading states\n\n## Example Ideas\n\nSome ideas for additional examples:\n\n- `mapbox-vanilla-js` - Pure JavaScript with Mapbox GL JS\n- `maplibre-vue-composition` - Vue 3 with Composition API\n- `mapbox-angular-standalone` - Angular with standalone components\n- `maplibre-svelte-kit` - SvelteKit application\n- `mapbox-nextjs-app-router` - Next.js with App Router\n- `maplibre-electron-desktop` - Electron desktop application\n\n## License\n\nAll examples are provided under the MIT License, same as the main esri-gl library.\n
+# esri-gl Examples
+
+This directory contains example applications demonstrating how to use the `esri-gl` library with different mapping frameworks and build tools.
+
+## Available Examples
+
+### MapLibre + React + TypeScript
+📁 **[maplibre-react-dynamic](./maplibre-react-dynamic/)**
+- Framework: React 18 with TypeScript
+- Mapping Library: MapLibre GL JS
+- Build Tool: Vite
+- Features: Dynamic layers, server-side labeling, styling, filtering, and feature identification
+
+### React Integration Examples
+📁 **[react-integration](./react-integration/)**
+- Framework: React 18 with TypeScript
+- Mapping Library: MapLibre GL JS and Mapbox GL JS
+- Build Tool: Vite
+- Features: React hooks, components, and integration patterns for esri-gl
+
+## Running Examples
+
+Each example is a standalone project with its own dependencies:
+
+```bash
+# Navigate to an example
+cd examples/maplibre-react-dynamic
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+## Local Development with esri-gl
+
+If you're developing esri-gl locally and want to test with these examples:
+
+### Option 1: npm link (Recommended)
+
+1. In the main esri-gl directory:
+   ```bash
+   npm run build
+   npm link
+   ```
+
+2. In the example directory:
+   ```bash
+   npm link esri-gl
+   npm run dev
+   ```
+
+### Option 2: File Path Dependency
+
+Modify the example's `package.json`:
+
+```json
+{
+  "dependencies": {
+    "esri-gl": "file:../../",
+    // ... other dependencies
+  }
+}
+```
+
+Then run `npm install` in the example directory.
+
+## Contributing Examples
+
+We welcome additional examples! When contributing:
+
+1. Create a new directory under `examples/`
+2. Use a descriptive name format: `{mapping-library}-{framework}-{feature}`
+3. Include a comprehensive README.md
+4. Ensure the example runs with `npm install && npm run dev`
+5. Use the latest stable versions of dependencies
+6. Add TypeScript support when possible
+7. Include proper error handling and loading states
+
+## Example Ideas
+
+Some ideas for additional examples:
+
+- `mapbox-vanilla-js` - Pure JavaScript with Mapbox GL JS
+- `maplibre-vue-composition` - Vue 3 with Composition API
+- `mapbox-angular-standalone` - Angular with standalone components
+- `maplibre-svelte-kit` - SvelteKit application
+- `mapbox-nextjs-app-router` - Next.js with App Router
+- `maplibre-electron-desktop` - Electron desktop application
+
+## License
+
+All examples are provided under the MIT License, same as the main esri-gl library.

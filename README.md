@@ -48,30 +48,7 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 npm install esri-gl
 ```
 
-### Alpha/Beta Releases
-```bash
-# Latest alpha release (current: v0.1.0-alpha.2)
-npm install esri-gl@alpha
 
-# Specific alpha version
-npm install esri-gl@0.1.0-alpha.2
-
-# Latest beta release  
-npm install esri-gl@beta
-```
-
-### GitHub Packages (Alternative Registry)
-```bash
-# Configure npm to use GitHub Packages for @muimsd scope
-npm config set @muimsd:registry https://npm.pkg.github.com/
-
-# Install from GitHub Packages
-npm install @muimsd/esri-gl
-
-# Or use the setup script
-./scripts/github-packages.sh configure
-./scripts/github-packages.sh install
-```
 
 ## Quick Start
 
@@ -405,11 +382,11 @@ const service = new FeatureService('optimized-source', map, {
 ## Development
 
 ### Build System
-- **Library Build**: Rollup with `@rollup/plugin-typescript` (UMD + ESM outputs)
-- **Type Declarations**: Consolidated in `dist/types/` directory
-- **Demo Development**: Vite dev server  
+- **Library Build**: Rollup with TypeScript, Babel, and Terser (UMD + ESM outputs)
+- **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
+- **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 92.94% with 651 focused test cases
+- **Test Coverage**: 77.78% with 583 comprehensive test cases
 
 ### Development Commands
 
@@ -461,9 +438,13 @@ src/
 └── types.ts           # TypeScript interfaces
 
 dist/
-├── types/             # Consolidated TypeScript declarations
-├── esri-gl.js         # UMD build
-├── esri-gl.esm.js     # ESM build  
+├── index.d.ts         # Main TypeScript declarations
+├── react.d.ts         # React integration declarations
+├── react-map-gl.d.ts  # React Map GL declarations
+├── index.js           # ESM build
+├── index.umd.js       # UMD build
+├── esri-gl.esm.js     # ESM build (legacy)
+├── esri-gl.js         # UMD build (legacy)
 └── esri-gl.min.js     # Minified UMD build
 ```
 
@@ -492,7 +473,7 @@ const options: FeatureServiceOptions = {
 };
 ```
 
-All type declarations are available in the `dist/types/` directory after building.
+All type declarations are available in the `dist/` directory after building.
 
 ## Contributing
 
