@@ -84,18 +84,6 @@ export function useEsriService<T extends RemovableService>(
     };
   }, [service]); // Run cleanup when service changes // Only depend on map and reload
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      setService(currentService => {
-        if (currentService) {
-          currentService.remove();
-        }
-        return null;
-      });
-    };
-  }, []);
-
   return {
     service,
     loading,
