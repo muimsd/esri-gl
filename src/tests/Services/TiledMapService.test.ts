@@ -2,15 +2,25 @@ import { TiledMapService } from '@/Services/TiledMapService';
 import type { Map } from '@/types';
 
 // Mock Map with minimal interface
-const createMockMap = (): Partial<Map> => ({
-  addSource: jest.fn(),
-  removeSource: jest.fn(),
-  getSource: jest.fn(),
-  addLayer: jest.fn(),
-  removeLayer: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn(),
-});
+const createMockMap = (): Partial<Map> => {
+  const sources: Record<string, any> = {};
+  const mockMap: any = {
+    addSource: jest.fn((id: string, source: any) => {
+      sources[id] = source;
+      return mockMap;
+    }),
+    removeSource: jest.fn((id: string) => {
+      delete sources[id];
+      return mockMap;
+    }),
+    getSource: jest.fn((id: string) => sources[id]),
+    addLayer: jest.fn(),
+    removeLayer: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+  };
+  return mockMap;
+};
 
 // Mock fetch globally
 global.fetch = jest.fn();

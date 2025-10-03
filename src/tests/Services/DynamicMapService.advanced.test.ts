@@ -19,18 +19,17 @@ jest.mock('@/utils', () => ({
   updateAttribution: jest.fn(),
 }));
 
-// Mock MapLibre/Mapbox map
-const mockSource = {
-  setTiles: jest.fn(),
-  setUrl: jest.fn(),
-  setRasterTileSize: jest.fn(),
-  tiles: ['https://example.com/{z}/{x}/{y}.png'],
-};
-
+// Mock MapLibre/Mapbox map with smart source tracking
+const sources: Record<string, any> = {};
 const mockMap = {
-  getSource: jest.fn().mockReturnValue(mockSource),
-  removeSource: jest.fn(),
-  addSource: jest.fn(),
+  addSource: jest.fn((id: string, source: any) => {
+    sources[id] = source;
+  }),
+  removeSource: jest.fn((id: string) => {
+    delete sources[id];
+  }),
+  getSource: jest.fn((id: string) => sources[id]),
+  getStyle: jest.fn().mockReturnValue({ layers: [] }),
   getBounds: jest.fn().mockReturnValue({
     getWest: () => -100,
     getSouth: () => 30,

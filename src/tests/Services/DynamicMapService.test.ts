@@ -2,30 +2,48 @@ import { DynamicMapService } from '@/Services/DynamicMapService';
 import type { Map } from '@/types';
 
 // Mock MapLibre/Mapbox GL Map with minimal interface
-const createMockMap = (): Partial<Map> => ({
-  addSource: jest.fn(),
-  removeSource: jest.fn(),
-  getSource: jest.fn().mockReturnValue({
-    setTiles: jest.fn(),
-    setUrl: jest.fn(),
-    tiles: ['https://example.com/{z}/{x}/{y}.png'],
-    _options: {},
-  }),
-  addLayer: jest.fn(),
-  removeLayer: jest.fn(),
-  getLayer: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn(),
-  getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
-  getBounds: jest.fn().mockReturnValue({
-    toArray: () => [
-      [-180, -90],
-      [180, 90],
-    ],
-  }),
-  project: jest.fn(),
-  unproject: jest.fn(),
-});
+const createMockMap = (): Partial<Map> => {
+  const sources: Record<string, any> = {};
+  const sourceCaches: Record<string, any> = {};
+  const mockMap: any = {
+    addSource: jest.fn((id: string, source: any) => {
+      sources[id] = source;
+      // Also add to sourceCaches for legacy update path
+      sourceCaches[id] = {
+        clearTiles: jest.fn(),
+        update: jest.fn(),
+      };
+      return mockMap;
+    }),
+    removeSource: jest.fn((id: string) => {
+      delete sources[id];
+      delete sourceCaches[id];
+      return mockMap;
+    }),
+    getSource: jest.fn((id: string) => sources[id]),
+    getStyle: jest.fn().mockReturnValue({ layers: [] }),
+    addLayer: jest.fn(),
+    removeLayer: jest.fn(),
+    getLayer: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
+    getBounds: jest.fn().mockReturnValue({
+      toArray: () => [
+        [-180, -90],
+        [180, 90],
+      ],
+    }),
+    project: jest.fn(),
+    unproject: jest.fn(),
+    // Mock style.sourceCaches for legacy update path
+    style: {
+      sourceCaches,
+    },
+    transform: {}, // Mock transform object for update() calls
+  };
+  return mockMap;
+};
 
 // Mock fetch globally
 global.fetch = jest.fn();

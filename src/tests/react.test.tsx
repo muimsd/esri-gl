@@ -14,13 +14,18 @@ import {
 } from '@/react';
 
 // Mock maplibre-gl
+const sources: Record<string, any> = {};
 const mockMap = {
-  addSource: jest.fn(),
-  removeSource: jest.fn(),
-  getSource: jest.fn(() => ({
-    setTiles: jest.fn(),
-    tiles: ['test-url'],
-  })),
+  addSource: jest.fn((id: string, source: any) => {
+    sources[id] = source;
+  }),
+  removeSource: jest.fn((id: string) => {
+    delete sources[id];
+  }),
+  getSource: jest.fn((id: string) => sources[id]),
+  getStyle: jest.fn().mockReturnValue({ layers: [] }),
+  getLayer: jest.fn(),
+  removeLayer: jest.fn(),
   hasSource: jest.fn(() => false),
   on: jest.fn(),
   off: jest.fn(),

@@ -11,28 +11,33 @@ global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 // Create a mock Map interface with only the methods we need
-const createMockMap = (): Partial<Map> => ({
-  addSource: jest.fn(),
-  removeSource: jest.fn(),
-  getSource: jest.fn().mockReturnValue({
-    setTiles: jest.fn(),
-    setUrl: jest.fn(),
-    tiles: ['http://example.com/initial'],
-    _options: {},
-  }),
-  addLayer: jest.fn(),
-  removeLayer: jest.fn(),
-  setLayerZoomRange: jest.fn(),
-  setFilter: jest.fn(),
-  queryRenderedFeatures: jest.fn().mockReturnValue([]),
-  getBounds: jest.fn().mockReturnValue({
-    getNorthEast: () => ({ lat: 45, lng: -90 }),
-    getSouthWest: () => ({ lat: 35, lng: -100 }),
-  }),
-  getZoom: jest.fn().mockReturnValue(10),
-  project: jest.fn().mockReturnValue({ x: 400, y: 300 }),
-  unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 }),
-});
+const createMockMap = (): Partial<Map> => {
+  const sources: Record<string, any> = {};
+  const mockMap: any = {
+    addSource: jest.fn((id: string, source: any) => {
+      sources[id] = source;
+      return mockMap;
+    }),
+    removeSource: jest.fn((id: string) => {
+      delete sources[id];
+      return mockMap;
+    }),
+    getSource: jest.fn((id: string) => sources[id]),
+    addLayer: jest.fn(),
+    removeLayer: jest.fn(),
+    setLayerZoomRange: jest.fn(),
+    setFilter: jest.fn(),
+    queryRenderedFeatures: jest.fn().mockReturnValue([]),
+    getBounds: jest.fn().mockReturnValue({
+      getNorthEast: () => ({ lat: 45, lng: -90 }),
+      getSouthWest: () => ({ lat: 35, lng: -100 }),
+    }),
+    getZoom: jest.fn().mockReturnValue(10),
+    project: jest.fn().mockReturnValue({ x: 400, y: 300 }),
+    unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 }),
+  };
+  return mockMap;
+};
 
 describe('Integration Tests', () => {
   let map: Partial<Map>;
@@ -324,8 +329,9 @@ describe('Integration Tests', () => {
       // Wait for third debounced update to complete
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Each update should trigger getSource once (due to debouncing, rapid calls are collapsed)
-      expect(map.getSource).toHaveBeenCalledTimes(3);
+      // Each update should trigger getSource (constructor + 3 updates = 4 calls)
+      // Constructor checks if source exists before adding, then each update checks
+      expect(map.getSource).toHaveBeenCalledTimes(4);
     });
   });
 
