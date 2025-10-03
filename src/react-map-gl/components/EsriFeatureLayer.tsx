@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMap } from 'react-map-gl';
 import { FeatureService } from '@/Services/FeatureService';
+import type { FeatureServiceOptions } from '@/types';
 import type { EsriFeatureLayerProps } from '../types';
 
 /**
@@ -9,16 +10,35 @@ import type { EsriFeatureLayerProps } from '../types';
 export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
   const { current: map } = useMap();
   const sourceId = props.sourceId || `esri-feature-${props.id}`;
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  // Wait for map to be loaded before creating service
+  useEffect(() => {
+    if (!map) return;
+
+    const mapInstance = map.getMap();
+
+    const checkLoaded = () => {
+      if (mapInstance.isStyleLoaded()) {
+        setIsMapLoaded(true);
+      } else {
+        mapInstance.once('load', () => setIsMapLoaded(true));
+      }
+    };
+
+    checkLoaded();
+  }, [map]);
 
   const service = useMemo(() => {
-    if (!map) return null;
+    if (!map || !isMapLoaded) return null;
 
-    return new FeatureService(sourceId, map.getMap() as unknown as import('@/types').Map, {
-      url: props.url,
-      where: props.where,
-      outFields: props.outFields,
-    });
-  }, [map, sourceId, props.url, props.where, props.outFields]);
+    // Only include defined properties to avoid overriding defaults with undefined
+    const options: Partial<FeatureServiceOptions> & { url: string } = { url: props.url };
+    if (props.where !== undefined) options.where = props.where;
+    if (props.outFields !== undefined) options.outFields = props.outFields;
+
+    return new FeatureService(sourceId, map.getMap() as unknown as import('@/types').Map, options);
+  }, [map, isMapLoaded, sourceId, props.url, props.where, props.outFields]);
 
   useEffect(() => {
     if (!map || !service) return;
@@ -50,7 +70,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
 
     // Cleanup function
     return () => {
-      if (mapInstance.getLayer(props.id)) {
+      if (mapInstance && mapInstance.getLayer(props.id)) {
         mapInstance.removeLayer(props.id);
       }
       if (service) {

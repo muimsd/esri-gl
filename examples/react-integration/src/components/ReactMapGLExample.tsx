@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Map, NavigationControl, ScaleControl } from 'react-map-gl';
+import Map, { NavigationControl, ScaleControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { EsriDynamicLayer, EsriFeatureLayer, EsriTiledLayer, EsriImageLayer } from 'esri-gl/react-map-gl';
 

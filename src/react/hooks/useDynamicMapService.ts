@@ -24,32 +24,39 @@ export function useDynamicMapService({
 
   // Update service options when they change
   useEffect(() => {
-    if (result.service && options !== optionsRef.current) {
-      // Check for specific option changes that we can handle without recreation
-      if (options.layers !== optionsRef.current.layers) {
-        const layers = options.layers || [];
-        if (Array.isArray(layers) || typeof layers === 'number') {
-          try {
-            result.service.setLayers(layers);
-          } catch (error) {
-            console.warn('useDynamicMapService: Error setting layers:', error);
+    if (result.service && options !== optionsRef.current && map) {
+      // Add a small delay to ensure the service is fully initialized
+      const timeoutId = setTimeout(() => {
+        if (!result.service || !map) return;
+
+        // Check for specific option changes that we can handle without recreation
+        if (options.layers !== optionsRef.current.layers) {
+          const layers = options.layers || [];
+          if (Array.isArray(layers) || typeof layers === 'number') {
+            try {
+              result.service.setLayers(layers);
+            } catch (error) {
+              console.warn('useDynamicMapService: Error setting layers:', error);
+            }
           }
         }
-      }
 
-      if (options.layerDefs !== optionsRef.current.layerDefs) {
-        const layerDefs = options.layerDefs || {};
-        try {
-          result.service.setLayerDefs(layerDefs);
-        } catch (error) {
-          console.warn('useDynamicMapService: Error setting layer definitions:', error);
+        if (options.layerDefs !== optionsRef.current.layerDefs) {
+          const layerDefs = options.layerDefs || {};
+          try {
+            result.service.setLayerDefs(layerDefs);
+          } catch (error) {
+            console.warn('useDynamicMapService: Error setting layer definitions:', error);
+          }
         }
-      }
 
-      // Update the ref to track current options
-      optionsRef.current = options;
+        // Update the ref to track current options
+        optionsRef.current = options;
+      }, 50);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [result.service, options]);
+  }, [result.service, options, map]);
 
   return result;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMap } from 'react-map-gl';
 import { TiledMapService } from '@/Services/TiledMapService';
 import type { EsriTiledLayerProps } from '../types';
@@ -9,14 +9,32 @@ import type { EsriTiledLayerProps } from '../types';
 export function EsriTiledLayer(props: EsriTiledLayerProps) {
   const { current: map } = useMap();
   const sourceId = props.sourceId || `esri-tiled-${props.id}`;
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  // Wait for map to be loaded before creating service
+  useEffect(() => {
+    if (!map) return;
+
+    const mapInstance = map.getMap();
+
+    const checkLoaded = () => {
+      if (mapInstance.isStyleLoaded()) {
+        setIsMapLoaded(true);
+      } else {
+        mapInstance.once('load', () => setIsMapLoaded(true));
+      }
+    };
+
+    checkLoaded();
+  }, [map]);
 
   const service = useMemo(() => {
-    if (!map) return null;
+    if (!map || !isMapLoaded) return null;
 
     return new TiledMapService(sourceId, map.getMap() as unknown as import('@/types').Map, {
       url: props.url,
     });
-  }, [map, sourceId, props.url]);
+  }, [map, isMapLoaded, sourceId, props.url]);
 
   useEffect(() => {
     if (!map || !service) return;
@@ -43,7 +61,7 @@ export function EsriTiledLayer(props: EsriTiledLayerProps) {
 
     // Cleanup function
     return () => {
-      if (mapInstance.getLayer(props.id)) {
+      if (mapInstance && mapInstance.getLayer(props.id)) {
         mapInstance.removeLayer(props.id);
       }
       if (service) {

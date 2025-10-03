@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "esri-gl": "^0.9.0-alpha.13",
+    "esri-gl": "file:../..",
     "mapbox-gl": "^3.15.0",
     "maplibre-gl": "^4.7.1",
     "react": "^19.1.1",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "@types/react-map-gl": "^6.1.7",
     "@vitejs/plugin-react": "^5.0.3",
     "typescript": "^5.9.2",
     "vite": "^7.1.5"
