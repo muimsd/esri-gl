@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMap } from 'react-map-gl';
 import { DynamicMapService } from '@/Services/DynamicMapService';
 import type { EsriServiceOptions } from '@/types';
 import type { EsriDynamicLayerProps } from '../types';
+import { useReactMapGL } from '../utils/useReactMapGL';
 
 /**
  * React Map GL component for Esri Dynamic Map Service
  */
 export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-dynamic-${props.id}`;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 

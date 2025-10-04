@@ -1,13 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { useMap } from 'react-map-gl';
 import { VectorTileService } from '@/Services/VectorTileService';
 import type { EsriVectorTileLayerProps } from '../types';
+import { useReactMapGL } from '../utils/useReactMapGL';
 
 /**
  * React Map GL component for Esri Vector Tile Service
  */
 export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-vector-tile-${props.id}`;
 
   const service = useMemo(() => {

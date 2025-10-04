@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { TiledMapService } from '../../main';
+import { TiledMapService } from '../../../main';
 
 const TiledMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);

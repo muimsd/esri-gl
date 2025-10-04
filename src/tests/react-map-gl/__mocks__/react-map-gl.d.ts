@@ -1,5 +1,5 @@
 // Type declarations for react-map-gl mock
-declare module 'react-map-gl' {
+declare module 'react-map-gl/mapbox' {
   import { ReactNode } from 'react';
 
   export interface MapRef {

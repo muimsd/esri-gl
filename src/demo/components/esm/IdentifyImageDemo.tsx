@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Map } from 'maplibre-gl';
-import { ImageService, IdentifyImage } from '../../main';
+import { ImageService, IdentifyImage } from '../../../main';
 
 interface PixelResult {
   value?: string | number;

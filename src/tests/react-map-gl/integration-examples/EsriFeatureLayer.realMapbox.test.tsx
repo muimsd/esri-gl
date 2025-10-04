@@ -6,10 +6,10 @@ import { render, waitFor } from '@testing-library/react';
 
 // Explicitly unmock mapbox-gl to use the real library
 jest.unmock('mapbox-gl');
-jest.unmock('react-map-gl');
+jest.unmock('react-map-gl/mapbox');
 
 import mapboxgl from 'mapbox-gl';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { EsriFeatureLayer } from '@/react-map-gl/components/EsriFeatureLayer';
 
 // Mock the FeatureService but allow real map integration

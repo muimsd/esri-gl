@@ -37,34 +37,31 @@ npm run dev
 
 If you're developing esri-gl locally and want to test with these examples:
 
-### Option 1: npm link (Recommended)
+### Option 1: Local dist workflow (default)
 
-1. In the main esri-gl directory:
-   ```bash
-   npm run build
-   npm link
-   ```
+1. From the repository root, build the library so the `dist` package is available:
+  ```bash
+  npm run build
+  ```
+2. Inside the example directory:
+  ```bash
+  npm install
+  npm run dev
+  ```
 
-2. In the example directory:
-   ```bash
-   npm link esri-gl
-   npm run dev
-   ```
+Each example depends on `file:../../dist`, so `npm install` will consume your freshly built bundle. If the `dist` package is missing, installation will exit with a helpful message.
 
-### Option 2: File Path Dependency
+### Option 2: npm link
 
-Modify the example's `package.json`:
+You can still use `npm link` if you prefer hot-reloading the source version:
 
-```json
-{
-  "dependencies": {
-    "esri-gl": "file:../../",
-    // ... other dependencies
-  }
-}
+```bash
+npm run build
+npm link
+cd examples/<example-name>
+npm link esri-gl
+npm run dev
 ```
-
-Then run `npm install` in the example directory.
 
 ## Contributing Examples
 

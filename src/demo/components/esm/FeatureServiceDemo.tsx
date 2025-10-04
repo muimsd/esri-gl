@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 // @ts-ignore - CSS type declarations not provided
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { FeatureService } from '../../main';
+import { FeatureService } from '../../../main';
+
+type PopupLike = {
+  setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
+  setHTML(html: string): PopupLike;
+  addTo(target: unknown): PopupLike;
+};
 
 const FeatureServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -38,7 +44,18 @@ const FeatureServiceDemo: React.FC = () => {
       zoom: 8,
     });
 
-    map.current.on('load', () => {
+    const mapInstance = map.current as unknown as {
+      on: (...args: unknown[]) => maplibregl.Map;
+      off: (...args: unknown[]) => maplibregl.Map;
+      getLayer(id: string): unknown;
+      getSource(id: string): unknown;
+      addLayer(layer: unknown): void;
+      removeLayer(id: string): void;
+      removeSource(id: string): void;
+      getCanvas(): HTMLCanvasElement;
+    };
+
+    mapInstance.on('load', () => {
       if (!map.current) return;
 
       setLoadingMessage('Creating Feature Service...');
@@ -59,27 +76,25 @@ const FeatureServiceDemo: React.FC = () => {
       // Helper to add layer safely using getStyle() for proper layer configuration
       const addLayerIfNeeded = async () => {
         if (!map.current) return;
-        if (map.current.getLayer(layerId)) return; // already added
-        if (!map.current.getSource(sourceId)) return; // source not yet registered
+        if (mapInstance.getLayer(layerId)) return; // already added
+        if (!mapInstance.getSource(sourceId)) return; // source not yet registered
 
         setLoadingMessage('Loading layer style...');
 
         try {
           // Use getStyle() to get the appropriate layer configuration
-          const style = await featureService.getStyle();
+          const style = (await featureService.getStyle()) as unknown as Record<string, unknown>;
           console.log('Using FeatureService style:', style);
 
           setLoadingMessage('Adding layer to map...');
 
           // Add layer using the style configuration
-          map.current.addLayer({
+          mapInstance.addLayer({
             id: layerId,
-            // @ts-expect-error - Dynamic layer type from FeatureService style
-            type: style.type,
-            // @ts-expect-error - Source ID reference for MapLibre
+            type: (typeof style.type === 'string' ? style.type : 'circle') as string,
             source: sourceId,
-            layout: style.layout || {},
-            paint: style.paint || {},
+            layout: (style.layout as Record<string, unknown>) || {},
+            paint: (style.paint as Record<string, unknown>) || {},
           });
 
           setLoadingMessage('Loading complete!');
@@ -89,7 +104,7 @@ const FeatureServiceDemo: React.FC = () => {
           setLoadingMessage('Adding fallback layer...');
 
           // Fallback to basic circle layer
-          map.current.addLayer({
+          mapInstance.addLayer({
             id: layerId,
             type: 'circle',
             source: sourceId,
@@ -107,23 +122,24 @@ const FeatureServiceDemo: React.FC = () => {
       };
 
       // Add layer when the source is available using sourcedata event
-      const onSourceData = (e: maplibregl.MapSourceDataEvent) => {
+      const onSourceData = (event: unknown) => {
+        const e = event as { sourceId?: string };
         if (e?.sourceId === sourceId) {
           setLoadingMessage('Processing source data...');
           addLayerIfNeeded();
-          map.current?.off('sourcedata', onSourceData);
+          mapInstance.off('sourcedata', onSourceData);
         }
       };
-      map.current.on('sourcedata', onSourceData);
+      mapInstance.on('sourcedata', onSourceData);
 
       // Fallback: try a few times in case sourcedata timing differs
       let attempts = 0;
       const interval = window.setInterval(() => {
         attempts += 1;
         addLayerIfNeeded();
-        if (!map.current || map.current.getLayer(layerId) || attempts > 50) {
+        if (!map.current || mapInstance.getLayer(layerId) || attempts > 50) {
           window.clearInterval(interval);
-          map.current?.off('sourcedata', onSourceData);
+          mapInstance.off('sourcedata', onSourceData);
           // Ensure loading is disabled if we timeout
           if (attempts > 50) {
             setLoadingMessage('Loading timeout - layer may not be visible');
@@ -133,7 +149,11 @@ const FeatureServiceDemo: React.FC = () => {
       }, 100);
 
       // Add click handler for feature identification
-      map.current.on('click', layerId, async e => {
+      mapInstance.on('click', layerId, async (event: unknown) => {
+        const e = event as {
+          features?: Array<{ properties?: Record<string, unknown> }>;
+          lngLat: { lng: number; lat: number };
+        };
         if (!e.features || e.features.length === 0) return;
 
         const feature = e.features[0];
@@ -144,19 +164,17 @@ const FeatureServiceDemo: React.FC = () => {
           .map(k => `<div><strong>${k}</strong>: ${String(props[k])}</div>`) // safe stringification
           .join('');
 
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`<div>${info}</div>`)
-          .addTo(map.current!);
+        const popup = new maplibregl.Popup() as unknown as PopupLike;
+        popup.setLngLat(e.lngLat).setHTML(`<div>${info}</div>`).addTo(map.current);
       });
 
       // Change cursor to pointer when hovering over counties
-      map.current.on('mouseenter', layerId, () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+      mapInstance.on('mouseenter', layerId, () => {
+        if (map.current) mapInstance.getCanvas().style.cursor = 'pointer';
       });
 
-      map.current.on('mouseleave', layerId, () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
+      mapInstance.on('mouseleave', layerId, () => {
+        if (map.current) mapInstance.getCanvas().style.cursor = '';
       });
     });
 

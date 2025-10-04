@@ -119,7 +119,7 @@ function MapComponent() {
 
 ### React Map GL Component Usage
 ```tsx
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { EsriDynamicLayer } from 'esri-gl/react-map-gl';
 
 function MapApp() {
@@ -153,7 +153,7 @@ function MapApp() {
 ### Runtime Dependencies (Peer)
 - `react` ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 - `react-dom` ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0  
-- `react-map-gl` ^7.0.0
+- `react-map-gl` ^8.0.0
 
 ### Build Dependencies
 - `rollup-plugin-dts` - TypeScript declaration bundling

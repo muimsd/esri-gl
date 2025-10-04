@@ -1,10 +1,10 @@
 import { renderHook } from '@testing-library/react';
 import { useEsriMapboxLayer } from '@/react-map-gl/hooks/useEsriMapboxLayer';
-import { useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl/mapbox';
 import * as reactHooks from '@/react/hooks/useDynamicMapService';
 
 // Mock react-map-gl
-jest.mock('react-map-gl');
+jest.mock('react-map-gl/mapbox');
 const mockUseMap = useMap as jest.MockedFunction<typeof useMap>;
 
 // Mock the react hooks

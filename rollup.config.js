@@ -41,7 +41,7 @@ const basePlugins = [
   })
 ]
 
-const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl', 'react-map-gl/maplibre']
+const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre']
 
 // ES modules build configuration with multiple entry points
 const esConfig = {
@@ -82,7 +82,7 @@ const umdConfig = {
       'maplibre-gl': 'maplibregl',
       'react': 'React',
       'react-dom': 'ReactDOM',
-      'react-map-gl': 'ReactMapGL',
+  'react-map-gl/mapbox': 'ReactMapGL',
       'react-map-gl/maplibre': 'ReactMapGL'
     }
   },

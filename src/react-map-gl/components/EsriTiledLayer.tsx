@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMap } from 'react-map-gl';
 import { TiledMapService } from '@/Services/TiledMapService';
 import type { EsriTiledLayerProps } from '../types';
+import { useReactMapGL } from '../utils/useReactMapGL';
 
 /**
  * React Map GL component for Esri Tiled Map Service
  */
 export function EsriTiledLayer(props: EsriTiledLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-tiled-${props.id}`;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 

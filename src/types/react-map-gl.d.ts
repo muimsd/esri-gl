@@ -1,15 +1,11 @@
-// Type stub for react-map-gl during build process
-// This file provides minimal type definitions to satisfy the TypeScript compiler
-// during the build process when react-map-gl is treated as an external dependency
+// Type stub for react-map-gl subpath exports during the build process
 
-declare module 'react-map-gl' {
-  export interface MapRef {
-    getMap(): any;
-  }
-
-  export function useMap(): { current: MapRef };
+declare module 'react-map-gl/mapbox' {
+  export * from '@vis.gl/react-mapbox';
+  export { Map as default } from '@vis.gl/react-mapbox';
 }
 
 declare module 'react-map-gl/maplibre' {
-  export * from 'react-map-gl';
+  export * from '@vis.gl/react-maplibre';
+  export { Map as default } from '@vis.gl/react-maplibre';
 }

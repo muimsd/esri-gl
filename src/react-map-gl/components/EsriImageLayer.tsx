@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMap } from 'react-map-gl';
+import { useReactMapGL } from '../utils/useReactMapGL';
 import { ImageService } from '@/Services/ImageService';
 import type { ImageServiceOptions } from '@/types';
 import type { EsriImageLayerProps } from '../types';
@@ -8,7 +8,7 @@ import type { EsriImageLayerProps } from '../types';
  * React Map GL component for Esri Image Service
  */
 export function EsriImageLayer(props: EsriImageLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-image-${props.id}`;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 

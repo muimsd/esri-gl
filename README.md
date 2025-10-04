@@ -368,7 +368,7 @@ For the smoothest React experience with declarative layer management:
 
 ```typescript
 import React, { useState } from 'react';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { 
   EsriDynamicLayer, 
   EsriFeatureLayer, 
@@ -485,7 +485,7 @@ import type {
   IdentifyResult,
   EsriLayerProps 
 } from 'esri-gl';
-import type { MapRef } from 'react-map-gl';
+import type { MapRef } from 'react-map-gl/mapbox';
 
 // Fully typed component props
 interface MapComponentProps {

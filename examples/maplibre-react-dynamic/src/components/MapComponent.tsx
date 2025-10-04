@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { Map } from 'maplibre-gl'
-import { DynamicMapService } from 'esri-gl'
+import { useDynamicMapService, useIdentifyFeatures } from 'esri-gl/react'
+import type { Map as EsriMap } from 'esri-gl'
 import LayerControls from './LayerControls'
 import './MapComponent.css'
 
@@ -12,7 +13,7 @@ interface LayerOption {
 const MapComponent = () => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<Map | null>(null)
-  const service = useRef<DynamicMapService | null>(null)
+  const [mapInstance, setMapInstance] = useState<Map | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 2]) // Cities and States by default
   const [labelsEnabled, setLabelsEnabled] = useState(false)
@@ -50,61 +51,11 @@ const MapComponent = () => {
       },
       center: [-95.7129, 37.0902], // Center of USA
       zoom: 4,
-    })
+    });
 
     map.current.on('load', () => {
       if (!map.current) return
-
-      // Create Dynamic Map Service using esri-gl
-      service.current = new DynamicMapService('usa-source', map.current, {
-        url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-        layers: selectedLayers,
-        format: 'png32',
-        transparent: true,
-      })
-
-      // Add layer to display the dynamic service
-      map.current.addLayer({
-        id: 'usa-layer',
-        type: 'raster',
-        source: 'usa-source',
-      })
-
-      // Add click handler for identify functionality
-      map.current.on('click', 'usa-layer', async (e) => {
-        if (!service.current) return
-        
-        try {
-          const results = await service.current.identify(e.lngLat)
-          if (results && results.length > 0) {
-            console.log('Identified features:', results)
-            // Create a simple popup
-            new maplibregl.Popup()
-              .setLngLat(e.lngLat)
-              .setHTML(
-                `<div>
-                  <h3>Feature Info</h3>
-                  <p><strong>Layer:</strong> ${results[0].layerName}</p>
-                  <p><strong>Attributes:</strong></p>
-                  <pre>${JSON.stringify(results[0].attributes, null, 2)}</pre>
-                </div>`
-              )
-              .addTo(map.current!)
-          }
-        } catch (error) {
-          console.error('Identify failed:', error)
-        }
-      })
-
-      // Change cursor on hover
-      map.current.on('mouseenter', 'usa-layer', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer'
-      })
-
-      map.current.on('mouseleave', 'usa-layer', () => {
-        if (map.current) map.current.getCanvas().style.cursor = ''
-      })
-
+      setMapInstance(map.current)
       setMapLoaded(true)
     })
 
@@ -112,9 +63,100 @@ const MapComponent = () => {
       if (map.current) {
         map.current.remove()
         map.current = null
+        setMapInstance(null)
       }
     }
   }, [])
+
+  const esriMap = useMemo<EsriMap | null>(() => {
+    if (!mapInstance) return null
+    return mapInstance as unknown as EsriMap
+  }, [mapInstance])
+
+  const serviceOptions = useMemo(
+    () => ({
+      url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+      layers: selectedLayers,
+      format: 'png32',
+      transparent: true,
+    }),
+    [selectedLayers]
+  )
+
+  const { service: dynamicService } = useDynamicMapService({
+    sourceId: 'usa-source',
+    map: esriMap,
+    options: serviceOptions,
+  })
+
+  const {
+    identify: runIdentify,
+    loading: identifyLoading,
+    error: identifyError,
+  } = useIdentifyFeatures({
+    url: serviceOptions.url,
+    tolerance: 6,
+    returnGeometry: false,
+  })
+
+  useEffect(() => {
+    if (!mapInstance || !dynamicService) return
+
+    if (!mapInstance.getLayer('usa-layer')) {
+      mapInstance.addLayer({
+        id: 'usa-layer',
+        type: 'raster',
+        source: 'usa-source',
+      })
+    }
+
+    const handleClick = async (e: maplibregl.MapLayerMouseEvent) => {
+      try {
+        const featureCollection = await runIdentify(
+          { lng: e.lngLat.lng, lat: e.lngLat.lat },
+          {
+            layers: selectedLayers.length ? selectedLayers : undefined,
+          }
+        )
+
+        const [firstFeature] = featureCollection.features || []
+        if (firstFeature) {
+          console.log('Identified features:', featureCollection.features)
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(
+              `<div>
+                <h3>Feature Info</h3>
+                <p><strong>Layer:</strong> ${firstFeature.properties?.layerName ?? 'Unknown'}</p>
+                <p><strong>Attributes:</strong></p>
+                <pre>${JSON.stringify(firstFeature.properties, null, 2)}</pre>
+              </div>`
+            )
+            .addTo(mapInstance)
+        }
+      } catch (error) {
+        console.error('Identify failed:', error)
+      }
+    }
+
+    const handleMouseEnter = () => {
+      mapInstance.getCanvas().style.cursor = 'pointer'
+    }
+
+    const handleMouseLeave = () => {
+      mapInstance.getCanvas().style.cursor = ''
+    }
+
+    mapInstance.on('click', 'usa-layer', handleClick)
+    mapInstance.on('mouseenter', 'usa-layer', handleMouseEnter)
+    mapInstance.on('mouseleave', 'usa-layer', handleMouseLeave)
+
+    return () => {
+      mapInstance.off('click', 'usa-layer', handleClick)
+      mapInstance.off('mouseenter', 'usa-layer', handleMouseEnter)
+      mapInstance.off('mouseleave', 'usa-layer', handleMouseLeave)
+    }
+  }, [mapInstance, dynamicService])
 
   // Handle layer visibility changes
   const handleLayerToggle = (layerId: number) => {
@@ -124,21 +166,21 @@ const MapComponent = () => {
     
     setSelectedLayers(newLayers)
     
-    if (service.current) {
-      service.current.setLayers(newLayers)
+    if (dynamicService) {
+      dynamicService.setLayers(newLayers)
     }
   }
 
   // Handle labels toggle
   const handleLabelsToggle = () => {
-    if (!service.current) return
+    if (!dynamicService) return
 
     const newLabelsEnabled = !labelsEnabled
     setLabelsEnabled(newLabelsEnabled)
 
     if (newLabelsEnabled) {
       // Add state name labels to the States layer (id: 2)
-      service.current.setLayerLabels(2, {
+      dynamicService.setLayerLabels(2, {
         labelExpression: '[state_name]',
         symbol: {
           type: 'esriTS',
@@ -153,18 +195,19 @@ const MapComponent = () => {
         maxScale: 50000000,
         labelPlacement: 'esriServerPolygonPlacementAlwaysHorizontal',
       })
+      dynamicService.setLayerLabelsVisible(2, true)
     } else {
       // Remove labels
-      service.current.setLayerLabelsVisible(2, false)
+      dynamicService.setLayerLabelsVisible(2, false)
     }
   }
 
   // Apply server-side styling
   const applyServerStyling = () => {
-    if (!service.current) return
+    if (!dynamicService) return
 
     // Apply orange styling to the States layer
-    service.current.setLayerRenderer(2, {
+    dynamicService.setLayerRenderer(2, {
       type: 'simple',
       symbol: {
         type: 'esriSFS',
@@ -182,10 +225,10 @@ const MapComponent = () => {
 
   // Apply server-side filtering
   const applyServerFilter = () => {
-    if (!service.current) return
+    if (!dynamicService) return
 
     // Filter to show only states with population > 5 million
-    service.current.setLayerFilter(2, {
+    dynamicService.setLayerFilter(2, {
       field: 'pop2000',
       op: '>',
       value: 5000000,
@@ -194,8 +237,8 @@ const MapComponent = () => {
 
   // Reset all server modifications
   const resetServer = () => {
-    if (!service.current) return
-    service.current.setDynamicLayers(false)
+    if (!dynamicService) return
+    dynamicService.setDynamicLayers(false)
     setLabelsEnabled(false)
   }
 
@@ -207,6 +250,8 @@ const MapComponent = () => {
           layerOptions={layerOptions}
           selectedLayers={selectedLayers}
           labelsEnabled={labelsEnabled}
+          identifyLoading={identifyLoading}
+          identifyError={identifyError?.message ?? null}
           onLayerToggle={handleLayerToggle}
           onLabelsToggle={handleLabelsToggle}
           onApplyStyling={applyServerStyling}

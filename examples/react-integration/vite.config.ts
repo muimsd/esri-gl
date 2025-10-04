@@ -16,7 +16,7 @@ export default defineConfig({
     preserveSymlinks: true
   },
   optimizeDeps: {
-    include: ['maplibre-gl', 'mapbox-gl', 'react-map-gl']
+    include: ['maplibre-gl', 'mapbox-gl', 'react-map-gl/mapbox', 'react-map-gl/maplibre']
   },
   build: {
     commonjsOptions: {

@@ -29,8 +29,8 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "npm run clean && npm run type-check && rollup -c",
-    "build:prod": "npm run clean && npm run type-check && npm run lint && rollup -c",
+  "build": "npm run clean && npm run type-check && rollup -c && node ./scripts/prepare-dist-package.mjs",
+  "build:prod": "npm run clean && npm run type-check && npm run lint && rollup -c && node ./scripts/prepare-dist-package.mjs",
     "build:watch": "rollup -c --watch",
     "build:example": "vite build",
     "preview:example": "vite preview",
@@ -142,7 +142,7 @@
     "maplibre-gl": "^3.0.0 || ^4.0.0 || ^5.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
-    "react-map-gl": "^7.0.0"
+    "react-map-gl": "^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
     "react": {

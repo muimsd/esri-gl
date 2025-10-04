@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMap } from 'react-map-gl';
 import { FeatureService } from '@/Services/FeatureService';
 import type { FeatureServiceOptions } from '@/types';
 import type { EsriFeatureLayerProps } from '../types';
+import { useReactMapGL } from '../utils/useReactMapGL';
 
 /**
  * React Map GL component for Esri Feature Service
  */
 export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-feature-${props.id}`;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 

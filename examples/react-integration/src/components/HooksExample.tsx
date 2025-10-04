@@ -1,254 +1,218 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useDynamicMapService, useTiledMapService, useImageService } from 'esri-gl/react';
+import {
+	useDynamicMapService,
+	useImageService,
+	useTiledMapService,
+} from 'esri-gl/react';
+import type { Map as EsriMap } from 'esri-gl';
+
+type ActiveService = 'dynamic' | 'tiled' | 'image';
+
+const SERVICE_OPTIONS = {
+	dynamic: {
+		url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
+		layers: [0, 1, 2],
+		transparent: true,
+	},
+	tiled: {
+		url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+	},
+	image: {
+		url: 'https://elevation3d.arcgisonline.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
+		format: 'jpgpng',
+	},
+} satisfies {
+	dynamic: Parameters<typeof useDynamicMapService>[0]['options'];
+	tiled: Parameters<typeof useTiledMapService>[0]['options'];
+	image: Parameters<typeof useImageService>[0]['options'];
+};
+
+const LAYER_CONFIG: Record<ActiveService, { layerId: string; sourceId: string }> = {
+	dynamic: { layerId: 'hooks-dynamic-layer', sourceId: 'hooks-dynamic' },
+	tiled: { layerId: 'hooks-tiled-layer', sourceId: 'hooks-tiled' },
+	image: { layerId: 'hooks-image-layer', sourceId: 'hooks-image' },
+};
+
+const SERVICE_LABEL: Record<ActiveService, string> = {
+	dynamic: 'Dynamic Map Service',
+	tiled: 'Tiled Map Service',
+	image: 'Image Service',
+};
 
 export default function HooksExample() {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<maplibregl.Map | null>(null);
-  const [activeService, setActiveService] = useState<'dynamic' | 'tiled' | 'image'>('dynamic');
-  const [switching, setSwitching] = useState(false);
+	const containerRef = useRef<HTMLDivElement | null>(null);
+	const [map, setMap] = useState<maplibregl.Map | null>(null);
+	const [activeService, setActiveService] = useState<ActiveService>('dynamic');
+	const [isSwitching, setIsSwitching] = useState(false);
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || map) return;
+	useEffect(() => {
+		if (map || !containerRef.current) {
+			return;
+		}
 
-    const mapInstance = new maplibregl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          'osm-tiles': {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap contributors',
-          },
-        },
-        layers: [
-          {
-            id: 'osm-tiles',
-            type: 'raster',
-            source: 'osm-tiles',
-          },
-        ],
-      },
-      center: [-95.7129, 37.0902], // Center of USA
-      zoom: 4,
-    });
+		const mapInstance = new maplibregl.Map({
+			container: containerRef.current,
+			style: {
+				version: 8,
+				sources: {
+					baseline: {
+						type: 'raster',
+						tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+						tileSize: 256,
+						attribution: '© OpenStreetMap contributors',
+					},
+				},
+				layers: [
+					{
+						id: 'baseline',
+						type: 'raster',
+						source: 'baseline',
+					},
+				],
+			},
+			center: [-95.7129, 37.0902],
+			zoom: 4,
+		});
 
-    mapInstance.on('load', () => {
-      // Resize map to fit container properly
-      setTimeout(() => {
-        mapInstance.resize();
-      }, 100);
-      setMap(mapInstance);
-    });
+		const resize = () => mapInstance.resize();
+		mapInstance.on('load', () => {
+			setMap(mapInstance);
+			resize();
+		});
+		window.addEventListener('resize', resize);
 
-    // Handle window resize
-    const handleResize = () => {
-      mapInstance.resize();
-    };
-    window.addEventListener('resize', handleResize);
+		return () => {
+			window.removeEventListener('resize', resize);
+			mapInstance.remove();
+			setMap(null);
+		};
+	}, [map]);
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      // Set map to null first to trigger service cleanup
-      setMap(null);
-      // Then remove the map instance after a brief delay
-      setTimeout(() => {
-        mapInstance.remove();
-      }, 10);
-    };
-  }, []);
+	const typedMap = map as unknown as EsriMap | null;
 
-  // Dynamic Map Service Hook
-  const { 
-    service: dynamicService, 
-    loading: dynamicLoading, 
-    error: dynamicError 
-  } = useDynamicMapService({
-    sourceId: 'usa-dynamic',
-    map: activeService === 'dynamic' && map ? (map as unknown as import('esri-gl').Map) : null,
-    options: {
-      url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
-      layers: [0, 1, 2],
-      transparent: true
-    }
-  });
+	const dynamicResult = useDynamicMapService({
+		sourceId: LAYER_CONFIG.dynamic.sourceId,
+		map: activeService === 'dynamic' && typedMap ? typedMap : null,
+		options: SERVICE_OPTIONS.dynamic,
+	});
 
-  // Tiled Map Service Hook
-  const { 
-    service: tiledService, 
-    loading: tiledLoading, 
-    error: tiledError 
-  } = useTiledMapService({
-    sourceId: 'world-tiled',
-    map: activeService === 'tiled' && map ? (map as unknown as import('esri-gl').Map) : null,
-    options: {
-      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-    }
-  });
+	const tiledResult = useTiledMapService({
+		sourceId: LAYER_CONFIG.tiled.sourceId,
+		map: activeService === 'tiled' && typedMap ? typedMap : null,
+		options: SERVICE_OPTIONS.tiled,
+	});
 
-  // Image Service Hook
-  const { 
-    service: imageService, 
-    loading: imageLoading, 
-    error: imageError 
-  } = useImageService({
-    sourceId: 'elevation-image',
-    map: activeService === 'image' && map ? (map as unknown as import('esri-gl').Map) : null,
-    options: {
-      url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
-      format: 'jpgpng'
-    }
-  });
+	const imageResult = useImageService({
+		sourceId: LAYER_CONFIG.image.sourceId,
+		map: activeService === 'image' && typedMap ? typedMap : null,
+		options: SERVICE_OPTIONS.image,
+	});
 
-  // Add layers when services are ready
-  useEffect(() => {
-    if (!map) return;
+	const serviceState = useMemo(() => ({
+		dynamic: dynamicResult,
+		tiled: tiledResult,
+		image: imageResult,
+	}), [dynamicResult, tiledResult, imageResult]);
 
-    // Remove existing layers
-    ['usa-layer', 'world-layer', 'elevation-layer'].forEach(layerId => {
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-    });
+	useEffect(() => {
+		if (!map) {
+			return;
+		}
 
-    // Add appropriate layer based on active service
-    if (activeService === 'dynamic' && dynamicService) {
-      map.addLayer({
-        id: 'usa-layer',
-        type: 'raster',
-        source: 'usa-dynamic'
-      });
-    } else if (activeService === 'tiled' && tiledService) {
-      map.addLayer({
-        id: 'world-layer',
-        type: 'raster',
-        source: 'world-tiled'
-      });
-    } else if (activeService === 'image' && imageService) {
-      map.addLayer({
-        id: 'elevation-layer',
-        type: 'raster',
-        source: 'elevation-image'
-      });
-    }
+		const { layerId, sourceId } = LAYER_CONFIG[activeService];
+		const allLayerIds = Object.values(LAYER_CONFIG).map(config => config.layerId);
 
-    // Cleanup function to remove layers before component unmounts or service changes
-    return () => {
-      ['usa-layer', 'world-layer', 'elevation-layer'].forEach(layerId => {
-        if (map.getLayer && map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-      });
-    };
-  }, [map, activeService, dynamicService, tiledService, imageService]);
+		allLayerIds.forEach(id => {
+			if (map.getLayer(id)) {
+				map.removeLayer(id);
+			}
+		});
 
-  const getCurrentStatus = () => {
-    switch (activeService) {
-      case 'dynamic':
-        return { loading: dynamicLoading, error: dynamicError, service: dynamicService };
-      case 'tiled':
-        return { loading: tiledLoading, error: tiledError, service: tiledService };
-      case 'image':
-        return { loading: imageLoading, error: imageError, service: imageService };
-    }
-  };
+		const activeServiceState = serviceState[activeService];
+		if (!activeServiceState.service || !map.getSource(sourceId)) {
+			return;
+		}
 
-  const status = getCurrentStatus();
+		map.addLayer({
+			id: layerId,
+			type: 'raster',
+			source: sourceId,
+		});
 
-  return (
-    <div className="example-section">
-      <h2>React Hooks Example</h2>
-      <p>
-        This example demonstrates using esri-gl React hooks to manage different types of Esri services.
-        Switch between services to see how hooks handle lifecycle management automatically.
-      </p>
+		return () => {
+			allLayerIds.forEach(id => {
+				if (map.getLayer(id)) {
+					map.removeLayer(id);
+				}
+			});
+		};
+	}, [map, activeService, serviceState]);
 
-      <div className="controls">
-        <button 
-          onClick={() => {
-            if (!switching) {
-              setSwitching(true);
-              setActiveService('dynamic');
-              setTimeout(() => setSwitching(false), 500);
-            }
-          }}
-          disabled={switching}
-          style={{ 
-            background: activeService === 'dynamic' ? '#007ACC' : '#f0f0f0',
-            color: activeService === 'dynamic' ? 'white' : '#333',
-            opacity: switching ? 0.6 : 1
-          }}
-        >
-          Dynamic Map Service
-        </button>
-        <button 
-          onClick={() => {
-            if (!switching) {
-              setSwitching(true);
-              setActiveService('tiled');
-              setTimeout(() => setSwitching(false), 500);
-            }
-          }}
-          disabled={switching}
-          style={{ 
-            background: activeService === 'tiled' ? '#007ACC' : '#f0f0f0',
-            color: activeService === 'tiled' ? 'white' : '#333',
-            opacity: switching ? 0.6 : 1
-          }}
-        >
-          Tiled Map Service
-        </button>
-        <button 
-          onClick={() => {
-            if (!switching) {
-              setSwitching(true);
-              setActiveService('image');
-              setTimeout(() => setSwitching(false), 500);
-            }
-          }}
-          disabled={switching}
-          style={{ 
-            background: activeService === 'image' ? '#007ACC' : '#f0f0f0',
-            color: activeService === 'image' ? 'white' : '#333',
-            opacity: switching ? 0.6 : 1
-          }}
-        >
-          Image Service
-        </button>
-      </div>
+	const { loading, error, service } = serviceState[activeService];
 
-      {status.loading && (
-        <div className="status loading">
-          Loading {activeService} service...
-        </div>
-      )}
+	return (
+		<div className="example-section">
+			<h2>React Hooks Example</h2>
+			<p>
+				This sample mirrors the in-repo demos and showcases how the esri-gl React hooks handle
+				service lifecycles. Toggle between different service types to see sources and layers swap
+				cleanly on the same MapLibre map instance.
+			</p>
 
-      {status.error && (
-        <div className="status error">
-          Error loading {activeService} service: {status.error.message}
-        </div>
-      )}
+			<div className="controls">
+				{(Object.keys(LAYER_CONFIG) as ActiveService[]).map(key => (
+					<button
+						key={key}
+						onClick={() => {
+							if (isSwitching || activeService === key) {
+								return;
+							}
+							setIsSwitching(true);
+							setActiveService(key);
+							setTimeout(() => setIsSwitching(false), 350);
+						}}
+						disabled={isSwitching}
+						style={{
+							background: activeService === key ? '#007ACC' : '#f0f0f0',
+							color: activeService === key ? '#fff' : '#333',
+						}}
+					>
+						{SERVICE_LABEL[key]}
+					</button>
+				))}
+			</div>
 
-      {status.service && !status.loading && (
-        <div className="status success">
-          {activeService} service loaded successfully!
-        </div>
-      )}
+			{loading && <div className="status loading">Loading {SERVICE_LABEL[activeService]}…</div>}
+			{error && (
+				<div className="status error">
+					Failed to load {SERVICE_LABEL[activeService]}: {error.message}
+				</div>
+			)}
+			{!loading && !error && service && (
+				<div className="status success">{SERVICE_LABEL[activeService]} ready</div>
+			)}
 
-      <div className="map-container" ref={mapContainer} />
+			<div className="map-container" ref={containerRef} />
 
-      <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-        <h4>Current Configuration:</h4>
-        <ul>
-          <li><strong>Active Service:</strong> {activeService}</li>
-          <li><strong>Map Instance:</strong> {map ? 'Ready' : 'Initializing...'}</li>
-          <li><strong>Service Status:</strong> {status.loading ? 'Loading' : status.service ? 'Ready' : 'Waiting'}</li>
-        </ul>
-      </div>
-    </div>
-  );
+			<aside style={{ marginTop: 24, fontSize: 14, color: '#475569' }}>
+				<h4 style={{ marginBottom: 8 }}>Runtime snapshot</h4>
+				<ul>
+					<li>
+						<strong>Map status:</strong> {map ? 'Initialised' : 'Starting up'}
+					</li>
+					<li>
+						<strong>Active service:</strong> {SERVICE_LABEL[activeService]}
+					</li>
+					<li>
+						<strong>Source in map:</strong> {map?.getSource(LAYER_CONFIG[activeService].sourceId) ? 'yes' : 'no'}
+					</li>
+					<li>
+						<strong>Layer in map:</strong> {map?.getLayer(LAYER_CONFIG[activeService].layerId) ? 'yes' : 'no'}
+					</li>
+				</ul>
+			</aside>
+		</div>
+	);
 }

@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node ./scripts/link-local-esri-gl.mjs"
   },
   "dependencies": {
-    "esri-gl": "file:../..",
+    "esri-gl": "file:../../dist",
     "mapbox-gl": "^3.15.0",
     "maplibre-gl": "^4.7.1",
     "react": "^19.1.1",

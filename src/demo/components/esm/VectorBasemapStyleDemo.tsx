@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 //@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { VectorBasemapStyle } from '../../main';
+import { VectorBasemapStyle } from '../../../main';
 
 // Session storage keys
 const STORAGE_KEYS = {
@@ -133,7 +133,7 @@ const VectorBasemapStyleDemo: React.FC = () => {
         setStyle(currentStyle);
       });
 
-      map.current.on('error', e => {
+      map.current.on('error', (e: { error?: Error }) => {
         // Suppress vector tile parsing errors - these are common with Esri tiles on MapLibre v5+
         if (
           e.error?.message?.includes('Unimplemented type:') ||
@@ -231,12 +231,12 @@ const VectorBasemapStyleDemo: React.FC = () => {
           ? { token: cleaned, language: language || undefined, worldview: worldview || undefined }
           : { apiKey: cleaned, language: language || undefined, worldview: worldview || undefined };
 
-      // Use static method to get the resolved URL for display
-      const resolvedUrl = VectorBasemapStyle.getStyleUrl(styleId, auth);
-      setResolvedUrl(resolvedUrl);
+      const vectorStyle = new VectorBasemapStyle(styleId, auth);
+      setResolvedUrl(vectorStyle.styleUrl);
 
-      // Use the simple applyStyle wrapper
-      VectorBasemapStyle.applyStyle(map.current, styleId, auth);
+      (map.current as unknown as { setStyle: (style: string) => void }).setStyle(
+        vectorStyle.styleUrl
+      );
 
       // Handle style loading completion
       const handleStyleLoad = () => {
