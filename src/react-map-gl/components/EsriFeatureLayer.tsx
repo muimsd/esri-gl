@@ -16,34 +16,51 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
   useEffect(() => {
     if (!map) return;
 
-    const mapInstance = map.getMap();
+    const mapInstance = map.getMap?.();
+    if (!mapInstance || typeof mapInstance.isStyleLoaded !== 'function') {
+      return;
+    }
 
-    const checkLoaded = () => {
-      if (mapInstance.isStyleLoaded()) {
-        setIsMapLoaded(true);
-      } else {
-        mapInstance.once('load', () => setIsMapLoaded(true));
-      }
+    if (mapInstance.isStyleLoaded()) {
+      setIsMapLoaded(true);
+      return;
+    }
+
+    const handleLoad = () => setIsMapLoaded(true);
+    mapInstance.once?.('load', handleLoad);
+
+    return () => {
+      mapInstance.off?.('load', handleLoad);
     };
-
-    checkLoaded();
   }, [map]);
 
   const service = useMemo(() => {
     if (!map || !isMapLoaded) return null;
+
+    const mapInstance = map.getMap?.();
+    if (!mapInstance) return null;
 
     // Only include defined properties to avoid overriding defaults with undefined
     const options: Partial<FeatureServiceOptions> & { url: string } = { url: props.url };
     if (props.where !== undefined) options.where = props.where;
     if (props.outFields !== undefined) options.outFields = props.outFields;
 
-    return new FeatureService(sourceId, map.getMap() as unknown as import('@/types').Map, options);
+    return new FeatureService(sourceId, mapInstance as unknown as import('@/types').Map, options);
   }, [map, isMapLoaded, sourceId, props.url, props.where, props.outFields]);
 
   useEffect(() => {
     if (!map || !service) return;
 
-    const mapInstance = map.getMap();
+    const mapInstance = map.getMap?.();
+    if (
+      !mapInstance ||
+      typeof mapInstance.getLayer !== 'function' ||
+      typeof mapInstance.addLayer !== 'function'
+    ) {
+      return () => {
+        service.remove();
+      };
+    }
 
     // Add GeoJSON layer
     if (!mapInstance.getLayer(props.id)) {
@@ -70,7 +87,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
 
     // Cleanup function
     return () => {
-      if (mapInstance && mapInstance.getLayer(props.id)) {
+      if (mapInstance.getStyle() && mapInstance.getLayer?.(props.id)) {
         mapInstance.removeLayer(props.id);
       }
       if (service) {

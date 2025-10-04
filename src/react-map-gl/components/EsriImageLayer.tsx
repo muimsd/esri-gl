@@ -16,21 +16,29 @@ export function EsriImageLayer(props: EsriImageLayerProps) {
   useEffect(() => {
     if (!map) return;
 
-    const mapInstance = map.getMap();
+    const mapInstance = map.getMap?.();
+    if (!mapInstance || typeof mapInstance.isStyleLoaded !== 'function') {
+      return;
+    }
 
-    const checkLoaded = () => {
-      if (mapInstance.isStyleLoaded()) {
-        setIsMapLoaded(true);
-      } else {
-        mapInstance.once('load', () => setIsMapLoaded(true));
-      }
+    if (mapInstance.isStyleLoaded()) {
+      setIsMapLoaded(true);
+      return;
+    }
+
+    const handleLoad = () => setIsMapLoaded(true);
+    mapInstance.once?.('load', handleLoad);
+
+    return () => {
+      mapInstance.off?.('load', handleLoad);
     };
-
-    checkLoaded();
   }, [map]);
 
   const service = useMemo(() => {
     if (!map || !isMapLoaded) return null;
+
+    const mapInstance = map.getMap?.();
+    if (!mapInstance) return null;
 
     // Only include defined properties to avoid overriding defaults with undefined
     const options: Partial<ImageServiceOptions> & { url: string } = { url: props.url };
@@ -38,13 +46,22 @@ export function EsriImageLayer(props: EsriImageLayerProps) {
     if (props.mosaicRule !== undefined) options.mosaicRule = props.mosaicRule;
     if (props.format !== undefined) options.format = props.format as ImageServiceOptions['format'];
 
-    return new ImageService(sourceId, map.getMap() as unknown as import('@/types').Map, options);
+    return new ImageService(sourceId, mapInstance as unknown as import('@/types').Map, options);
   }, [map, isMapLoaded, sourceId, props.url, props.renderingRule, props.mosaicRule, props.format]);
 
   useEffect(() => {
     if (!map || !service) return;
 
-    const mapInstance = map.getMap();
+    const mapInstance = map.getMap?.();
+    if (
+      !mapInstance ||
+      typeof mapInstance.getLayer !== 'function' ||
+      typeof mapInstance.addLayer !== 'function'
+    ) {
+      return () => {
+        service.remove();
+      };
+    }
 
     // Add raster layer
     if (!mapInstance.getLayer(props.id)) {
@@ -66,7 +83,7 @@ export function EsriImageLayer(props: EsriImageLayerProps) {
 
     // Cleanup function
     return () => {
-      if (mapInstance && mapInstance.getLayer(props.id)) {
+      if (mapInstance.getStyle() && mapInstance.getLayer?.(props.id)) {
         mapInstance.removeLayer(props.id);
       }
       if (service) {

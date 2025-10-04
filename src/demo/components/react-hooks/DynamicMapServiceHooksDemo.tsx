@@ -266,13 +266,16 @@ const DynamicMapServiceHooksDemo: React.FC = () => {
     try {
       service.setLayers(selectedLayers);
     } catch (error) {
-      // Ignore AbortError from rapid layer updates
-      const isAbort =
+      // Ignore AbortError and other transient errors from rapid layer updates
+      const errorString = String(error).toLowerCase();
+      const isTransient =
+        errorString.includes('abort') ||
+        errorString.includes('network') ||
+        errorString.includes('fetch') ||
         (error instanceof Error && error.name === 'AbortError') ||
-        (error as { name?: string })?.name === 'AbortError' ||
-        String(error).includes('AbortError');
+        (error as { name?: string })?.name === 'AbortError';
 
-      if (!isAbort) {
+      if (!isTransient) {
         console.warn('Failed to update dynamic layers', error);
       }
     }

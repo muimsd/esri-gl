@@ -52,7 +52,7 @@ const ImageServiceHooksDemo: React.FC = () => {
     [renderingRule]
   );
 
-  const { service, loading, error, reload } = useImageService({
+  const { service, loading, error } = useImageService({
     sourceId: SOURCE_ID,
     map: esriMap,
     options: imageOptions,
@@ -66,43 +66,90 @@ const ImageServiceHooksDemo: React.FC = () => {
 
     const map = mapRef.current as maplibregl.Map;
     const eventedMap = map as unknown as {
-      on: (type: string, listener: (...args: unknown[]) => void) => void;
-      off: (type: string, listener: (...args: unknown[]) => void) => void;
+      on?: (type: string, listener: (...args: unknown[]) => void) => void;
+      off?: (type: string, listener: (...args: unknown[]) => void) => void;
       isStyleLoaded?: () => boolean;
       loaded?: () => boolean;
     };
+    const layerApi = map as unknown as {
+      getLayer?: (id: string) => unknown;
+      addLayer?: (layer: unknown) => void;
+      removeLayer?: (id: string) => void;
+      setPaintProperty?: (layerId: string, name: string, value: unknown) => void;
+    };
+
+    // Guard against missing APIs
+    if (
+      typeof eventedMap.on !== 'function' ||
+      typeof eventedMap.off !== 'function' ||
+      typeof layerApi.getLayer !== 'function' ||
+      typeof layerApi.addLayer !== 'function' ||
+      typeof layerApi.removeLayer !== 'function' ||
+      typeof layerApi.setPaintProperty !== 'function'
+    ) {
+      return;
+    }
+
+    // Bind methods to preserve context
+    const mapOn = eventedMap.on.bind(eventedMap);
+    const mapOff = eventedMap.off.bind(eventedMap);
+    const getLayer = layerApi.getLayer.bind(layerApi);
+    const addLayer = layerApi.addLayer.bind(layerApi);
+    const removeLayer = layerApi.removeLayer.bind(layerApi);
+    const setPaintProperty = layerApi.setPaintProperty.bind(layerApi);
 
     const ensureLayer = () => {
-      if (map.getLayer(LAYER_ID)) {
-        map.setPaintProperty(LAYER_ID, 'raster-opacity', opacity);
-        return;
+      try {
+        const mapInstance = map as unknown as { getSource?: (id: string) => unknown };
+        if (typeof mapInstance.getSource === 'function' && !mapInstance.getSource(SOURCE_ID)) {
+          return; // Source not ready yet
+        }
+        if (!getLayer(LAYER_ID)) {
+          addLayer({
+            id: LAYER_ID,
+            type: 'raster',
+            source: SOURCE_ID,
+            paint: {
+              'raster-opacity': opacity,
+            },
+          });
+        } else {
+          setPaintProperty(LAYER_ID, 'raster-opacity', opacity);
+        }
+      } catch (error) {
+        console.warn('Failed to ensure image layer', error);
       }
-      map.addLayer({
-        id: LAYER_ID,
-        type: 'raster',
-        source: SOURCE_ID,
-        paint: {
-          'raster-opacity': opacity,
-        },
-      });
     };
 
-    const isLoaded = eventedMap.isStyleLoaded?.() ?? eventedMap.loaded?.() ?? false;
     const onLoad = () => {
       ensureLayer();
-      eventedMap.off('load', onLoad);
+      try {
+        mapOff('load', onLoad);
+      } catch {
+        // Ignore cleanup errors
+      }
     };
 
-    if (isLoaded) {
-      ensureLayer();
-    } else {
-      eventedMap.on('load', onLoad);
+    // Always try to ensure layer immediately, and also on style events
+    ensureLayer();
+    try {
+      mapOn('load', onLoad);
+    } catch (error) {
+      console.warn('Failed to bind load listener', error);
     }
 
     return () => {
-      eventedMap.off('load', onLoad);
-      if (map.getLayer(LAYER_ID)) {
-        map.removeLayer(LAYER_ID);
+      try {
+        mapOff('load', onLoad);
+      } catch {
+        // Ignore cleanup errors
+      }
+      try {
+        if (getLayer(LAYER_ID)) {
+          removeLayer(LAYER_ID);
+        }
+      } catch {
+        // Map may be disposed
       }
     };
   }, [mapReady, service, opacity]);
@@ -139,20 +186,6 @@ const ImageServiceHooksDemo: React.FC = () => {
           {!loading && !error && service && (
             <span style={createBadgeStyle('#bbf7d0', '#064e3b')}>Image layer ready</span>
           )}
-          <button
-            onClick={reload}
-            disabled={loading}
-            style={{
-              marginTop: '10px',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid #d1d5db',
-              backgroundColor: '#ffffff',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Reload Service
-          </button>
         </div>
 
         <div>

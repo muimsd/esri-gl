@@ -17,13 +17,6 @@ const LAYER_ID = 'hooks-feature-layer';
 const FEATURE_SERVICE_URL =
   'https://services6.arcgis.com/drBkxhK7nF7o7hKT/arcgis/rest/services/TN_Bridges/FeatureServer/0';
 
-const colorOptions = [
-  { label: 'Sky Blue', value: '#3b82f6' },
-  { label: 'Emerald', value: '#10b981' },
-  { label: 'Orange', value: '#f97316' },
-  { label: 'Magenta', value: '#db2777' },
-];
-
 const FeatureServiceHooksDemo: React.FC = () => {
   const { containerRef, mapRef, mapReady, esriMap } = useMapLibreDemo({
     style: 'https://demotiles.maplibre.org/style.json',
@@ -31,8 +24,6 @@ const FeatureServiceHooksDemo: React.FC = () => {
     zoom: 8,
   });
 
-  const [radius, setRadius] = useState(4);
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0].value);
   const [featureCount, setFeatureCount] = useState<string>('Not queried yet');
   const [queryLoading, setQueryLoading] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
@@ -97,13 +88,7 @@ const FeatureServiceHooksDemo: React.FC = () => {
           type: typedLayerType,
           source: SOURCE_ID,
           layout,
-          paint: {
-            ...paint,
-            'circle-color': selectedColor,
-            'circle-radius': radius,
-            'circle-stroke-color': '#1f2937',
-            'circle-stroke-width': 1,
-          },
+          paint,
         });
       } catch (err) {
         console.warn('Failed to apply feature style, using fallback.', err);
@@ -115,8 +100,8 @@ const FeatureServiceHooksDemo: React.FC = () => {
           type: 'circle',
           source: SOURCE_ID,
           paint: {
-            'circle-radius': radius,
-            'circle-color': selectedColor,
+            'circle-radius': 5,
+            'circle-color': '#3b82f6',
             'circle-stroke-color': '#1f2937',
             'circle-stroke-width': 1,
           },
@@ -144,11 +129,12 @@ const FeatureServiceHooksDemo: React.FC = () => {
       cancelled = true;
       window.clearInterval(interval);
       eventedMap.off('sourcedata', handleSourceData);
-      if (map.getLayer(LAYER_ID)) {
+      //@ts-ignore
+      if (map.getStyle() && map.getLayer(LAYER_ID)) {
         map.removeLayer(LAYER_ID);
       }
     };
-  }, [mapReady, service, radius, selectedColor]);
+  }, [mapReady, service]);
 
   const runQuery = async () => {
     if (!service) return;
@@ -176,7 +162,7 @@ const FeatureServiceHooksDemo: React.FC = () => {
           <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Feature Service (Hooks)</h2>
           <p style={{ margin: 0, color: '#4b5563' }}>
             Loads live Tennessee bridge features using <code>useFeatureService</code> with automatic
-            vector tile support and GeoJSON fallback.
+            vector tile support and GeoJSON fallback. and get default style from the service.
           </p>
         </div>
 
@@ -203,35 +189,6 @@ const FeatureServiceHooksDemo: React.FC = () => {
           >
             Reload Service
           </button>
-        </div>
-
-        <div>
-          <h3 style={DEMO_SECTION_TITLE_STYLE}>Visualization</h3>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            Circle Radius
-            <input
-              type="range"
-              min={2}
-              max={12}
-              step={1}
-              value={radius}
-              onChange={event => setRadius(Number(event.target.value))}
-            />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            Color
-            <select
-              value={selectedColor}
-              onChange={event => setSelectedColor(event.target.value)}
-              style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-            >
-              {colorOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
 
         <div>

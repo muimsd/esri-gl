@@ -82,7 +82,11 @@ export class DynamicMapService {
     this.esriServiceOptions = esriServiceOptions;
     this._createSource();
 
-    if (this.options.getAttributionFromService) this.setAttributionFromService();
+    if (this.options.getAttributionFromService) {
+      this.setAttributionFromService().catch(() => {
+        // Silently handle attribution fetch errors to prevent unhandled rejections
+      });
+    }
   }
 
   get options(): Required<DynamicMapServiceOptions> {
@@ -205,7 +209,6 @@ export class DynamicMapService {
         src.tiles[0] = this._source.tiles[0];
       }
       src._options = this._source;
-
       if (src.setTiles) {
         // New MapboxGL >= 2.13.0
         // setTiles may return a promise - handle rejections to prevent console errors

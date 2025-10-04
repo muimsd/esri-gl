@@ -69,6 +69,8 @@ export class FeatureService {
   }
 
   private async _createSource(): Promise<void> {
+    if (!this._map) return;
+
     try {
       // Get service metadata
       this._serviceMetadata = await getServiceDetails(
@@ -478,7 +480,11 @@ export class FeatureService {
           const style = mapWithStyle.getStyle();
           const layers = style?.layers || [];
           layers.forEach(layer => {
-            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
+            if (
+              layer.source === this._sourceId &&
+              this._map.getLayer &&
+              this._map.getLayer(layer.id)
+            ) {
               this._map.removeLayer(layer.id);
             }
           });

@@ -24,7 +24,7 @@ const TiledMapServiceHooksDemo: React.FC = () => {
     zoom: 3,
   });
 
-  const [opacity, setOpacity] = useState(0.85);
+  const [opacity, setOpacity] = useState(1);
   const tiledOptions = useMemo(
     () => ({
       url: TILED_SERVICE_URL,
@@ -81,15 +81,24 @@ const TiledMapServiceHooksDemo: React.FC = () => {
 
     const ensureLayer = () => {
       try {
+        const mapInstance = map as unknown as { getSource?: (id: string) => unknown };
+        if (typeof mapInstance.getSource === 'function' && !mapInstance.getSource(SOURCE_ID)) {
+          return; // Source not ready yet
+        }
         if (!getLayer(LAYER_ID)) {
           addLayer({
             id: LAYER_ID,
             type: 'raster',
             source: SOURCE_ID,
+            layout: {
+              visibility: 'visible',
+            },
             paint: {
               'raster-opacity': opacity,
             },
           });
+          // Ensure opacity is set
+          setPaintProperty(LAYER_ID, 'raster-opacity', opacity);
         } else {
           setPaintProperty(LAYER_ID, 'raster-opacity', opacity);
         }
@@ -98,7 +107,6 @@ const TiledMapServiceHooksDemo: React.FC = () => {
       }
     };
 
-    const isLoaded = eventedMap.isStyleLoaded?.() ?? eventedMap.loaded?.() ?? false;
     const onLoad = () => {
       ensureLayer();
       try {
@@ -108,14 +116,12 @@ const TiledMapServiceHooksDemo: React.FC = () => {
       }
     };
 
-    if (isLoaded) {
-      ensureLayer();
-    } else {
-      try {
-        mapOn('load', onLoad);
-      } catch (error) {
-        console.warn('Failed to bind load listener', error);
-      }
+    // Always try to ensure layer immediately, and also on style events
+    ensureLayer();
+    try {
+      mapOn('load', onLoad);
+    } catch (error) {
+      console.warn('Failed to bind load listener', error);
     }
 
     return () => {

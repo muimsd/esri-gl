@@ -49,7 +49,11 @@ export class ImageService {
     this.esriServiceOptions = esriServiceOptions;
     this._createSource();
 
-    if (this.options.getAttributionFromService) this.setAttributionFromService();
+    if (this.options.getAttributionFromService) {
+      this.setAttributionFromService().catch(() => {
+        // Silently handle attribution fetch errors to prevent unhandled rejections
+      });
+    }
   }
 
   get options(): Required<ImageServiceExtendedOptions> {
@@ -105,6 +109,10 @@ export class ImageService {
   // This requires hooking into some undocumented methods
   private _updateSource(): void {
     const src = this._map.getSource(this._sourceId) as any;
+    if (!src) {
+      // Source not yet added to map, nothing to update
+      return;
+    }
     src.tiles[0] = this._source.tiles[0];
     src._options = this._source;
 

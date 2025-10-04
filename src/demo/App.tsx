@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+
 import DynamicMapServiceDemo from './components/esm/DynamicMapServiceDemo';
 import TiledMapServiceDemo from './components/esm/TiledMapServiceDemo';
 import FeatureServiceDemo from './components/esm/FeatureServiceDemo';
@@ -9,7 +10,8 @@ import IdentifyFeaturesDemo from './components/esm/IdentifyFeaturesDemo';
 import QueryDemo from './components/esm/QueryDemo';
 import FindDemo from './components/esm/FindDemo';
 import IdentifyImageDemo from './components/esm/IdentifyImageDemo';
-import MapLibreHooksDemo from './components/react-hooks/MapLibreHooksDemo';
+
+// import MapLibreHooksDemo from './components/react-hooks/MapLibreHooksDemo';
 import DynamicMapServiceHooksDemo from './components/react-hooks/DynamicMapServiceHooksDemo';
 import TiledMapServiceHooksDemo from './components/react-hooks/TiledMapServiceHooksDemo';
 import FeatureServiceHooksDemo from './components/react-hooks/FeatureServiceHooksDemo';
@@ -19,7 +21,8 @@ import VectorBasemapStyleHooksDemo from './components/react-hooks/VectorBasemapS
 import IdentifyFeaturesHooksDemo from './components/react-hooks/IdentifyFeaturesHooksDemo';
 import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
 import FindHooksDemo from './components/react-hooks/FindHooksDemo';
-import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
+
+// import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
 import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
 import TiledMapServiceReactMapGLDemo from './components/react-map-gl/TiledMapServiceReactMapGLDemo';
 import FeatureServiceReactMapGLDemo from './components/react-map-gl/FeatureServiceReactMapGLDemo';
@@ -61,7 +64,6 @@ const ESM_TABS: DemoTab[] = [
 ];
 
 const HOOK_TABS: DemoTab[] = [
-  { id: 'hooks-maplibre', label: 'MapLibre Hooks Overview', component: MapLibreHooksDemo },
   {
     id: 'hooks-dynamic',
     label: 'Dynamic Map Service',
@@ -110,11 +112,6 @@ const HOOK_TABS: DemoTab[] = [
 ];
 
 const REACT_MAP_GL_TABS: DemoTab[] = [
-  {
-    id: 'react-map-gl-maplibre',
-    label: 'MapLibre + react-map-gl',
-    component: ReactMapGLMapLibreDemo,
-  },
   {
     id: 'react-map-gl-dynamic',
     label: 'Dynamic Map Service',
