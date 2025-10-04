@@ -208,7 +208,14 @@ export class DynamicMapService {
 
       if (src.setTiles) {
         // New MapboxGL >= 2.13.0
-        src.setTiles(this._source.tiles);
+        // setTiles may return a promise - handle rejections to prevent console errors
+        const result = src.setTiles(this._source.tiles);
+        if (result && typeof result.catch === 'function') {
+          result.catch(() => {
+            // Silently ignore - setTiles rejections are often abort errors during rapid updates
+            // The outer try/catch will handle any synchronous errors
+          });
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if ((this._map as any).style.sourceCaches) {
         // Old MapboxGL and MaplibreGL
@@ -224,8 +231,34 @@ export class DynamicMapService {
         (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
       }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        // Ignore aborted tile refresh; map will request new tiles on next frame
+      // Comprehensive abort detection - check all possible error shapes
+      // MapLibre can throw various forms of AbortError
+      const errorName = (error as { name?: string })?.name;
+      const errorMessage = (error as { message?: string })?.message;
+      const errorConstructor = (error as { constructor?: { name?: string } })?.constructor?.name;
+
+      let stringified = '';
+      try {
+        stringified = String(error);
+      } catch {
+        // ignore
+      }
+
+      // Check every possible way an error could represent AbortError
+      const isAbortError =
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError') ||
+        errorName === 'AbortError' ||
+        errorConstructor === 'AbortError' ||
+        errorMessage?.toLowerCase().includes('abort') ||
+        stringified.toLowerCase().includes('abort') ||
+        errorMessage?.includes('AbortError') ||
+        stringified.includes('AbortError') ||
+        stringified === 'Error: AbortError' ||
+        error === 'AbortError';
+
+      if (isAbortError) {
+        // Silently ignore aborted tile operations - MapLibre will retry
         return;
       }
       // Swallow occasional transient errors that can happen during style reloads
@@ -895,29 +928,67 @@ export class DynamicMapService {
   }
 
   remove(): void {
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // First, remove any layers that are using this source
-        const mapWithStyle = this._map as unknown as {
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
-              this._map.removeLayer(layer.id);
-            }
-          });
+    const map = this._map;
+    if (!map || typeof map.removeSource !== 'function') {
+      return;
+    }
+
+    try {
+      const mapWithStyle = map as unknown as {
+        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+      };
+      const mapLayerApi = map as unknown as {
+        getLayer?: (id: string) => unknown;
+        removeLayer?: (id: string) => void;
+      };
+      const mapSourceApi = map as unknown as {
+        getSource?: (id: string) => unknown;
+      };
+
+      if (typeof mapWithStyle.getStyle === 'function') {
+        const style = mapWithStyle.getStyle();
+        const layers = style?.layers || [];
+        layers.forEach(layer => {
+          if (layer.source !== this._sourceId) return;
+          if (
+            typeof mapLayerApi.getLayer !== 'function' ||
+            typeof mapLayerApi.removeLayer !== 'function'
+          ) {
+            return;
+          }
+          let hasLayer = false;
+          try {
+            hasLayer = Boolean(mapLayerApi.getLayer(layer.id));
+          } catch {
+            hasLayer = false;
+          }
+          if (!hasLayer) return;
+          try {
+            mapLayerApi.removeLayer(layer.id);
+          } catch (error) {
+            console.warn(`Failed to remove layer ${layer.id} for source ${this._sourceId}:`, error);
+          }
+        });
+      }
+
+      if (typeof mapSourceApi.getSource === 'function') {
+        let hasSource = false;
+        try {
+          hasSource = Boolean(mapSourceApi.getSource(this._sourceId));
+        } catch {
+          hasSource = false;
         }
 
-        // Then check if source exists before trying to remove it
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
-          this._map.removeSource(this._sourceId);
+        if (hasSource) {
+          try {
+            map.removeSource(this._sourceId);
+          } catch (error) {
+            console.warn(`Failed to remove source ${this._sourceId}:`, error);
+          }
         }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
       }
+    } catch (error) {
+      console.warn(`Failed to remove source ${this._sourceId}:`, error);
     }
   }
 }

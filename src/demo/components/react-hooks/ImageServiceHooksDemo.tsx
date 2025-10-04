@@ -1,0 +1,206 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { useImageService } from '../../../react';
+import type { ImageServiceOptions } from '../../../types';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
+import { useMapLibreDemo } from './useMapLibreDemo';
+
+const SOURCE_ID = 'hooks-image-source';
+const LAYER_ID = 'hooks-image-layer';
+const IMAGE_SERVICE_URL = 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer';
+
+type RenderingRuleOption = {
+  label: string;
+  value: string | null;
+};
+
+const RENDERING_RULES: RenderingRuleOption[] = [
+  { label: 'Natural Color', value: 'Natural Color' },
+  { label: 'Color Infrared', value: 'Color Infrared' },
+  { label: 'Short-wave Infrared', value: 'Short-wave Infrared' },
+  { label: 'None (Server Default)', value: null },
+];
+
+const ImageServiceHooksDemo: React.FC = () => {
+  const { containerRef, mapRef, mapReady, esriMap } = useMapLibreDemo({
+    style: 'https://demotiles.maplibre.org/style.json',
+    center: [-110.0, 40.0],
+    zoom: 5,
+  });
+
+  const [opacity, setOpacity] = useState(0.85);
+  const [renderingRule, setRenderingRule] = useState<RenderingRuleOption>(RENDERING_RULES[0]);
+
+  const imageOptions = useMemo<ImageServiceOptions>(
+    () => ({
+      url: IMAGE_SERVICE_URL,
+      format: 'jpg',
+      renderingRule: renderingRule.value
+        ? {
+            rasterFunction: renderingRule.value,
+          }
+        : undefined,
+    }),
+    [renderingRule]
+  );
+
+  const { service, loading, error, reload } = useImageService({
+    sourceId: SOURCE_ID,
+    map: esriMap,
+    options: imageOptions,
+    sourceOptions: {
+      tileSize: 256,
+    },
+  });
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !service) return;
+
+    const map = mapRef.current as maplibregl.Map;
+    const eventedMap = map as unknown as {
+      on: (type: string, listener: (...args: unknown[]) => void) => void;
+      off: (type: string, listener: (...args: unknown[]) => void) => void;
+      isStyleLoaded?: () => boolean;
+      loaded?: () => boolean;
+    };
+
+    const ensureLayer = () => {
+      if (map.getLayer(LAYER_ID)) {
+        map.setPaintProperty(LAYER_ID, 'raster-opacity', opacity);
+        return;
+      }
+      map.addLayer({
+        id: LAYER_ID,
+        type: 'raster',
+        source: SOURCE_ID,
+        paint: {
+          'raster-opacity': opacity,
+        },
+      });
+    };
+
+    const isLoaded = eventedMap.isStyleLoaded?.() ?? eventedMap.loaded?.() ?? false;
+    const onLoad = () => {
+      ensureLayer();
+      eventedMap.off('load', onLoad);
+    };
+
+    if (isLoaded) {
+      ensureLayer();
+    } else {
+      eventedMap.on('load', onLoad);
+    }
+
+    return () => {
+      eventedMap.off('load', onLoad);
+      if (map.getLayer(LAYER_ID)) {
+        map.removeLayer(LAYER_ID);
+      }
+    };
+  }, [mapReady, service, opacity]);
+
+  const applyRenderingRule = (option: RenderingRuleOption) => {
+    if (!service) return;
+    setRenderingRule(option);
+    if (!option.value) {
+      service.setRenderingRule({});
+      return;
+    }
+    service.setRenderingRule({
+      rasterFunction: option.value,
+    });
+  };
+
+  return (
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <div>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Image Service (Hooks)</h2>
+          <p style={{ margin: 0, color: '#4b5563' }}>
+            Landsat multispectral imagery delivered via <code>useImageService</code> with live
+            rendering rule swaps.
+          </p>
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+          {loading && <span style={createBadgeStyle('#fde68a', '#78350f')}>Loading imagery…</span>}
+          {error && (
+            <span style={createBadgeStyle('#fecaca', '#7f1d1d')}>Error: {error.message}</span>
+          )}
+          {!loading && !error && service && (
+            <span style={createBadgeStyle('#bbf7d0', '#064e3b')}>Image layer ready</span>
+          )}
+          <button
+            onClick={reload}
+            disabled={loading}
+            style={{
+              marginTop: '10px',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              backgroundColor: '#ffffff',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Reload Service
+          </button>
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Rendering Rules</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {RENDERING_RULES.map(option => (
+              <button
+                key={option.label}
+                onClick={() => applyRenderingRule(option)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: renderingRule.label === option.label ? '#2563eb' : '#ffffff',
+                  color: renderingRule.label === option.label ? '#ffffff' : '#1f2937',
+                  cursor: 'pointer',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Opacity</h3>
+          <input
+            type="range"
+            min={0.3}
+            max={1}
+            step={0.05}
+            value={opacity}
+            onChange={event => setOpacity(Number(event.target.value))}
+            style={{ width: '100%' }}
+          />
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>{(opacity * 100).toFixed(0)}%</p>
+        </div>
+
+        <div style={DEMO_FOOTER_STYLE}>
+          Compare different Landsat spectral composites instantly without tearing down the service.
+        </div>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+      </div>
+    </div>
+  );
+};
+
+export default ImageServiceHooksDemo;

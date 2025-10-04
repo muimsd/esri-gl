@@ -10,7 +10,24 @@ import QueryDemo from './components/esm/QueryDemo';
 import FindDemo from './components/esm/FindDemo';
 import IdentifyImageDemo from './components/esm/IdentifyImageDemo';
 import MapLibreHooksDemo from './components/react-hooks/MapLibreHooksDemo';
+import DynamicMapServiceHooksDemo from './components/react-hooks/DynamicMapServiceHooksDemo';
+import TiledMapServiceHooksDemo from './components/react-hooks/TiledMapServiceHooksDemo';
+import FeatureServiceHooksDemo from './components/react-hooks/FeatureServiceHooksDemo';
+import ImageServiceHooksDemo from './components/react-hooks/ImageServiceHooksDemo';
+import VectorTileServiceHooksDemo from './components/react-hooks/VectorTileServiceHooksDemo';
+import VectorBasemapStyleHooksDemo from './components/react-hooks/VectorBasemapStyleHooksDemo';
+import IdentifyFeaturesHooksDemo from './components/react-hooks/IdentifyFeaturesHooksDemo';
+import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
+import FindHooksDemo from './components/react-hooks/FindHooksDemo';
 import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
+import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
+import TiledMapServiceReactMapGLDemo from './components/react-map-gl/TiledMapServiceReactMapGLDemo';
+import FeatureServiceReactMapGLDemo from './components/react-map-gl/FeatureServiceReactMapGLDemo';
+import ImageServiceReactMapGLDemo from './components/react-map-gl/ImageServiceReactMapGLDemo';
+import VectorTileServiceReactMapGLDemo from './components/react-map-gl/VectorTileServiceReactMapGLDemo';
+import VectorBasemapStyleReactMapGLDemo from './components/react-map-gl/VectorBasemapStyleReactMapGLDemo';
+import IdentifyFeaturesReactMapGLDemo from './components/react-map-gl/IdentifyFeaturesReactMapGLDemo';
+import IdentifyImageReactMapGLDemo from './components/react-map-gl/IdentifyImageReactMapGLDemo';
 
 type CategoryId = 'esm' | 'react-hooks' | 'react-map-gl';
 
@@ -44,7 +61,52 @@ const ESM_TABS: DemoTab[] = [
 ];
 
 const HOOK_TABS: DemoTab[] = [
-  { id: 'hooks-maplibre', label: 'MapLibre Hooks', component: MapLibreHooksDemo },
+  { id: 'hooks-maplibre', label: 'MapLibre Hooks Overview', component: MapLibreHooksDemo },
+  {
+    id: 'hooks-dynamic',
+    label: 'Dynamic Map Service',
+    component: DynamicMapServiceHooksDemo,
+  },
+  {
+    id: 'hooks-tiled',
+    label: 'Tiled Map Service',
+    component: TiledMapServiceHooksDemo,
+  },
+  {
+    id: 'hooks-feature',
+    label: 'Feature Service',
+    component: FeatureServiceHooksDemo,
+  },
+  {
+    id: 'hooks-image',
+    label: 'Image Service',
+    component: ImageServiceHooksDemo,
+  },
+  {
+    id: 'hooks-vector-tile',
+    label: 'Vector Tile Service',
+    component: VectorTileServiceHooksDemo,
+  },
+  {
+    id: 'hooks-vector-basemap',
+    label: 'Vector Basemap Style',
+    component: VectorBasemapStyleHooksDemo,
+  },
+  {
+    id: 'hooks-identify-features',
+    label: 'Identify Features',
+    component: IdentifyFeaturesHooksDemo,
+  },
+  {
+    id: 'hooks-query',
+    label: 'Query Task',
+    component: QueryHooksDemo,
+  },
+  {
+    id: 'hooks-find',
+    label: 'Find Task',
+    component: FindHooksDemo,
+  },
 ];
 
 const REACT_MAP_GL_TABS: DemoTab[] = [
@@ -52,6 +114,46 @@ const REACT_MAP_GL_TABS: DemoTab[] = [
     id: 'react-map-gl-maplibre',
     label: 'MapLibre + react-map-gl',
     component: ReactMapGLMapLibreDemo,
+  },
+  {
+    id: 'react-map-gl-dynamic',
+    label: 'Dynamic Map Service',
+    component: DynamicMapServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-tiled',
+    label: 'Tiled Map Service',
+    component: TiledMapServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-feature',
+    label: 'Feature Service',
+    component: FeatureServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-image',
+    label: 'Image Service',
+    component: ImageServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-vector-tile',
+    label: 'Vector Tile Service',
+    component: VectorTileServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-vector-basemap',
+    label: 'Vector Basemap Style',
+    component: VectorBasemapStyleReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-identify-features',
+    label: 'Identify Features',
+    component: IdentifyFeaturesReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-identify-image',
+    label: 'Identify Image',
+    component: IdentifyImageReactMapGLDemo,
   },
 ];
 

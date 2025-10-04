@@ -161,29 +161,67 @@ export class VectorTileService {
   }
 
   remove(): void {
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // First, remove any layers that are using this source
-        const mapWithStyle = this._map as unknown as {
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
-              this._map.removeLayer(layer.id);
-            }
-          });
+    const map = this._map;
+    if (!map || typeof map.removeSource !== 'function') {
+      return;
+    }
+
+    try {
+      const mapWithStyle = map as unknown as {
+        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+      };
+      const mapLayerApi = map as unknown as {
+        getLayer?: (id: string) => unknown;
+        removeLayer?: (id: string) => void;
+      };
+      const mapSourceApi = map as unknown as {
+        getSource?: (id: string) => unknown;
+      };
+
+      if (typeof mapWithStyle.getStyle === 'function') {
+        const style = mapWithStyle.getStyle();
+        const layers = style?.layers || [];
+        layers.forEach(layer => {
+          if (layer.source !== this._sourceId) return;
+          if (
+            typeof mapLayerApi.getLayer !== 'function' ||
+            typeof mapLayerApi.removeLayer !== 'function'
+          ) {
+            return;
+          }
+          let hasLayer = false;
+          try {
+            hasLayer = Boolean(mapLayerApi.getLayer(layer.id));
+          } catch {
+            hasLayer = false;
+          }
+          if (!hasLayer) return;
+          try {
+            mapLayerApi.removeLayer(layer.id);
+          } catch (error) {
+            console.warn(`Failed to remove layer ${layer.id} for source ${this._sourceId}:`, error);
+          }
+        });
+      }
+
+      if (typeof mapSourceApi.getSource === 'function') {
+        let hasSource = false;
+        try {
+          hasSource = Boolean(mapSourceApi.getSource(this._sourceId));
+        } catch {
+          hasSource = false;
         }
 
-        // Then check if source exists before trying to remove it
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
-          this._map.removeSource(this._sourceId);
+        if (hasSource) {
+          try {
+            map.removeSource(this._sourceId);
+          } catch (error) {
+            console.warn(`Failed to remove source ${this._sourceId}:`, error);
+          }
         }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
       }
+    } catch (error) {
+      console.warn(`Failed to remove source ${this._sourceId}:`, error);
     }
   }
 }

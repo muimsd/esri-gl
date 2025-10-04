@@ -98,29 +98,44 @@ export class TiledMapService {
   }
 
   remove(): void {
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // First, remove any layers that are using this source
-        const mapWithStyle = this._map as unknown as {
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
-              this._map.removeLayer(layer.id);
-            }
-          });
-        }
+    // Guard against disposed or invalid map
+    if (!this._map || typeof this._map.removeSource !== 'function') {
+      return;
+    }
 
-        // Then check if source exists before trying to remove it
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
+    try {
+      // First, remove any layers that are using this source
+      const mapWithStyle = this._map as unknown as {
+        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+        getLayer?: (id: string) => unknown;
+      };
+
+      if (mapWithStyle.getStyle && typeof mapWithStyle.getLayer === 'function') {
+        const style = mapWithStyle.getStyle();
+        const layers = style?.layers || [];
+        const getLayer = mapWithStyle.getLayer;
+        layers.forEach(layer => {
+          if (layer.source === this._sourceId) {
+            try {
+              if (getLayer(layer.id)) {
+                this._map.removeLayer(layer.id);
+              }
+            } catch {
+              // Layer may already be removed
+            }
+          }
+        });
+      }
+
+      // Then check if source exists before trying to remove it
+      if (typeof this._map.getSource === 'function') {
+        const source = this._map.getSource(this._sourceId);
+        if (source) {
           this._map.removeSource(this._sourceId);
         }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
       }
+    } catch (error) {
+      console.warn(`Failed to remove source ${this._sourceId}:`, error);
     }
   }
 }

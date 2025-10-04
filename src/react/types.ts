@@ -7,6 +7,8 @@ import type {
   VectorTileServiceOptions,
   VectorBasemapStyleOptions,
 } from '@/types';
+import type { IdentifyImageOptions } from '@/Tasks/IdentifyImage';
+import type { FindOptions } from '@/Tasks/Find';
 
 // Base service hook types
 export interface UseEsriServiceOptions<T extends EsriServiceOptions = EsriServiceOptions> {
@@ -30,9 +32,9 @@ export interface UseImageServiceOptions extends UseEsriServiceOptions<ImageServi
 export interface UseVectorTileServiceOptions
   extends UseEsriServiceOptions<VectorTileServiceOptions> {}
 export interface UseVectorBasemapStyleOptions {
-  sourceId: string;
-  map: Map | null;
-  options: VectorBasemapStyleOptions;
+  sourceId?: string;
+  map?: Map | null;
+  options?: VectorBasemapStyleOptions | null;
   sourceOptions?: Record<string, unknown>;
 }
 export interface UseFeatureServiceOptions extends UseEsriServiceOptions<FeatureServiceOptions> {}
@@ -44,14 +46,11 @@ export interface UseIdentifyFeaturesOptions {
   returnGeometry?: boolean;
 }
 
+export type UseIdentifyImageOptions = IdentifyImageOptions;
+
 export interface UseQueryOptions extends FeatureServiceOptions {}
 
-export interface UseFindOptions {
-  url: string;
-  searchText: string;
-  layers?: number[];
-  searchFields?: string[];
-}
+export type UseFindOptions = FindOptions;
 
 // Component types
 export interface EsriServiceProviderProps {

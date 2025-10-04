@@ -30,7 +30,7 @@ run_step() {
 
 run_step "npx lint-staged" \
 	"Lint-staged format & quick fixes" \
-	"Run 'npm run format' to apply formatting locally if needed."
+	"Run 'npm run format:check' to check formatting locally."
 
 run_step "npm run lint" \
 	"ESLint" \
