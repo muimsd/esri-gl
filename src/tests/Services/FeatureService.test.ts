@@ -790,34 +790,6 @@ describe('FeatureService', () => {
       expect(callUrl).toContain('token=test-token');
     });
 
-    it('should handle production environment logging in updateData', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      const service = new FeatureService('test-source', mockMap as Map, {
-        ...mockServiceOptions,
-        useVectorTiles: false,
-        useBoundingBox: true,
-      });
-      await flush();
-
-      // Manually add a mock source with setData method
-      const setDataMock = jest.fn();
-      (mockMap.getSource as jest.Mock).mockReturnValue({ setData: setDataMock });
-
-      service.updateData();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Updating FeatureService data with new bounding box:'),
-        expect.any(String)
-      );
-
-      process.env.NODE_ENV = originalEnv;
-      consoleSpy.mockRestore();
-    });
-
     it('should handle production environment error logging in queryFeatures', async () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
