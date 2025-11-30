@@ -153,7 +153,7 @@ export class FeatureService {
       } else {
         return false;
       }
-    } catch (error) {
+    } catch {
       return false;
     }
   }
