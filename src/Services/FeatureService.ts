@@ -78,29 +78,13 @@ export class FeatureService {
 
       // Check if vector tiles should be used (default behavior)
       // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
-      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      if (!isTestEnvironment) {
-        console.log(
-          'FeatureService: useVectorTiles setting:',
-          this.esriServiceOptions.useVectorTiles
-        );
-      }
       const vectorTileSupport = await this._checkVectorTileSupport();
-      if (!isTestEnvironment) {
-        console.log('FeatureService: Vector tile support detected:', vectorTileSupport);
-      }
 
       const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
-      if (!isTestEnvironment) {
-        console.log('FeatureService: Final decision - using vector tiles:', useVectorTiles);
-      }
 
       if (useVectorTiles) {
         // Create vector tile source
         const tileUrl = this._buildTileUrl();
-        if (!isTestEnvironment) {
-          console.log('FeatureService: Using vector tiles for FeatureService:', tileUrl);
-        }
 
         // Add vector source to map
         this._map.addSource(this._sourceId, {
@@ -112,9 +96,6 @@ export class FeatureService {
       } else {
         // Fallback to GeoJSON (most common for FeatureServers)
         const queryUrl = this._buildQueryUrl();
-        if (!isTestEnvironment) {
-          console.log('FeatureService: Using GeoJSON for FeatureService:', queryUrl);
-        }
 
         this._map.addSource(this._sourceId, {
           type: 'geojson',
@@ -151,45 +132,22 @@ export class FeatureService {
 
       // Only check if the URL actually changed (meaning it was a FeatureServer URL)
       if (vectorTileUrl === this.esriServiceOptions.url) {
-        const isTestEnvironment =
-          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-        if (!isTestEnvironment) {
-          console.log('FeatureService: Not a FeatureServer URL, falling back to GeoJSON');
-        }
         return false;
       }
 
-      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      if (!isTestEnvironment) {
-        console.log('FeatureService: Checking vector tile support at:', vectorTileUrl);
-      }
       const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
 
       if (response.ok) {
         const data = await response.json();
         if (data && !data.error) {
-          if (!isTestEnvironment) {
-            console.log('FeatureService: Vector tile endpoint found and working:', vectorTileUrl);
-            console.log('FeatureService: Vector tile service data:', data);
-          }
           return true;
         } else {
-          if (!isTestEnvironment) {
-            console.log('FeatureService: Vector tile endpoint returned error:', data?.error);
-          }
           return false;
         }
       } else {
-        if (!isTestEnvironment) {
-          console.log('FeatureService: Vector tile endpoint returned HTTP', response.status);
-        }
         return false;
       }
     } catch (error) {
-      const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-      if (!isTestEnvironment) {
-        console.log('FeatureService: Vector tile check failed, falling back to GeoJSON:', error);
-      }
       return false;
     }
   }
@@ -364,11 +322,6 @@ export class FeatureService {
       const source = this._map.getSource(this._sourceId);
       if (source && 'setData' in source && typeof source.setData === 'function') {
         const newQueryUrl = this._buildQueryUrl();
-        const isTestEnvironment =
-          typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-        if (!isTestEnvironment) {
-          console.log('Updating FeatureService data with new bounding box:', newQueryUrl);
-        }
         // @ts-ignore - GeoJSON source setData method not in generic Source type
         source.setData(newQueryUrl);
       }
