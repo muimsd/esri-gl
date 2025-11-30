@@ -97,7 +97,8 @@ export interface VectorTileServiceOptions {
 
 export interface VectorBasemapStyleOptions {
   basemapEnum: string;
-  token: string;
+  token?: string;
+  apiKey?: string;
   language?: string;
   worldview?: string;
 }

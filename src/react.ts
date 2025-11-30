@@ -7,6 +7,7 @@ export { useVectorTileService } from './react/hooks/useVectorTileService';
 export { useVectorBasemapStyle } from './react/hooks/useVectorBasemapStyle';
 export { useFeatureService } from './react/hooks/useFeatureService';
 export { useIdentifyFeatures } from './react/hooks/useIdentifyFeatures';
+export { useIdentifyImage } from './react/hooks/useIdentifyImage';
 export { useQuery } from './react/hooks/useQuery';
 export { useFind } from './react/hooks/useFind';
 

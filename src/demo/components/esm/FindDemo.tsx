@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Map } from 'maplibre-gl';
-import { DynamicMapService, Find } from '../../main';
+import maplibregl from 'maplibre-gl';
+import { DynamicMapService, Find } from '../../../main';
 
 interface FindResults {
   features?: Array<GeoJSON.Feature>;
@@ -9,7 +9,7 @@ interface FindResults {
 
 const FindDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<Map | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [findResults, setFindResults] = useState<FindResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -24,7 +24,7 @@ const FindDemo: React.FC = () => {
     if (!mapContainer.current) return;
 
     // Initialize map
-    map.current = new Map({
+    map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://demotiles.maplibre.org/style.json',
       center: [-98, 39.5],
@@ -88,7 +88,7 @@ const FindDemo: React.FC = () => {
           data: results,
         });
 
-        map.current.addLayer({
+        (map.current as unknown as { addLayer(layer: unknown): void }).addLayer({
           id: 'find-results',
           type: 'fill',
           source: 'find-results',
@@ -120,14 +120,34 @@ const FindDemo: React.FC = () => {
           });
 
           if (allCoords.length > 0) {
-            const bounds = allCoords.reduce(
-              (bounds, coord) => {
-                return bounds.extend(coord);
-              },
-              new (await import('maplibre-gl')).LngLatBounds()
-            );
+            const [firstLng, firstLat] = allCoords[0];
+            let minLng = firstLng;
+            let maxLng = firstLng;
+            let minLat = firstLat;
+            let maxLat = firstLat;
 
-            map.current.fitBounds(bounds, { padding: 50 });
+            for (let i = 1; i < allCoords.length; i += 1) {
+              const [lng, lat] = allCoords[i];
+              minLng = Math.min(minLng, lng);
+              maxLng = Math.max(maxLng, lng);
+              minLat = Math.min(minLat, lat);
+              maxLat = Math.max(maxLat, lat);
+            }
+
+            const fitBounds = map.current as unknown as {
+              fitBounds(
+                bounds: [[number, number], [number, number]],
+                options?: { padding?: number }
+              ): void;
+            };
+
+            fitBounds.fitBounds(
+              [
+                [minLng, minLat],
+                [maxLng, maxLat],
+              ],
+              { padding: 50 }
+            );
           }
         }
       }
@@ -142,8 +162,12 @@ const FindDemo: React.FC = () => {
   const clearResults = () => {
     setFindResults(null);
     if (map.current && map.current.getLayer('find-results')) {
-      map.current.removeLayer('find-results');
-      map.current.removeSource('find-results');
+      const mapInstance = map.current as unknown as {
+        removeLayer(layerId: string): void;
+        removeSource(sourceId: string): void;
+      };
+      mapInstance.removeLayer('find-results');
+      mapInstance.removeSource('find-results');
     }
   };
 

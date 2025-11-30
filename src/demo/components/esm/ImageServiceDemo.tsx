@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { ImageService } from '../../main';
+import { ImageService } from '../../../main';
 
 const ImageServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);

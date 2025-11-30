@@ -7,6 +7,8 @@ interface LayerControlsProps {
   layerOptions: LayerOption[]
   selectedLayers: number[]
   labelsEnabled: boolean
+  identifyLoading?: boolean
+  identifyError?: string | null
   onLayerToggle: (layerId: number) => void
   onLabelsToggle: () => void
   onApplyStyling: () => void
@@ -18,6 +20,8 @@ const LayerControls = ({
   layerOptions,
   selectedLayers,
   labelsEnabled,
+  identifyLoading = false,
+  identifyError = null,
   onLayerToggle,
   onLabelsToggle,
   onApplyStyling,
@@ -65,6 +69,8 @@ const LayerControls = ({
 
       <div className="info-section">
         <p><small>Click on the map to identify features</small></p>
+        {identifyLoading && <p className="status loading">Identifying…</p>}
+        {identifyError && <p className="status error">{identifyError}</p>}
       </div>
     </div>
   )

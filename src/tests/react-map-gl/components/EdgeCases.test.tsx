@@ -8,10 +8,10 @@ import { EsriVectorTileLayer } from '@/react-map-gl/components/EsriVectorTileLay
 import { FeatureService } from '@/Services/FeatureService';
 import { VectorBasemapStyle } from '@/Services/VectorBasemapStyle';
 import { VectorTileService } from '@/Services/VectorTileService';
-import { useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl/mapbox';
 
 // Mock react-map-gl
-jest.mock('react-map-gl');
+jest.mock('react-map-gl/mapbox');
 const mockUseMap = useMap as jest.MockedFunction<typeof useMap>;
 
 // Mock services

@@ -2,38 +2,43 @@ import { FeatureService } from '@/Services/FeatureService';
 import type { Map, FeatureServiceOptions } from '@/types';
 
 // Mock MapLibre/Mapbox GL Map with minimal interface
-const createMockMap = (): Partial<Map> => ({
-  addSource: jest.fn(),
-  removeSource: jest.fn(),
-  getSource: jest.fn().mockReturnValue({
-    setTiles: jest.fn(),
-    setUrl: jest.fn(),
-    setData: jest.fn(),
-    tiles: ['https://example.com/{z}/{x}/{y}.png'],
-    _options: {},
-  }),
-  addLayer: jest.fn(),
-  removeLayer: jest.fn(),
-  getLayer: jest.fn(),
-  setPaintProperty: jest.fn(),
-  moveLayer: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn(),
-  fire: jest.fn(),
-  getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
-  getBounds: jest.fn().mockReturnValue({
-    toArray: () => [
-      [-180, -90],
-      [180, 90],
-    ],
-    getWest: () => -180,
-    getSouth: () => -90,
-    getEast: () => 180,
-    getNorth: () => 90,
-  }),
-  project: jest.fn(),
-  unproject: jest.fn(),
-});
+const createMockMap = (): Partial<Map> => {
+  const sources: Record<string, any> = {};
+  const mockMap: any = {
+    addSource: jest.fn((id: string, source: any) => {
+      sources[id] = source;
+      return mockMap;
+    }),
+    removeSource: jest.fn((id: string) => {
+      delete sources[id];
+      return mockMap;
+    }),
+    getSource: jest.fn((id: string) => sources[id]),
+    getStyle: jest.fn().mockReturnValue({ layers: [] }),
+    addLayer: jest.fn(),
+    removeLayer: jest.fn(),
+    getLayer: jest.fn(),
+    setPaintProperty: jest.fn(),
+    moveLayer: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    fire: jest.fn(),
+    getCanvas: jest.fn().mockReturnValue({ width: 800, height: 600 }),
+    getBounds: jest.fn().mockReturnValue({
+      toArray: () => [
+        [-180, -90],
+        [180, 90],
+      ],
+      getWest: () => -180,
+      getSouth: () => -90,
+      getEast: () => 180,
+      getNorth: () => 90,
+    }),
+    project: jest.fn(),
+    unproject: jest.fn(),
+  };
+  return mockMap;
+};
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -365,7 +370,7 @@ describe('FeatureService', () => {
   describe('Parameter Updates', () => {
     it('should set where clause', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
+      await flush();
 
       service.setWhere('STATE_NAME = "California"');
       await flush();
@@ -377,7 +382,7 @@ describe('FeatureService', () => {
 
     it('should set output fields as array', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
+      await flush();
 
       service.setOutFields(['STATE_NAME', 'POP2000']);
       await flush();
@@ -389,7 +394,6 @@ describe('FeatureService', () => {
 
     it('should set output fields as string', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
 
       service.setOutFields('STATE_NAME,POP2000');
       await flush();
@@ -399,7 +403,7 @@ describe('FeatureService', () => {
 
     it('should set layers', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
+      await flush();
 
       service.setLayers([0, 1]);
       await flush();
@@ -411,7 +415,6 @@ describe('FeatureService', () => {
 
     it('should set single layer', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
 
       service.setLayers(5);
       await flush();
@@ -421,7 +424,6 @@ describe('FeatureService', () => {
 
     it('should set geometry filter', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
 
       const geometry = { x: -95, y: 40 };
       service.setGeometry(geometry, 'esriGeometryPoint');
@@ -432,7 +434,6 @@ describe('FeatureService', () => {
 
     it('should clear geometry filter', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
 
       // First set geometry
       service.setGeometry({ x: -95, y: 40 }, 'esriGeometryPoint');
@@ -449,7 +450,7 @@ describe('FeatureService', () => {
     it('should enable bounding box updates for GeoJSON sources', async () => {
       const options = { ...mockServiceOptions, useVectorTiles: false };
       const service = new FeatureService('test-source', mockMap as Map, options);
-      (mockMap.getSource as jest.Mock).mockReturnValue({ setData: jest.fn() });
+      await flush();
 
       service.setBoundingBoxFilter(true);
 
@@ -639,9 +640,9 @@ describe('FeatureService', () => {
   });
 
   describe('Cleanup', () => {
-    it('should remove source', () => {
+    it('should remove source', async () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
-      (mockMap.getSource as jest.Mock).mockReturnValue({});
+      await flush();
 
       service.remove();
 
@@ -789,7 +790,7 @@ describe('FeatureService', () => {
       expect(callUrl).toContain('token=test-token');
     });
 
-    it('should handle production environment logging in updateData', () => {
+    it('should handle production environment logging in updateData', async () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
@@ -800,6 +801,11 @@ describe('FeatureService', () => {
         useVectorTiles: false,
         useBoundingBox: true,
       });
+      await flush();
+
+      // Manually add a mock source with setData method
+      const setDataMock = jest.fn();
+      (mockMap.getSource as jest.Mock).mockReturnValue({ setData: setDataMock });
 
       service.updateData();
 

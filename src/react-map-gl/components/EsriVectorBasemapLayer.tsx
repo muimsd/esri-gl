@@ -1,13 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { useMap } from 'react-map-gl';
 import { VectorBasemapStyle } from '@/Services/VectorBasemapStyle';
 import type { EsriVectorBasemapLayerProps } from '../types';
+import { useReactMapGL } from '../utils/useReactMapGL';
 
 /**
  * React Map GL component for Esri Vector Basemap Style
  */
 export function EsriVectorBasemapLayer(props: EsriVectorBasemapLayerProps) {
-  const { current: map } = useMap();
+  const { current: map } = useReactMapGL();
 
   const service = useMemo(() => {
     return new VectorBasemapStyle(props.basemapEnum, { token: props.token });

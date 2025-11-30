@@ -19,10 +19,18 @@ describe('VectorTileService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Smart mock that tracks sources
+    const sources: Record<string, any> = {};
     mockMap = {
-      addSource: jest.fn(),
-      removeSource: jest.fn(),
-      getSource: jest.fn(),
+      addSource: jest.fn((id: string, source: any) => {
+        sources[id] = source;
+        return mockMap;
+      }),
+      removeSource: jest.fn((id: string) => {
+        delete sources[id];
+        return mockMap;
+      }),
+      getSource: jest.fn((id: string) => sources[id]),
     } as unknown as jest.Mocked<Map>;
 
     // Default mock implementations

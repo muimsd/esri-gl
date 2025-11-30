@@ -49,7 +49,11 @@ export class ImageService {
     this.esriServiceOptions = esriServiceOptions;
     this._createSource();
 
-    if (this.options.getAttributionFromService) this.setAttributionFromService();
+    if (this.options.getAttributionFromService) {
+      this.setAttributionFromService().catch(() => {
+        // Silently handle attribution fetch errors to prevent unhandled rejections
+      });
+    }
   }
 
   get options(): Required<ImageServiceExtendedOptions> {
@@ -96,12 +100,19 @@ export class ImageService {
   }
 
   private _createSource(): void {
-    this._map.addSource(this._sourceId, this._source);
+    // Check if source already exists before adding
+    if (!this._map.getSource(this._sourceId)) {
+      this._map.addSource(this._sourceId, this._source);
+    }
   }
 
   // This requires hooking into some undocumented methods
   private _updateSource(): void {
     const src = this._map.getSource(this._sourceId) as any;
+    if (!src) {
+      // Source not yet added to map, nothing to update
+      return;
+    }
     src.tiles[0] = this._source.tiles[0];
     src._options = this._source;
 
@@ -196,6 +207,29 @@ export class ImageService {
   }
 
   remove(): void {
-    this._map.removeSource(this._sourceId);
+    if (this._map && typeof this._map.removeSource === 'function') {
+      try {
+        // First, remove any layers that are using this source
+        const mapWithStyle = this._map as unknown as {
+          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+        };
+        if (mapWithStyle.getStyle) {
+          const style = mapWithStyle.getStyle();
+          const layers = style?.layers || [];
+          layers.forEach(layer => {
+            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
+              this._map.removeLayer(layer.id);
+            }
+          });
+        }
+
+        // Then check if source exists before trying to remove it
+        if (this._map.getSource && this._map.getSource(this._sourceId)) {
+          this._map.removeSource(this._sourceId);
+        }
+      } catch (error) {
+        console.warn(`Failed to remove source ${this._sourceId}:`, error);
+      }
+    }
   }
 }

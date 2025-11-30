@@ -1,4 +1,4 @@
-import { useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl/mapbox';
 import { useDynamicMapService } from '../../react/hooks/useDynamicMapService';
 import { useTiledMapService } from '../../react/hooks/useTiledMapService';
 import { useImageService } from '../../react/hooks/useImageService';

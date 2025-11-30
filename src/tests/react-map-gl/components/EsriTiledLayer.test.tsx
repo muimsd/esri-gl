@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react';
 import { EsriTiledLayer } from '@/react-map-gl/components/EsriTiledLayer';
 import { TiledMapService } from '@/Services/TiledMapService';
-import { useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl/mapbox';
 
 // Mock react-map-gl
-jest.mock('react-map-gl');
+jest.mock('react-map-gl/mapbox');
 const mockUseMap = useMap as jest.MockedFunction<typeof useMap>;
 
 // Mock TiledMapService

@@ -6,7 +6,7 @@ import { render, waitFor } from '@testing-library/react';
 
 // Explicitly unmock mapbox-gl to use the real library for imports
 jest.unmock('mapbox-gl');
-jest.unmock('react-map-gl');
+jest.unmock('react-map-gl/mapbox');
 
 import mapboxgl from 'mapbox-gl';
 import { EsriFeatureLayer } from '@/react-map-gl/components/EsriFeatureLayer';
@@ -20,8 +20,8 @@ const MockedFeatureService = FeatureService as jest.MockedClass<typeof FeatureSe
 mapboxgl.accessToken = 'pk.eyJ1IjoidGVzdCIsImEiOiJ0ZXN0LXRva2VuIn0.test';
 
 // Mock react-map-gl's useMap hook at module level
-jest.mock('react-map-gl', () => {
-  const originalModule = jest.requireActual('react-map-gl');
+jest.mock('react-map-gl/mapbox', () => {
+  const originalModule = jest.requireActual('react-map-gl/mapbox');
   return {
     ...originalModule,
     useMap: () => ({

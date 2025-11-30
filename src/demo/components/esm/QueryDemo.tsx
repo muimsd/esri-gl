@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Map, LngLatBounds } from 'maplibre-gl';
-import { DynamicMapService, Query } from '../../main';
+import maplibregl from 'maplibre-gl';
+import type { Map as MaplibreMap } from 'maplibre-gl';
+import { DynamicMapService, Query } from '../../../main';
 
 interface QueryResults {
   features?: Array<GeoJSON.Feature>;
@@ -9,7 +10,7 @@ interface QueryResults {
 
 const QueryDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<Map | null>(null);
+  const map = useRef<MaplibreMap | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [queryResults, setQueryResults] = useState<QueryResults | null>(null);
   const [isQuerying, setIsQuerying] = useState(false);
@@ -23,7 +24,7 @@ const QueryDemo: React.FC = () => {
     if (!mapContainer.current) return;
 
     // Initialize map
-    map.current = new Map({
+    map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://demotiles.maplibre.org/style.json',
       center: [-98, 39.5],
@@ -128,11 +129,33 @@ const QueryDemo: React.FC = () => {
           });
 
           if (allCoords.length > 0) {
-            const bounds = allCoords.reduce((bounds, coord) => {
-              return bounds.extend(coord);
-            }, new LngLatBounds());
+            const [firstLng, firstLat] = allCoords[0];
+            let minLng = firstLng;
+            let maxLng = firstLng;
+            let minLat = firstLat;
+            let maxLat = firstLat;
 
-            map.current.fitBounds(bounds, { padding: 50 });
+            for (let i = 1; i < allCoords.length; i += 1) {
+              const [lng, lat] = allCoords[i];
+              minLng = Math.min(minLng, lng);
+              maxLng = Math.max(maxLng, lng);
+              minLat = Math.min(minLat, lat);
+              maxLat = Math.max(maxLat, lat);
+            }
+
+            const mapInstance = map.current as unknown as {
+              fitBounds(
+                bounds: [[number, number], [number, number]],
+                options?: { padding?: number }
+              ): void;
+            };
+            mapInstance.fitBounds(
+              [
+                [minLng, minLat],
+                [maxLng, maxLat],
+              ],
+              { padding: 50 }
+            );
           }
         }
       }

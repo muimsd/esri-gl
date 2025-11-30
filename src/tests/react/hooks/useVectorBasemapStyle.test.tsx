@@ -11,17 +11,30 @@ const MockedVectorBasemapStyle = VectorBasemapStyle as jest.MockedClass<typeof V
 // Test component that uses the hook
 const TestComponent: React.FC<{
   basemapEnum?: string;
-  token?: string;
+  credentialType?: 'token' | 'apiKey' | 'none';
+  credentialValue?: string;
   language?: string;
   worldview?: string;
-}> = ({ basemapEnum = 'arcgis/streets', token = 'test-token', language, worldview }) => {
+}> = ({
+  basemapEnum = 'arcgis/streets',
+  credentialType = 'token',
+  credentialValue = 'test-token',
+  language,
+  worldview,
+}) => {
+  const options =
+    credentialType === 'none'
+      ? undefined
+      : {
+          basemapEnum,
+          token: credentialType === 'token' ? credentialValue : undefined,
+          apiKey: credentialType === 'apiKey' ? credentialValue : undefined,
+          language,
+          worldview,
+        };
+
   const { service, loading, error, reload } = useVectorBasemapStyle({
-    options: {
-      basemapEnum,
-      token,
-      language,
-      worldview,
-    },
+    options,
   });
 
   return (
@@ -61,6 +74,7 @@ describe('useVectorBasemapStyle', () => {
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/streets', {
         token: 'test-token',
+        apiKey: undefined,
         language: undefined,
         worldview: undefined,
       });
@@ -96,6 +110,7 @@ describe('useVectorBasemapStyle', () => {
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/streets', {
         token: 'test-token',
+        apiKey: undefined,
         language: undefined,
         worldview: undefined,
       });
@@ -109,6 +124,7 @@ describe('useVectorBasemapStyle', () => {
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/topographic', {
         token: 'test-token',
+        apiKey: undefined,
         language: undefined,
         worldview: undefined,
       });
@@ -121,11 +137,12 @@ describe('useVectorBasemapStyle', () => {
   it('should recreate service when token changes', async () => {
     jest.clearAllMocks(); // Clear previous test calls
 
-    const { rerender } = render(<TestComponent token="token1" />);
+    const { rerender } = render(<TestComponent credentialType="token" credentialValue="token1" />);
 
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/streets', {
         token: 'token1',
+        apiKey: undefined,
         language: undefined,
         worldview: undefined,
       });
@@ -134,11 +151,12 @@ describe('useVectorBasemapStyle', () => {
     const callsAfterFirst = MockedVectorBasemapStyle.mock.calls.length;
 
     // Change token
-    rerender(<TestComponent token="token2" />);
+    rerender(<TestComponent credentialType="token" credentialValue="token2" />);
 
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/streets', {
         token: 'token2',
+        apiKey: undefined,
         language: undefined,
         worldview: undefined,
       });
@@ -184,7 +202,8 @@ describe('useVectorBasemapStyle', () => {
     const { getByTestId } = render(
       <TestComponent
         basemapEnum="arcgis/topographic"
-        token="my-token"
+        credentialType="token"
+        credentialValue="my-token"
         language="en"
         worldview="US"
       />
@@ -193,11 +212,39 @@ describe('useVectorBasemapStyle', () => {
     await waitFor(() => {
       expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/topographic', {
         token: 'my-token',
+        apiKey: undefined,
         language: 'en',
         worldview: 'US',
       });
     });
 
     expect(getByTestId('service-exists').textContent).toBe('true');
+  });
+
+  it('should create service with apiKey credentials', async () => {
+    render(
+      <TestComponent
+        credentialType="apiKey"
+        credentialValue="abc123"
+        basemapEnum="arcgis/streets"
+      />
+    );
+
+    await waitFor(() => {
+      expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/streets', {
+        token: undefined,
+        apiKey: 'abc123',
+        language: undefined,
+        worldview: undefined,
+      });
+    });
+  });
+
+  it('should not create service when credentials are missing', async () => {
+    render(<TestComponent credentialType="none" />);
+
+    await waitFor(() => {
+      expect(MockedVectorBasemapStyle).not.toHaveBeenCalled();
+    });
   });
 });

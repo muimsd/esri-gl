@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import mapboxgl from 'mapbox-gl';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { EsriDynamicLayer } from '@/react-map-gl/components/EsriDynamicLayer';
 
 // Import and mock the Esri services

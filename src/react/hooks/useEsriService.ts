@@ -30,7 +30,11 @@ export function useEsriService<T extends RemovableService>(
     try {
       // Clean up existing service
       if (service) {
-        service.remove();
+        try {
+          service.remove();
+        } catch (error) {
+          console.warn('Error removing existing service:', error);
+        }
       }
 
       // Create new service
@@ -48,7 +52,11 @@ export function useEsriService<T extends RemovableService>(
   useEffect(() => {
     if (!map) {
       if (service) {
-        service.remove();
+        try {
+          service.remove();
+        } catch (error) {
+          console.warn('Error removing service during cleanup:', error);
+        }
       }
       setService(null);
       return;
@@ -56,8 +64,8 @@ export function useEsriService<T extends RemovableService>(
 
     // Add a small delay to ensure map is fully initialized
     const timeoutId = setTimeout(() => {
-      // Check if map is still valid and loaded
-      if (map && typeof map.addSource === 'function' && map.isStyleLoaded?.() !== false) {
+      // Check if map is still valid
+      if (map && typeof map.addSource === 'function') {
         reload();
       } else {
         // If map is not ready, try again after a short delay
@@ -79,10 +87,14 @@ export function useEsriService<T extends RemovableService>(
     return () => {
       // This cleanup function runs on unmount
       if (service) {
-        service.remove();
+        try {
+          service.remove();
+        } catch (error) {
+          console.warn('Error removing service during cleanup:', error);
+        }
       }
     };
-  }, [service]); // Run cleanup when service changes // Only depend on map and reload
+  }, [service]); // Run cleanup when service changes
 
   return {
     service,

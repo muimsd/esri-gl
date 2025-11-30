@@ -368,7 +368,7 @@ For the smoothest React experience with declarative layer management:
 
 ```typescript
 import React, { useState } from 'react';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { 
   EsriDynamicLayer, 
   EsriFeatureLayer, 
@@ -485,7 +485,7 @@ import type {
   IdentifyResult,
   EsriLayerProps 
 } from 'esri-gl';
-import type { MapRef } from 'react-map-gl';
+import type { MapRef } from 'react-map-gl/mapbox';
 
 // Fully typed component props
 interface MapComponentProps {
@@ -653,6 +653,8 @@ All type declarations are available in the `dist/` directory after building.
 
 ## Contributing
 
+We welcome contributions! Please follow these steps:
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make changes and add tests
@@ -660,6 +662,17 @@ All type declarations are available in the `dist/` directory after building.
 5. Commit changes: `git commit -m 'Add new feature'`
 6. Push to branch: `git push origin feature/my-feature`
 7. Submit a pull request
+
+### Pre-commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) to automatically run quality checks before each commit:
+
+- **Formatting & Linting**: Automatically formats and lints staged files using Prettier and ESLint
+- **Testing**: Runs the full test suite to ensure no regressions
+
+The hooks are automatically installed when you run `npm install`. If you need to skip them (not recommended), you can use `git commit --no-verify`.
+
+For more details, see [.husky/README.md](.husky/README.md).
 
 ## License
 

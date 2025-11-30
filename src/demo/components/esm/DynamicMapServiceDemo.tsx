@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 //@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { DynamicMapService, IdentifyFeatures } from '../../main';
+import { DynamicMapService, IdentifyFeatures } from '../../../main';
+
+type PopupLike = {
+  setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
+  setHTML(html: string): PopupLike;
+  addTo(target: unknown): PopupLike;
+};
 
 const DynamicMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -61,7 +67,13 @@ const DynamicMapServiceDemo: React.FC = () => {
       });
 
       // Add click handler for identify using IdentifyFeatures task
-      map.current.on('click', async e => {
+      const mapInstance = map.current as unknown as {
+        on: (...args: unknown[]) => maplibregl.Map;
+        getCanvas: () => HTMLCanvasElement;
+      };
+
+      mapInstance.on('click', async (event: unknown) => {
+        const e = event as { lngLat: { lng: number; lat: number } };
         if (!service.current || !map.current) return;
 
         try {
@@ -91,7 +103,9 @@ const DynamicMapServiceDemo: React.FC = () => {
             });
             content += '</div>';
 
-            new maplibregl.Popup().setLngLat(e.lngLat).setHTML(content).addTo(map.current);
+            const popup = new maplibregl.Popup();
+            const typedPopup = popup as unknown as PopupLike;
+            typedPopup.setLngLat(e.lngLat).setHTML(content).addTo(map.current);
           }
         } catch (error) {
           console.error('Identify (task) error:', error);
@@ -99,12 +113,12 @@ const DynamicMapServiceDemo: React.FC = () => {
       });
 
       // Change cursor on hover
-      map.current.on('mouseenter', 'dynamic-layer', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+      mapInstance.on('mouseenter', 'dynamic-layer', () => {
+        if (map.current) mapInstance.getCanvas().style.cursor = 'pointer';
       });
 
-      map.current.on('mouseleave', 'dynamic-layer', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
+      mapInstance.on('mouseleave', 'dynamic-layer', () => {
+        if (map.current) mapInstance.getCanvas().style.cursor = '';
       });
     });
 

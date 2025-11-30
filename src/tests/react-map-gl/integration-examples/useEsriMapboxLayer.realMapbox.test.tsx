@@ -4,7 +4,7 @@
 import React from 'react';
 import { renderHook } from '@testing-library/react';
 import mapboxgl from 'mapbox-gl';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import { useEsriMapboxLayer } from '@/react-map-gl/hooks/useEsriMapboxLayer';
 
 // Mock the react hooks

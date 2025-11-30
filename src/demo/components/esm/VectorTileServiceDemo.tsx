@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { VectorTileService } from '../../main';
+import { VectorTileService } from '../../../main';
 
 type VTLStyleLayer = {
   type: 'fill' | 'line' | 'symbol' | 'circle' | string;

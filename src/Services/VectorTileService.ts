@@ -75,7 +75,13 @@ export class VectorTileService {
   }
 
   private _createSource(): void {
-    this._map.addSource(this._sourceId, this._source as unknown as Parameters<Map['addSource']>[1]);
+    // Check if source already exists before adding
+    if (!this._map.getSource(this._sourceId)) {
+      this._map.addSource(
+        this._sourceId,
+        this._source as unknown as Parameters<Map['addSource']>[1]
+      );
+    }
   }
 
   private _mapToLocalSource(style: StyleData): StyleData {
@@ -155,6 +161,67 @@ export class VectorTileService {
   }
 
   remove(): void {
-    this._map.removeSource(this._sourceId);
+    const map = this._map;
+    if (!map || typeof map.removeSource !== 'function') {
+      return;
+    }
+
+    try {
+      const mapWithStyle = map as unknown as {
+        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+      };
+      const mapLayerApi = map as unknown as {
+        getLayer?: (id: string) => unknown;
+        removeLayer?: (id: string) => void;
+      };
+      const mapSourceApi = map as unknown as {
+        getSource?: (id: string) => unknown;
+      };
+
+      if (typeof mapWithStyle.getStyle === 'function') {
+        const style = mapWithStyle.getStyle();
+        const layers = style?.layers || [];
+        layers.forEach(layer => {
+          if (layer.source !== this._sourceId) return;
+          if (
+            typeof mapLayerApi.getLayer !== 'function' ||
+            typeof mapLayerApi.removeLayer !== 'function'
+          ) {
+            return;
+          }
+          let hasLayer = false;
+          try {
+            hasLayer = Boolean(mapLayerApi.getLayer(layer.id));
+          } catch {
+            hasLayer = false;
+          }
+          if (!hasLayer) return;
+          try {
+            mapLayerApi.removeLayer(layer.id);
+          } catch (error) {
+            console.warn(`Failed to remove layer ${layer.id} for source ${this._sourceId}:`, error);
+          }
+        });
+      }
+
+      if (typeof mapSourceApi.getSource === 'function') {
+        let hasSource = false;
+        try {
+          hasSource = Boolean(mapSourceApi.getSource(this._sourceId));
+        } catch {
+          hasSource = false;
+        }
+
+        if (hasSource) {
+          try {
+            map.removeSource(this._sourceId);
+          } catch (error) {
+            console.warn(`Failed to remove source ${this._sourceId}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to remove source ${this._sourceId}:`, error);
+    }
   }
 }
