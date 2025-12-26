@@ -135,7 +135,26 @@ jobs:
             echo "tag=alpha" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check if version exists
+        id: version-check
+        run: |
+          VERSION=${{ steps.package-version.outputs.version }}
+          PACKAGE_NAME=${{ steps.package-name.outputs.name }}
+          
+          # Check if this version already exists in GitHub Packages
+          if npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null; then
+            echo "Version ${VERSION} already exists in GitHub Packages"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${VERSION} does not exist, proceeding with publish"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       - name: Publish to GitHub Packages
+        if: steps.version-check.outputs.exists != 'true'
         run: npm publish --tag ${{ steps.npm-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
