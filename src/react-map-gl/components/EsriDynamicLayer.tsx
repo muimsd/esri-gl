@@ -17,20 +17,21 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
     if (!map) return;
 
     const mapInstance = map.getMap?.();
-    if (!mapInstance || typeof mapInstance.isStyleLoaded !== 'function') {
+    const mi = mapInstance as any;
+    if (!mi || typeof mi.isStyleLoaded !== 'function') {
       return;
     }
 
-    if (mapInstance.isStyleLoaded()) {
+    if (mi.isStyleLoaded()) {
       setIsMapLoaded(true);
       return;
     }
 
     const handleLoad = () => setIsMapLoaded(true);
-    mapInstance.once?.('load', handleLoad);
+    mi?.once?.('load', handleLoad);
 
     return () => {
-      mapInstance.off?.('load', handleLoad);
+      mi?.off?.('load', handleLoad);
     };
   }, [map]);
 
@@ -68,7 +69,7 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
   useEffect(() => {
     if (!map || !service) return;
 
-    const mapInstance = map.getMap?.();
+    const mapInstance = map.getMap?.() as any;
     if (
       !mapInstance ||
       typeof mapInstance.getLayer !== 'function' ||
@@ -88,19 +89,19 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
         layout: {
           visibility: (props.visible !== false ? 'visible' : 'none') as 'visible' | 'none',
         },
-      } as Parameters<typeof mapInstance.addLayer>[0];
+      };
 
       if (props.beforeId) {
-        mapInstance.addLayer(layerConfig, props.beforeId);
+        (mapInstance as any).addLayer(layerConfig as any, props.beforeId as any);
       } else {
-        mapInstance.addLayer(layerConfig);
+        (mapInstance as any).addLayer(layerConfig as any);
       }
     }
 
     // Cleanup function
     return () => {
-      if (mapInstance.getStyle() && mapInstance.getLayer?.(props.id)) {
-        mapInstance.removeLayer(props.id);
+      if ((mapInstance as any).getStyle?.() && (mapInstance as any).getLayer?.(props.id)) {
+        (mapInstance as any).removeLayer(props.id);
       }
       if (service) {
         service.remove();
