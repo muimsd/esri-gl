@@ -22,9 +22,32 @@ export class FeatureService {
   private _serviceMetadata: ServiceMetadata | null = null;
   private _defaultStyleData: StyleData | null = null;
   private _boundingBoxUpdateHandler: (() => void) | null = null;
+  private _sourceReadyResolve: (() => void) | null = null;
+  private _sourceReadyReject: ((error: Error) => void) | null = null;
 
   public vectorSrcOptions?: VectorSourceOptions;
   public esriServiceOptions: FeatureServiceExtendedOptions;
+  /**
+   * Promise that resolves when the source has been successfully added to the map.
+   * This can be used to ensure the source exists before adding layers that reference it.
+   *
+   * @example
+   * ```typescript
+   * const service = new FeatureService('my-source', map, { url: '...' });
+   *
+   * // Wait for source to be ready before adding a layer
+   * await service.sourceReady;
+   * map.addLayer({
+   *   id: 'my-layer',
+   *   type: 'circle',
+   *   source: 'my-source',
+   *   paint: { 'circle-radius': 5, 'circle-color': '#007cbf' }
+   * });
+   * ```
+   *
+   * If source creation fails, the promise will reject with an error.
+   */
+  public sourceReady: Promise<void>;
 
   constructor(
     sourceId: string,
@@ -65,11 +88,22 @@ export class FeatureService {
       this.esriServiceOptions.useBoundingBox = true;
     }
 
+    // Create the sourceReady promise that will resolve when the source is added to the map
+    this.sourceReady = new Promise<void>((resolve, reject) => {
+      this._sourceReadyResolve = resolve;
+      this._sourceReadyReject = reject;
+    });
+
     this._createSource();
   }
 
   private async _createSource(): Promise<void> {
-    if (!this._map) return;
+    if (!this._map) {
+      if (this._sourceReadyReject) {
+        this._sourceReadyReject(new Error('Map not available'));
+      }
+      return;
+    }
 
     try {
       // Get service metadata
@@ -118,10 +152,19 @@ export class FeatureService {
       if (!useVectorTiles && this.esriServiceOptions.useBoundingBox) {
         this._setupBoundingBoxUpdates();
       }
+
+      // Resolve the sourceReady promise now that the source is successfully added
+      if (this._sourceReadyResolve) {
+        this._sourceReadyResolve();
+      }
     } catch (error) {
       const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
       if (!isTestEnvironment) {
         console.error('Error creating FeatureService source:', error);
+      }
+      // Reject the sourceReady promise so callers can catch the error
+      if (this._sourceReadyReject && error instanceof Error) {
+        this._sourceReadyReject(error);
       }
       // Don't rethrow - service should handle errors gracefully
       // The source just won't be created and the service will be in a degraded state

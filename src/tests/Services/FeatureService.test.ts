@@ -122,6 +122,46 @@ describe('FeatureService', () => {
 
       expect(service.esriServiceOptions.useBoundingBox).toBe(false);
     });
+
+    it('should create a sourceReady promise that resolves when source is added', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      // sourceReady promise should exist immediately
+      expect(service.sourceReady).toBeInstanceOf(Promise);
+
+      // Wait for the promise to resolve
+      await service.sourceReady;
+
+      // After promise resolves, source should be added to map
+      expect(mockMap.addSource).toHaveBeenCalled();
+    });
+
+    it('should allow adding layers immediately after awaiting sourceReady', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      // Await sourceReady to ensure source is added
+      await service.sourceReady;
+
+      // Now source should exist
+      expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.any(Object));
+
+      // getSource should now return the source
+      const source = (mockMap as any).getSource('test-source');
+      expect(source).toBeDefined();
+    });
+
+    it('should handle race condition when immediately accessing source', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      // Before awaiting, source should not exist yet
+      let sourceBeforeReady = (mockMap as any).getSource('test-source');
+      expect(sourceBeforeReady).toBeUndefined();
+
+      // After awaiting sourceReady, source should exist
+      await service.sourceReady;
+      sourceBeforeReady = (mockMap as any).getSource('test-source');
+      expect(sourceBeforeReady).toBeDefined();
+    });
   });
 
   describe('Vector Tile Support Detection', () => {
@@ -567,15 +607,14 @@ describe('FeatureService', () => {
       mockFetch.mockRejectedValueOnce(new Error('Service metadata fetch failed'));
 
       // Constructor shouldn't throw, but error should be handled gracefully
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       expect(() => {
-        new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+        // Constructor itself doesn't throw, but the async source creation will fail
+        void service;
       }).not.toThrow();
 
-      // Wait for async source creation to complete and handle the error
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // Note: Console errors are suppressed in test environment to reduce noise
-      // The service should handle errors gracefully without throwing
+      // Wait for the sourceReady promise to reject due to the error
+      await expect(service.sourceReady).rejects.toThrow('Service metadata fetch failed');
     });
 
     it('should handle vector tile detection errors gracefully', async () => {
@@ -728,6 +767,11 @@ describe('FeatureService', () => {
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
 
+      // sourceReady will reject since fetch is mocked to reject
+      service.sourceReady.catch(() => {
+        // Expected - source creation failed
+      });
+
       await expect(service.getStyle()).rejects.toThrow('Service unavailable');
     });
   });
@@ -799,6 +843,12 @@ describe('FeatureService', () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+
+      // sourceReady will reject since fetch is mocked to reject
+      // We need to handle this to avoid unhandled promise rejection
+      service.sourceReady.catch(() => {
+        // Expected - source creation failed due to mocked fetch rejection
+      });
 
       await expect(service.queryFeatures()).rejects.toThrow('Network error');
 
