@@ -162,16 +162,10 @@ jobs:
             
             # If no specific notes found, create default ones
             if [ -z "$NOTES" ]; then
-              NOTES="Release $VERSION
-
-Changes since last release:
-- See commit history for detailed changes
-- Updated dependencies and bug fixes"
+              NOTES=$(printf 'Release %s\n\nChanges since last release:\n- See commit history for detailed changes\n- Updated dependencies and bug fixes' "$VERSION")
             fi
           else
-            NOTES="Release $VERSION
-
-No changelog found. See commit history for changes."
+            NOTES=$(printf 'Release %s\n\nNo changelog found. See commit history for changes.' "$VERSION")
           fi
           
           # Save to file for multiline output
