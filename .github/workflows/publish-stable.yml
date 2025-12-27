@@ -1,7 +1,9 @@
 name: Publish Stable to NPM
 
 on:
-  # Only run manually - NPM requires 2FA/OTP which cannot be automated
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version_type:
