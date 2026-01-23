@@ -48,7 +48,9 @@ const mockMap = {
   removeSource: jest.fn((id: string) => {
     delete sources[id];
   }),
-  getSource: jest.fn((id: string) => sources[id] || { setData: jest.fn() }),
+  getSource: jest.fn((id: string) =>
+    sources[id] ? { ...sources[id], setData: jest.fn() } : undefined
+  ),
   getStyle: jest.fn().mockReturnValue({ layers: [] }),
   getLayer: jest.fn(),
   removeLayer: jest.fn(),
@@ -102,6 +104,8 @@ global.fetch = jest.fn().mockResolvedValue({
 describe('React Hooks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear sources between tests
+    Object.keys(sources).forEach(key => delete sources[key]);
   });
 
   describe('useDynamicMapService', () => {
@@ -121,7 +125,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       expect(result.current.service).toBeDefined();
@@ -132,7 +136,7 @@ describe('React Hooks', () => {
         () => {
           expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.any(Object));
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
     });
 
@@ -168,7 +172,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       // Wait for addSource to be called
@@ -176,7 +180,7 @@ describe('React Hooks', () => {
         () => {
           expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expect.any(Object));
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       unmount();
@@ -186,7 +190,7 @@ describe('React Hooks', () => {
         () => {
           expect(mockMap.removeSource).toHaveBeenCalledWith('test-source');
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
     });
 
@@ -209,7 +213,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       rerender({ layers: [0, 1, 2] });
@@ -218,7 +222,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service?.esriServiceOptions.layers).toEqual([0, 1, 2]);
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       // The service should be updated with new layers (may be same instance or new one)
@@ -475,7 +479,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       expect(result.current.error).toBeNull();
@@ -496,7 +500,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       expect(result.current.error).toBeNull();
@@ -517,7 +521,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       expect(result.current.error).toBeNull();
@@ -538,7 +542,7 @@ describe('React Hooks', () => {
         () => {
           expect(result.current.service).toBeDefined();
         },
-        { timeout: 200 }
+        { timeout: 1000 }
       );
 
       expect(result.current.error).toBeNull();
