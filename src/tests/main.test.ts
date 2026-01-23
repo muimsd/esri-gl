@@ -23,6 +23,32 @@ import {
   updateAttribution,
 } from '@/main';
 
+// Mock the tilebelt module (required by FeatureService)
+jest.mock('@mapbox/tilebelt', () => ({
+  bboxToTile: jest.fn(() => [0, 0, 10]),
+  tileToBBOX: jest.fn(() => [-180, -90, 180, 90]),
+  tileToQuadkey: jest.fn(() => '0000000000'),
+  getChildren: jest.fn((tile: [number, number, number]) => {
+    const z = tile[2] + 1;
+    return [
+      [0, 0, z],
+      [1, 0, z],
+      [0, 1, z],
+      [1, 1, z],
+    ];
+  }),
+}));
+
+// Mock the arcgis-pbf-parser module (required by FeatureService)
+jest.mock('arcgis-pbf-parser', () =>
+  jest.fn(() => ({
+    featureCollection: {
+      type: 'FeatureCollection',
+      features: [],
+    },
+  }))
+);
+
 // Mock global fetch
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
@@ -210,32 +236,52 @@ describe('Main Module Exports', () => {
     const mockMap = {
       addSource: jest.fn(),
       removeSource: jest.fn(),
-      getSource: jest.fn(),
+      getSource: jest.fn().mockReturnValue({
+        setData: jest.fn(),
+      }),
+      getLayer: jest.fn(),
       addLayer: jest.fn(),
       removeLayer: jest.fn(),
       on: jest.fn(),
       off: jest.fn(),
       project: jest.fn().mockReturnValue({ x: 100, y: 100 }),
       unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 }),
+      getZoom: jest.fn().mockReturnValue(10),
+      getCanvas: jest.fn().mockReturnValue({ width: 800 }),
+      getStyle: jest.fn().mockReturnValue({ layers: [] }),
       getBounds: jest.fn().mockReturnValue({
         getNorth: () => 90,
         getSouth: () => -90,
         getEast: () => 180,
         getWest: () => -180,
+        toArray: () => [
+          [-120, 30],
+          [-100, 50],
+        ],
       }),
     } as unknown as import('@/types').Map;
 
     beforeEach(() => {
       jest.clearAllMocks();
 
-      // Additional mock setup for service tests
+      // Additional mock setup for service tests - include supportedQueryFormats for FeatureService
       mockFetch.mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
             copyrightText: 'Test Attribution',
             name: 'Test Service',
+            supportedQueryFormats: 'JSON, geoJSON, PBF',
+            uniqueIdField: { name: 'OBJECTID', type: 'esriFieldTypeOID' },
+            extent: {
+              xmin: -180,
+              ymin: -90,
+              xmax: 180,
+              ymax: 90,
+              spatialReference: { wkid: 4326 },
+            },
           }),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
       } as Response);
     });
 

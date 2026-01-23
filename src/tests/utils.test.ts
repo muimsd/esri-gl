@@ -1,4 +1,4 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
+import { cleanTrailingSlash, getServiceDetails, isAbortError, updateAttribution } from '@/utils';
 import type { Map } from '@/types';
 
 // Mock fetch globally
@@ -51,6 +51,45 @@ describe('Utils', () => {
 
     it('should handle root path only', () => {
       expect(cleanTrailingSlash('/')).toBe('');
+    });
+  });
+
+  describe('isAbortError', () => {
+    it('should return false for null or undefined', () => {
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+    });
+
+    it('should detect DOMException with AbortError name', () => {
+      const error = new DOMException('The operation was aborted', 'AbortError');
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should detect Error with AbortError name', () => {
+      const error = new Error('Request aborted');
+      error.name = 'AbortError';
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should detect error message containing abort', () => {
+      const error = new Error('The request was aborted');
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should detect error-like objects with AbortError name', () => {
+      const error = { name: 'AbortError', message: 'Aborted' };
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should detect string errors containing abort', () => {
+      expect(isAbortError('AbortError')).toBe(true);
+      expect(isAbortError('Request was aborted')).toBe(true);
+    });
+
+    it('should return false for non-abort errors', () => {
+      expect(isAbortError(new Error('Network error'))).toBe(false);
+      expect(isAbortError({ name: 'TypeError', message: 'Type error' })).toBe(false);
+      expect(isAbortError('Some other error')).toBe(false);
     });
   });
 
@@ -108,9 +147,22 @@ describe('Utils', () => {
         json: () => Promise.resolve({ error: 'Service not found' }),
       } as Response);
 
-      // Should still resolve with the error response
-      const result = await getServiceDetails('https://example.com/MapServer');
-      expect(result).toEqual({ error: 'Service not found' });
+      // Should throw an error for non-ok HTTP responses
+      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
+        'Failed to fetch service details: HTTP 404'
+      );
+    });
+
+    it('should handle ESRI error responses', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ error: { message: 'Service not found' } }),
+      } as Response);
+
+      // Should throw an error for ESRI error responses
+      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
+        'Service not found'
+      );
     });
 
     it('should handle JSON parse errors', async () => {

@@ -41,7 +41,7 @@ const basePlugins = [
   })
 ]
 
-const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre']
+const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre', '@mapbox/tilebelt', 'arcgis-pbf-parser']
 
 // ES modules build configuration with multiple entry points
 const esConfig = {
@@ -82,8 +82,10 @@ const umdConfig = {
       'maplibre-gl': 'maplibregl',
       'react': 'React',
       'react-dom': 'ReactDOM',
-  'react-map-gl/mapbox': 'ReactMapGL',
-      'react-map-gl/maplibre': 'ReactMapGL'
+      'react-map-gl/mapbox': 'ReactMapGL',
+      'react-map-gl/maplibre': 'ReactMapGL',
+      '@mapbox/tilebelt': 'tilebelt',
+      'arcgis-pbf-parser': 'arcgisPbfParser'
     }
   },
   plugins: basePlugins,
@@ -95,21 +97,30 @@ const umdConfig = {
 };
 
 // Legacy builds for backward compatibility
+const legacyGlobals = {
+  'mapbox-gl': 'mapboxgl',
+  'maplibre-gl': 'maplibregl',
+  '@mapbox/tilebelt': 'tilebelt',
+  'arcgis-pbf-parser': 'arcgisPbfParser'
+};
+
 const legacyConfig = {
   input: 'src/main.ts',
-  external: ['mapbox-gl', 'maplibre-gl'],
+  external: ['mapbox-gl', 'maplibre-gl', '@mapbox/tilebelt', 'arcgis-pbf-parser'],
   output: [
     {
       file: 'dist/esri-gl.js',
       format: 'umd',
       name: 'esrigl',
-      sourcemap: true
+      sourcemap: true,
+      globals: legacyGlobals
     },
     {
       file: 'dist/esri-gl.min.js',
       format: 'umd',
       name: 'esrigl',
       sourcemap: true,
+      globals: legacyGlobals,
       plugins: [terser()]
     },
     {

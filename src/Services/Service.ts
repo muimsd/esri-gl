@@ -306,8 +306,19 @@ export class Service {
       ? `${this.options.proxy}?${this.options.url}${path}`
       : `${this.options.url}${path}`;
 
+    // Set up abort controller for timeout support
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    if (this.options.timeout > 0) {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+      }, this.options.timeout);
+    }
+
     try {
       let response: Response;
+      const fetchOptions: RequestInit = { signal: controller.signal };
 
       if (method === 'POST') {
         const formData = new FormData();
@@ -323,6 +334,7 @@ export class Service {
         });
 
         response = await fetch(url, {
+          ...fetchOptions,
           method: 'POST',
           body: formData,
         });
@@ -342,17 +354,31 @@ export class Service {
         });
 
         const fullUrl = `${url}?${searchParams.toString()}`;
-        response = await fetch(fullUrl);
+        response = await fetch(fullUrl, fetchOptions);
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const error = new Error(`HTTP error! status: ${response.status}`) as Error & {
+          code?: number;
+        };
+        error.code = response.status;
+        throw error;
       }
 
       const data = await response.json();
       callback(undefined, data);
     } catch (error) {
-      callback(error as Error);
+      // Provide clearer error message for timeout
+      if (error instanceof Error && error.name === 'AbortError' && this.options.timeout > 0) {
+        const timeoutError = new Error(`Request timed out after ${this.options.timeout}ms`);
+        callback(timeoutError);
+      } else {
+        callback(error as Error);
+      }
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 

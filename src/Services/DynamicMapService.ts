@@ -1,4 +1,4 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
+import { cleanTrailingSlash, getServiceDetails, isAbortError, updateAttribution } from '@/utils';
 import type {
   Map,
   EsriServiceOptions,
@@ -234,34 +234,8 @@ export class DynamicMapService {
         (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
       }
     } catch (error) {
-      // Comprehensive abort detection - check all possible error shapes
-      // MapLibre can throw various forms of AbortError
-      const errorName = (error as { name?: string })?.name;
-      const errorMessage = (error as { message?: string })?.message;
-      const errorConstructor = (error as { constructor?: { name?: string } })?.constructor?.name;
-
-      let stringified = '';
-      try {
-        stringified = String(error);
-      } catch {
-        // ignore
-      }
-
-      // Check every possible way an error could represent AbortError
-      const isAbortError =
-        (error instanceof DOMException && error.name === 'AbortError') ||
-        (error instanceof Error && error.name === 'AbortError') ||
-        errorName === 'AbortError' ||
-        errorConstructor === 'AbortError' ||
-        errorMessage?.toLowerCase().includes('abort') ||
-        stringified.toLowerCase().includes('abort') ||
-        errorMessage?.includes('AbortError') ||
-        stringified.includes('AbortError') ||
-        stringified === 'Error: AbortError' ||
-        error === 'AbortError';
-
-      if (isAbortError) {
-        // Silently ignore aborted tile operations - MapLibre will retry
+      // Silently ignore aborted tile operations - MapLibre will retry
+      if (isAbortError(error)) {
         return;
       }
       // Swallow occasional transient errors that can happen during style reloads
@@ -502,7 +476,7 @@ export class DynamicMapService {
     return layersStr ? layersStr.replace('show', 'visible') : false;
   }
 
-  identify(
+  async identify(
     lnglat: { lng: number; lat: number },
     returnGeometry: boolean = false
   ): Promise<unknown> {
@@ -533,15 +507,22 @@ export class DynamicMapService {
     if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
     if (this._time) params.append('time', this._time);
 
-    return new Promise((resolve, reject) => {
-      fetch(
-        `${this.esriServiceOptions.url}/identify?${params.toString()}`,
-        this.esriServiceOptions.fetchOptions
-      )
-        .then(response => response.json())
-        .then(data => resolve(data))
-        .catch(error => reject(error));
-    });
+    const response = await fetch(
+      `${this.esriServiceOptions.url}/identify?${params.toString()}`,
+      this.esriServiceOptions.fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Identify request failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(`Identify request failed: ${data.error.message}`);
+    }
+
+    return data;
   }
 
   // ========================================
@@ -687,6 +668,11 @@ export class DynamicMapService {
     }
 
     const response = await fetch(`${queryUrl}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Statistics query failed: HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.error) {
@@ -735,6 +721,11 @@ export class DynamicMapService {
     }
 
     const response = await fetch(`${queryUrl}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Layer query failed: HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.error) {
@@ -796,6 +787,11 @@ export class DynamicMapService {
     }
 
     const response = await fetch(`${legendUrl}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Legend generation failed: HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.error) {
@@ -811,6 +807,11 @@ export class DynamicMapService {
     const params = new URLSearchParams({ f: 'json' });
 
     const response = await fetch(`${layerUrl}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Layer info request failed: HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.error) {
@@ -841,6 +842,11 @@ export class DynamicMapService {
     const params = new URLSearchParams({ f: 'json' });
 
     const response = await fetch(`${serviceUrl}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Service discovery failed: HTTP ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.error) {

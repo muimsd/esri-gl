@@ -1,10 +1,60 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
-import type { Map, FeatureServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
+/**
+ * FeatureService - Tile-based feature loading from ArcGIS FeatureServers
+ *
+ * This implementation is based on mapbox-gl-arcgis-featureserver by Rowan Winsemius
+ * @see https://github.com/rowanwins/mapbox-gl-arcgis-featureserver
+ *
+ * Key features:
+ * - Prioritizes PBF format for minimal payload size (requires ArcGIS Server 10.7+)
+ * - Falls back to GeoJSON if PBF is not supported
+ * - Uses tiled requests for efficient data loading
+ * - Client-side feature deduplication
+ * - Service bounds detection and coordinate projection
+ */
 
-interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
+import * as tilebelt from '@mapbox/tilebelt';
+import tileDecode from 'arcgis-pbf-parser';
+import { cleanTrailingSlash, updateAttribution } from '@/utils';
+import type { Map, FeatureServiceOptions, ServiceMetadata, Extent } from '@/types';
+
+// Extended options for FeatureService
+export interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   fetchOptions?: RequestInit;
-  useVectorTiles?: boolean;
-  useBoundingBox?: boolean; // Enable screen bounding box filtering
+  /** Use a static zoom level for tile requests instead of dynamic */
+  useStaticZoomLevel?: boolean;
+  /** Minimum zoom level for data requests (default: 7 if useStaticZoomLevel, else 2) */
+  minZoom?: number;
+  /** Simplification factor for geometry (0-1, default: 0.3) */
+  simplifyFactor?: number;
+  /** Decimal precision for coordinates (default: 8) */
+  precision?: number;
+  /** Time filter: start date */
+  from?: Date | number | null;
+  /** Time filter: end date */
+  to?: Date | number | null;
+  /** Set attribution from service metadata (default: true) */
+  setAttributionFromService?: boolean;
+  /** Use service bounds to limit tile requests (default: true) */
+  useServiceBounds?: boolean;
+  /** Custom projection endpoint URL */
+  projectionEndpoint?: string;
+}
+
+interface GeoJSONSourceOptions {
+  attribution?: string;
+  buffer?: number;
+  cluster?: boolean;
+  clusterMaxZoom?: number;
+  clusterMinPoints?: number;
+  clusterProperties?: Record<string, unknown>;
+  clusterRadius?: number;
+  data?: string | GeoJSON.FeatureCollection;
+  filter?: unknown[];
+  generateId?: boolean;
+  lineMetrics?: boolean;
+  maxzoom?: number;
+  promoteId?: string | { [key: string]: string };
+  tolerance?: number;
 }
 
 interface StyleData {
@@ -15,286 +65,271 @@ interface StyleData {
   paint?: Record<string, unknown>;
 }
 
+interface ExtendedServiceMetadata extends ServiceMetadata {
+  supportedQueryFormats?: string;
+  uniqueIdField?: { name: string; type: string };
+  extent?: Extent;
+  geometryType?: string;
+  name?: string;
+}
+
 export class FeatureService {
   private _sourceId: string;
   private _map: Map;
-  private _defaultEsriOptions: Partial<FeatureServiceOptions>;
-  private _serviceMetadata: ServiceMetadata | null = null;
-  private _defaultStyleData: StyleData | null = null;
-  private _boundingBoxUpdateHandler: (() => void) | null = null;
+  private _tileIndices: globalThis.Map<number, globalThis.Map<string, boolean>>;
+  private _featureIndices: globalThis.Map<number, globalThis.Map<string | number, boolean>>;
+  private _featureCollections: globalThis.Map<number, GeoJSON.FeatureCollection>;
+  private _esriServiceOptions: Required<
+    Pick<
+      FeatureServiceExtendedOptions,
+      | 'url'
+      | 'useStaticZoomLevel'
+      | 'minZoom'
+      | 'simplifyFactor'
+      | 'precision'
+      | 'where'
+      | 'outFields'
+      | 'setAttributionFromService'
+      | 'useServiceBounds'
+      | 'projectionEndpoint'
+    >
+  > &
+    Omit<FeatureServiceExtendedOptions, 'url'>;
+  private _fallbackProjectionEndpoint: string;
+  private _serviceMetadata: ExtendedServiceMetadata | null = null;
+  private _maxExtent: [number, number, number, number];
+  private _boundEvent: (() => void) | null = null;
+  private _format: 'pbf' | 'geojson' = 'pbf';
   private _sourceReadyResolve: (() => void) | null = null;
   private _sourceReadyReject: ((error: Error) => void) | null = null;
 
-  public vectorSrcOptions?: VectorSourceOptions;
-  public esriServiceOptions: FeatureServiceExtendedOptions;
   /**
-   * Promise that resolves when the source has been successfully added to the map.
-   * This can be used to ensure the source exists before adding layers that reference it.
-   *
-   * @example
-   * ```typescript
-   * const service = new FeatureService('my-source', map, { url: '...' });
-   *
-   * // Wait for source to be ready before adding a layer
-   * await service.sourceReady;
-   * map.addLayer({
-   *   id: 'my-layer',
-   *   type: 'circle',
-   *   source: 'my-source',
-   *   paint: { 'circle-radius': 5, 'circle-color': '#007cbf' }
-   * });
-   * ```
-   *
-   * If source creation fails, the promise will reject with an error.
+   * Promise that resolves when the source has been successfully added to the map
+   * and is ready to receive data.
    */
   public sourceReady: Promise<void>;
+
+  /**
+   * The GeoJSON source options passed to the constructor
+   */
+  public geojsonSourceOptions: GeoJSONSourceOptions;
 
   constructor(
     sourceId: string,
     map: Map,
-    esriServiceOptions: FeatureServiceExtendedOptions,
-    vectorSrcOptions?: VectorSourceOptions
+    arcgisOptions: FeatureServiceExtendedOptions,
+    geojsonSourceOptions?: GeoJSONSourceOptions
   ) {
-    if (!esriServiceOptions.url) {
+    if (!sourceId || !map || !arcgisOptions) {
+      throw new Error(
+        'Source id, map and arcgisOptions must be supplied as the first three arguments.'
+      );
+    }
+    if (!arcgisOptions.url) {
       throw new Error('A url must be supplied as part of the esriServiceOptions object.');
     }
-
-    esriServiceOptions.url = cleanTrailingSlash(esriServiceOptions.url);
 
     this._sourceId = sourceId;
     this._map = map;
 
-    this._defaultEsriOptions = {
+    // Initialize tile/feature tracking maps
+    this._tileIndices = new globalThis.Map();
+    this._featureIndices = new globalThis.Map();
+    this._featureCollections = new globalThis.Map();
+
+    // Clean URL and set up options
+    const cleanedUrl = cleanTrailingSlash(arcgisOptions.url);
+
+    this._esriServiceOptions = {
+      useStaticZoomLevel: false,
+      minZoom: arcgisOptions.useStaticZoomLevel ? 7 : 2,
+      simplifyFactor: 0.3,
+      precision: 8,
       where: '1=1',
+      to: null,
+      from: null,
       outFields: '*',
-      f: 'geojson',
-      returnGeometry: true,
-      // Only include geometry/spatial params when geometry is specified
-      // No defaults for inSR/outSR; let server defaults apply
-      // Do not send maxRecordCount: it's a server capability, not a query param
+      setAttributionFromService: true,
+      useServiceBounds: true,
+      projectionEndpoint: `${cleanedUrl.split('rest/services')[0]}rest/services/Geometry/GeometryServer/project`,
       token: '',
+      fetchOptions: undefined,
+      ...arcgisOptions,
+      url: cleanedUrl,
     };
 
-    this.vectorSrcOptions = vectorSrcOptions;
-    this.esriServiceOptions = esriServiceOptions;
+    this._fallbackProjectionEndpoint =
+      'https://tasks.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer/project';
+    this._maxExtent = [-Infinity, Infinity, -Infinity, Infinity];
 
-    // Default to vector tiles unless explicitly disabled
-    if (this.esriServiceOptions.useVectorTiles === undefined) {
-      this.esriServiceOptions.useVectorTiles = true;
-    }
+    this.geojsonSourceOptions = geojsonSourceOptions || {};
 
-    // Default to bounding box filtering for better performance
-    if (this.esriServiceOptions.useBoundingBox === undefined) {
-      this.esriServiceOptions.useBoundingBox = true;
-    }
-
-    // Create the sourceReady promise that will resolve when the source is added to the map
+    // Create the sourceReady promise
     this.sourceReady = new Promise<void>((resolve, reject) => {
       this._sourceReadyResolve = resolve;
       this._sourceReadyReject = reject;
     });
 
-    this._createSource();
+    // Add GeoJSON source to map
+    this._map.addSource(sourceId, {
+      type: 'geojson' as const,
+      data: this._getBlankFc(),
+      ...this.geojsonSourceOptions,
+    });
+
+    // Initialize the service
+    this._initialize();
   }
 
-  private async _createSource(): Promise<void> {
-    if (!this._map) {
-      if (this._sourceReadyReject) {
-        this._sourceReadyReject(new Error('Map not available'));
-      }
-      return;
-    }
-
+  private async _initialize(): Promise<void> {
     try {
-      // Get service metadata
-      this._serviceMetadata = await getServiceDetails(
-        this.esriServiceOptions.url,
-        this.esriServiceOptions.fetchOptions
-      );
+      await this._getServiceMetadata();
 
-      // Check if vector tiles should be used (default behavior)
-      // Note: Most FeatureServers don't support vector tiles, so we'll detect and fallback
-      const vectorTileSupport = await this._checkVectorTileSupport();
-
-      const useVectorTiles = this.esriServiceOptions.useVectorTiles !== false && vectorTileSupport;
-
-      if (useVectorTiles) {
-        // Create vector tile source
-        const tileUrl = this._buildTileUrl();
-
-        // Add vector source to map if it doesn't already exist
-        if (!this._map.getSource(this._sourceId)) {
-          this._map.addSource(this._sourceId, {
-            type: 'vector',
-            tiles: [tileUrl],
-            maxzoom: 24,
-            ...this.vectorSrcOptions,
-          });
+      if (!this.supportsPbf) {
+        if (!this.supportsGeojson) {
+          this._map.removeSource(this._sourceId);
+          const error = new Error('Server does not support PBF or GeoJSON query formats.');
+          if (this._sourceReadyReject) this._sourceReadyReject(error);
+          throw error;
         }
-      } else {
-        // Fallback to GeoJSON (most common for FeatureServers)
-        const queryUrl = this._buildQueryUrl();
+        this._format = 'geojson';
+      }
 
-        if (!this._map.getSource(this._sourceId)) {
-          this._map.addSource(this._sourceId, {
-            type: 'geojson',
-            data: queryUrl,
-          });
+      if (this._esriServiceOptions.useServiceBounds && this._serviceMetadata?.extent) {
+        const serviceExtent = this._serviceMetadata.extent;
+        if (serviceExtent.spatialReference?.wkid === 4326) {
+          this._setBounds([
+            serviceExtent.xmin,
+            serviceExtent.ymin,
+            serviceExtent.xmax,
+            serviceExtent.ymax,
+          ]);
+        } else {
+          await this._projectBounds();
         }
       }
 
-      // Update attribution after source is added if available in service metadata
-      if (this._serviceMetadata?.copyrightText) {
-        updateAttribution(this._serviceMetadata.copyrightText, this._sourceId, this._map);
+      // Ensure unique ID field is included in outFields
+      if (
+        this._esriServiceOptions.outFields !== '*' &&
+        this._serviceMetadata?.uniqueIdField?.name
+      ) {
+        const currentFields = this._esriServiceOptions.outFields;
+        const uniqueIdField = this._serviceMetadata.uniqueIdField.name;
+        if (typeof currentFields === 'string') {
+          if (!currentFields.includes(uniqueIdField)) {
+            this._esriServiceOptions.outFields = `${currentFields},${uniqueIdField}`;
+          }
+        } else if (Array.isArray(currentFields)) {
+          if (!currentFields.includes(uniqueIdField)) {
+            this._esriServiceOptions.outFields = [...currentFields, uniqueIdField].join(',');
+          }
+        }
       }
 
-      // Set up bounding box update listeners if using GeoJSON and bounding box filtering
-      if (!useVectorTiles && this.esriServiceOptions.useBoundingBox) {
-        this._setupBoundingBoxUpdates();
-      }
+      this._setAttribution();
+      this.enableRequests();
+      this._clearAndRefreshTiles();
 
-      // Resolve the sourceReady promise now that the source is successfully added
-      if (this._sourceReadyResolve) {
-        this._sourceReadyResolve();
-      }
+      if (this._sourceReadyResolve) this._sourceReadyResolve();
     } catch (error) {
       const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
       if (!isTestEnvironment) {
-        console.error('Error creating FeatureService source:', error);
+        console.error('Error initializing FeatureService:', error);
       }
-      // Reject the sourceReady promise so callers can catch the error
       if (this._sourceReadyReject && error instanceof Error) {
         this._sourceReadyReject(error);
       }
-      // Don't rethrow - service should handle errors gracefully
-      // The source just won't be created and the service will be in a degraded state
     }
   }
 
-  private async _checkVectorTileSupport(): Promise<boolean> {
-    try {
-      // Try to check if a VectorTileServer endpoint exists
-      const vectorTileUrl = this.esriServiceOptions.url.replace(
-        '/FeatureServer/',
-        '/VectorTileServer/'
-      );
-
-      // Only check if the URL actually changed (meaning it was a FeatureServer URL)
-      if (vectorTileUrl === this.esriServiceOptions.url) {
-        return false;
-      }
-
-      const response = await fetch(vectorTileUrl + '?f=json', this.esriServiceOptions.fetchOptions);
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data && !data.error) {
-          return true;
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  private _buildTileUrl(): string {
-    const baseUrl = this.esriServiceOptions.url;
-    // Check if this is a FeatureServer that supports vector tiles
-    // Most FeatureServers don't have VectorTileServer endpoints
-    // We'll use a different approach for FeatureServers with vector tile capability
-
-    // Try to construct vector tile URL from FeatureServer URL
-    // Some services have both FeatureServer and VectorTileServer endpoints
-    const vectorTileUrl = baseUrl.replace('/FeatureServer/', '/VectorTileServer/');
-    return `${vectorTileUrl}/tile/{z}/{y}/{x}.pbf`;
-  }
-
-  private _buildQueryUrl(): string {
-    const options = { ...this._defaultEsriOptions, ...this.esriServiceOptions };
-    const baseUrl = `${options.url}/query`;
-    const params = new URLSearchParams();
-
-    // Add query parameters (FeatureServer /layerId/query does not accept 'layers')
-
-    params.append('where', options.where || '1=1');
-    params.append(
-      'outFields',
-      Array.isArray(options.outFields) ? options.outFields.join(',') : options.outFields || '*'
-    );
-    params.append('f', options.f || 'geojson');
-    params.append('returnGeometry', (options.returnGeometry !== false).toString());
-
-    // Add bounding box geometry if enabled and map is available
-    if (options.useBoundingBox !== false && this._map) {
-      const bounds = this._map.getBounds();
-      if (bounds) {
-        const geometry = {
-          xmin: bounds.getWest(),
-          ymin: bounds.getSouth(),
-          xmax: bounds.getEast(),
-          ymax: bounds.getNorth(),
-          spatialReference: { wkid: 4326 },
+  /**
+   * Remove the source and clean up event listeners
+   */
+  remove(): void {
+    this.disableRequests();
+    if (this._map && typeof this._map.removeSource === 'function') {
+      try {
+        // First, remove any layers that are using this source
+        const mapWithStyle = this._map as unknown as {
+          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
         };
-        params.append('geometry', JSON.stringify(geometry));
-        params.append('geometryType', 'esriGeometryEnvelope');
-        params.append('spatialRel', 'esriSpatialRelIntersects');
-        params.append('inSR', '4326');
+        if (mapWithStyle.getStyle) {
+          const style = mapWithStyle.getStyle();
+          const layers = style?.layers || [];
+          layers.forEach(layer => {
+            if (
+              layer.source === this._sourceId &&
+              this._map.getLayer &&
+              this._map.getLayer(layer.id)
+            ) {
+              this._map.removeLayer(layer.id);
+            }
+          });
+        }
+
+        if (this._map.getSource && this._map.getSource(this._sourceId)) {
+          this._map.removeSource(this._sourceId);
+        }
+      } catch (error) {
+        console.warn(`Failed to remove source ${this._sourceId}:`, error);
       }
     }
-
-    // Only include geometry-related params when geometry is present (and not bounding box)
-    if (options.geometry && options.useBoundingBox === false) {
-      params.append('geometry', JSON.stringify(options.geometry));
-      if (options.geometryType) params.append('geometryType', options.geometryType);
-      if (options.spatialRel) params.append('spatialRel', options.spatialRel);
-      if (options.inSR) params.append('inSR', options.inSR);
-    }
-    if (options.outSR) params.append('outSR', options.outSR);
-    if (options.orderByFields) params.append('orderByFields', options.orderByFields);
-    if (options.groupByFieldsForStatistics)
-      params.append('groupByFieldsForStatistics', options.groupByFieldsForStatistics);
-    if (options.outStatistics && options.outStatistics.length > 0)
-      params.append('outStatistics', JSON.stringify(options.outStatistics));
-    if (options.having) params.append('having', options.having);
-    if (options.resultOffset) params.append('resultOffset', options.resultOffset.toString());
-    if (options.resultRecordCount)
-      params.append('resultRecordCount', options.resultRecordCount.toString());
-    if (options.token) params.append('token', options.token);
-
-    return `${baseUrl}?${params.toString()}`;
   }
 
+  /** Alias for remove() for API compatibility */
+  destroySource(): void {
+    this.remove();
+  }
+
+  private _getBlankFc(): GeoJSON.FeatureCollection {
+    return {
+      type: 'FeatureCollection',
+      features: [],
+    };
+  }
+
+  private _setBounds(bounds: [number, number, number, number]): void {
+    this._maxExtent = bounds;
+  }
+
+  /** Check if service supports GeoJSON format */
+  get supportsGeojson(): boolean {
+    return (this._serviceMetadata?.supportedQueryFormats?.indexOf('geoJSON') ?? -1) > -1;
+  }
+
+  /** Check if service supports PBF format */
+  get supportsPbf(): boolean {
+    return (this._serviceMetadata?.supportedQueryFormats?.indexOf('PBF') ?? -1) > -1;
+  }
+
+  /** Get the service metadata */
+  get serviceMetadata(): ExtendedServiceMetadata | null {
+    return this._serviceMetadata;
+  }
+
+  /** Get the source object from the map */
   get _source(): unknown {
     return this._map.getSource(this._sourceId);
   }
 
+  /** Get the current query URL */
   get _url(): string {
-    return this._buildQueryUrl();
+    return this._esriServiceOptions.url;
   }
 
-  get serviceMetadata(): ServiceMetadata | null {
-    return this._serviceMetadata;
+  /** Get the esri service options */
+  get esriServiceOptions(): FeatureServiceExtendedOptions {
+    return this._esriServiceOptions;
   }
 
+  /** Get default style based on geometry type */
   get defaultStyle(): StyleData {
-    if (this._defaultStyleData) return this._defaultStyleData;
-
-    // Generate default style based on geometry type from service metadata
     const geometryType = String(this._serviceMetadata?.geometryType || 'esriGeometryPoint');
-    const isVectorTiles = this.esriServiceOptions.useVectorTiles !== false;
 
-    // For vector tiles, we need to include source-layer
     const baseStyle: Partial<StyleData> = {
       source: this._sourceId,
     };
-
-    if (isVectorTiles && this._serviceMetadata?.name) {
-      baseStyle['source-layer'] = String(this._serviceMetadata.name);
-    }
 
     if (geometryType.includes('Point')) {
       return {
@@ -340,173 +375,471 @@ export class FeatureService {
     };
   }
 
-  getStyle(): Promise<StyleData> {
-    return new Promise((resolve, reject) => {
-      if (this._serviceMetadata) {
-        resolve(this.defaultStyle);
-      } else {
-        // Wait for service metadata to be loaded
-        this._getServiceMetadata()
-          .then(() => resolve(this.defaultStyle))
-          .catch(error => reject(error));
+  /** Get style, fetching metadata if needed */
+  async getStyle(): Promise<StyleData> {
+    if (this._serviceMetadata) {
+      return this.defaultStyle;
+    }
+    await this._getServiceMetadata();
+    return this.defaultStyle;
+  }
+
+  /** Disable map event listeners */
+  disableRequests(): void {
+    if (this._boundEvent) {
+      this._map.off('moveend', this._boundEvent);
+      this._boundEvent = null;
+    }
+  }
+
+  /** Enable map event listeners */
+  enableRequests(): void {
+    this._boundEvent = this._findAndMapData.bind(this);
+    this._map.on('moveend', this._boundEvent);
+  }
+
+  private _clearAndRefreshTiles(): void {
+    this._tileIndices = new globalThis.Map();
+    this._featureIndices = new globalThis.Map();
+    this._featureCollections = new globalThis.Map();
+    this._findAndMapData();
+  }
+
+  /**
+   * Set the WHERE clause filter
+   */
+  setWhere(newWhere: string): void {
+    this._esriServiceOptions.where = newWhere;
+    this._clearAndRefreshTiles();
+  }
+
+  /**
+   * Clear the WHERE clause filter
+   */
+  clearWhere(): void {
+    this._esriServiceOptions.where = '1=1';
+    this._clearAndRefreshTiles();
+  }
+
+  /**
+   * Set a date/time filter
+   */
+  setDate(to: Date | number | null, from?: Date | number | null): void {
+    this._esriServiceOptions.to = to;
+    this._esriServiceOptions.from = from ?? null;
+    this._clearAndRefreshTiles();
+  }
+
+  /**
+   * Set the authentication token
+   */
+  setToken(token: string | null): void {
+    this._esriServiceOptions.token = token ?? '';
+    this._clearAndRefreshTiles();
+  }
+
+  /**
+   * Set output fields
+   */
+  setOutFields(fields: string | string[]): void {
+    this._esriServiceOptions.outFields = Array.isArray(fields) ? fields.join(',') : fields;
+    this._clearAndRefreshTiles();
+  }
+
+  private _createOrGetTileIndex(zoomLevel: number): globalThis.Map<string, boolean> {
+    const existingZoomIndex = this._tileIndices.get(zoomLevel);
+    if (existingZoomIndex) return existingZoomIndex;
+    const newIndex = new globalThis.Map<string, boolean>();
+    this._tileIndices.set(zoomLevel, newIndex);
+    return newIndex;
+  }
+
+  private _createOrGetFeatureCollection(zoomLevel: number): GeoJSON.FeatureCollection {
+    const existingZoomIndex = this._featureCollections.get(zoomLevel);
+    if (existingZoomIndex) return existingZoomIndex;
+    const fc = this._getBlankFc();
+    this._featureCollections.set(zoomLevel, fc);
+    return fc;
+  }
+
+  private _createOrGetFeatureIdIndex(zoomLevel: number): globalThis.Map<string | number, boolean> {
+    const existingFeatureIdIndex = this._featureIndices.get(zoomLevel);
+    if (existingFeatureIdIndex) return existingFeatureIdIndex;
+    const newFeatureIdIndex = new globalThis.Map<string | number, boolean>();
+    this._featureIndices.set(zoomLevel, newFeatureIdIndex);
+    return newFeatureIdIndex;
+  }
+
+  private async _findAndMapData(): Promise<void> {
+    const z = this._map.getZoom();
+
+    if (z < this._esriServiceOptions.minZoom) {
+      return;
+    }
+
+    const bounds = this._map.getBounds();
+    if (!bounds) return;
+
+    const boundsArray = bounds.toArray();
+    const primaryTile = tilebelt.bboxToTile([
+      boundsArray[0][0],
+      boundsArray[0][1],
+      boundsArray[1][0],
+      boundsArray[1][1],
+    ]) as [number, number, number];
+
+    if (this._esriServiceOptions.useServiceBounds) {
+      if (
+        this._maxExtent[0] !== -Infinity &&
+        !this._doesTileOverlapBbox(this._maxExtent, boundsArray)
+      ) {
+        return;
+      }
+    }
+
+    // Round to nearest even zoom level to reuse data across zooms
+    const zoomLevel = this._esriServiceOptions.useStaticZoomLevel
+      ? this._esriServiceOptions.minZoom
+      : 2 * Math.floor(z / 2);
+
+    const zoomLevelIndex = this._createOrGetTileIndex(zoomLevel);
+    const featureIdIndex = this._createOrGetFeatureIdIndex(zoomLevel);
+    const fc = this._createOrGetFeatureCollection(zoomLevel);
+
+    let tilesToRequest: [number, number, number][] = [];
+
+    if (primaryTile[2] < zoomLevel) {
+      let candidateTiles = tilebelt.getChildren(primaryTile) as [number, number, number][];
+      let minZoomOfCandidates = candidateTiles[0][2];
+
+      while (minZoomOfCandidates < zoomLevel) {
+        const newCandidateTiles: [number, number, number][] = [];
+        candidateTiles.forEach(t => {
+          newCandidateTiles.push(...(tilebelt.getChildren(t) as [number, number, number][]));
+        });
+        candidateTiles = newCandidateTiles;
+        minZoomOfCandidates = candidateTiles[0][2];
+      }
+
+      for (let index = 0; index < candidateTiles.length; index++) {
+        if (this._doesTileOverlapBbox(candidateTiles[index], boundsArray)) {
+          tilesToRequest.push(candidateTiles[index]);
+        }
+      }
+    } else {
+      tilesToRequest.push(primaryTile);
+    }
+
+    // Filter out already fetched tiles
+    tilesToRequest = tilesToRequest.filter(tile => {
+      const quadKey = tilebelt.tileToQuadkey(tile);
+      if (zoomLevelIndex.has(quadKey)) {
+        return false;
+      }
+      zoomLevelIndex.set(quadKey, true);
+      return true;
+    });
+
+    if (tilesToRequest.length === 0) {
+      this._updateFcOnMap(fc);
+      return;
+    }
+
+    // Calculate tolerance for simplification
+    const mapWidth = Math.abs(boundsArray[1][0] - boundsArray[0][0]);
+    const canvas = this._map.getCanvas();
+    const tolerance = (mapWidth / canvas.width) * this._esriServiceOptions.simplifyFactor;
+
+    await this._loadTiles(tilesToRequest, tolerance, featureIdIndex, fc);
+    this._updateFcOnMap(fc);
+  }
+
+  private async _loadTiles(
+    tilesToRequest: [number, number, number][],
+    tolerance: number,
+    featureIdIndex: globalThis.Map<string | number, boolean>,
+    fc: GeoJSON.FeatureCollection
+  ): Promise<void> {
+    const promises = tilesToRequest.map(t => this._getTile(t, tolerance));
+    const featureCollections = await Promise.all(promises);
+
+    featureCollections.forEach(tileFc => {
+      if (tileFc) this._iterateItems(tileFc, featureIdIndex, fc);
+    });
+  }
+
+  private _iterateItems(
+    tileFc: GeoJSON.FeatureCollection | null | undefined,
+    featureIdIndex: globalThis.Map<string | number, boolean>,
+    fc: GeoJSON.FeatureCollection
+  ): void {
+    if (!tileFc || !tileFc.features) return;
+
+    tileFc.features.forEach(feature => {
+      const featureId = feature.id;
+      if (featureId !== undefined && !featureIdIndex.has(featureId)) {
+        fc.features.push(feature);
+        featureIdIndex.set(featureId, true);
+      } else if (featureId === undefined) {
+        // If no ID, just add it (can't deduplicate)
+        fc.features.push(feature);
       }
     });
   }
 
-  private async _getServiceMetadata(): Promise<void> {
-    if (this._serviceMetadata) return;
+  private get _time(): string | false {
+    if (!this._esriServiceOptions.to) return false;
+    let from = this._esriServiceOptions.from;
+    let to = this._esriServiceOptions.to;
+    if (from instanceof Date) from = from.valueOf();
+    if (to instanceof Date) to = to.valueOf();
 
-    this._serviceMetadata = await getServiceDetails(
-      this.esriServiceOptions.url,
-      this.esriServiceOptions.fetchOptions
-    );
+    return `${from ?? ''},${to}`;
   }
 
-  updateData(): void {
-    // For GeoJSON sources with bounding box filtering, update the data URL
-    if (
-      this.esriServiceOptions.useVectorTiles === false &&
-      this.esriServiceOptions.useBoundingBox
-    ) {
-      const source = this._map.getSource(this._sourceId);
-      if (source && 'setData' in source && typeof source.setData === 'function') {
-        const newQueryUrl = this._buildQueryUrl();
-        // @ts-ignore - GeoJSON source setData method not in generic Source type
-        source.setData(newQueryUrl);
-      }
-    } else {
-      // Vector tile sources don't need dynamic data updates like GeoJSON
-      // The tiles are fetched automatically based on the tile URL
-      // For filtering, we would need to recreate the source or use layer filtering
-      console.warn(
-        'updateData() is only applicable for GeoJSON sources with bounding box filtering.'
-      );
-    }
-  }
+  private async _getTile(
+    tile: [number, number, number],
+    tolerance: number
+  ): Promise<GeoJSON.FeatureCollection | null> {
+    const tileBounds = tilebelt.tileToBBOX(tile);
 
-  private _setupBoundingBoxUpdates(): void {
-    if (this._boundingBoxUpdateHandler) {
-      // Remove existing handler
-      this._map.off('moveend', this._boundingBoxUpdateHandler);
-      this._map.off('zoomend', this._boundingBoxUpdateHandler);
-    }
-
-    // Debounced update function to prevent excessive API calls
-    let updateTimeout: NodeJS.Timeout | null = null;
-    this._boundingBoxUpdateHandler = () => {
-      if (updateTimeout) {
-        clearTimeout(updateTimeout);
-      }
-      updateTimeout = setTimeout(() => {
-        this.updateData();
-      }, 300); // 300ms debounce
+    const extent = {
+      spatialReference: {
+        latestWkid: 4326,
+        wkid: 4326,
+      },
+      xmin: tileBounds[0],
+      ymin: tileBounds[1],
+      xmax: tileBounds[2],
+      ymax: tileBounds[3],
     };
 
-    // Listen for map movement and zoom changes
-    this._map.on('moveend', this._boundingBoxUpdateHandler);
-    this._map.on('zoomend', this._boundingBoxUpdateHandler);
-  }
+    const params = new URLSearchParams({
+      f: this._format,
+      geometry: JSON.stringify(extent),
+      where: this._esriServiceOptions.where,
+      outFields:
+        typeof this._esriServiceOptions.outFields === 'string'
+          ? this._esriServiceOptions.outFields
+          : this._esriServiceOptions.outFields?.join(',') || '*',
+      outSR: '4326',
+      returnZ: 'false',
+      returnM: 'false',
+      precision: this._esriServiceOptions.precision.toString(),
+      quantizationParameters: JSON.stringify({
+        extent,
+        tolerance,
+        mode: 'view',
+      }),
+      resultType: 'tile',
+      spatialRel: 'esriSpatialRelIntersects',
+      geometryType: 'esriGeometryEnvelope',
+      inSR: '4326',
+    });
 
-  private _removeBoundingBoxUpdates(): void {
-    if (this._boundingBoxUpdateHandler) {
-      this._map.off('moveend', this._boundingBoxUpdateHandler);
-      this._map.off('zoomend', this._boundingBoxUpdateHandler);
-      this._boundingBoxUpdateHandler = null;
+    if (this._time) {
+      params.append('time', this._time);
     }
-  }
 
-  updateSource(): void {
-    // Remove existing source and recreate with new parameters
-    if (this._map.getSource(this._sourceId)) {
-      this._map.removeSource(this._sourceId);
-    }
-    this._createSource();
-  }
+    this._appendTokenIfExists(params);
 
-  setWhere(whereClause: string): void {
-    this.esriServiceOptions.where = whereClause;
-    this.updateSource();
-  }
+    try {
+      const response = await fetch(
+        `${this._esriServiceOptions.url}/query?${params.toString()}`,
+        this._esriServiceOptions.fetchOptions
+      );
 
-  setOutFields(fields: string | string[]): void {
-    this.esriServiceOptions.outFields = fields;
-    this.updateSource();
-  }
-
-  setLayers(layers: number[] | number): void {
-    this.esriServiceOptions.layers = layers;
-    this.updateSource();
-  }
-
-  setGeometry(geometry: Record<string, unknown>, geometryType?: string): void {
-    this.esriServiceOptions.geometry = geometry;
-    if (geometryType) {
-      this.esriServiceOptions.geometryType = geometryType;
-    }
-    this.updateSource();
-  }
-
-  clearGeometry(): void {
-    delete this.esriServiceOptions.geometry;
-    delete this.esriServiceOptions.geometryType;
-    this.updateSource();
-  }
-
-  setBoundingBoxFilter(enabled: boolean): void {
-    this.esriServiceOptions.useBoundingBox = enabled;
-    if (enabled && this.esriServiceOptions.useVectorTiles === false) {
-      this._setupBoundingBoxUpdates();
-    } else {
-      this._removeBoundingBoxUpdates();
-    }
-    this.updateSource();
-  }
-
-  // Note: maxRecordCount is a server capability; not settable via query params
-
-  remove(): void {
-    this._removeBoundingBoxUpdates();
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // First, remove any layers that are using this source
-        const mapWithStyle = this._map as unknown as {
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (
-              layer.source === this._sourceId &&
-              this._map.getLayer &&
-              this._map.getLayer(layer.id)
-            ) {
-              this._map.removeLayer(layer.id);
-            }
-          });
-        }
-
-        // Then check if source exists before trying to remove it
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
-          this._map.removeSource(this._sourceId);
-        }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
+      if (!response.ok) {
+        console.warn(`Tile fetch failed: HTTP ${response.status}`);
+        return null;
       }
+
+      if (this._format === 'pbf') {
+        const buffer = await response.arrayBuffer();
+        try {
+          const decoded = tileDecode(new Uint8Array(buffer));
+          return decoded.featureCollection;
+        } catch {
+          console.error('Could not parse arcgis buffer. Please check the url you requested.');
+          return null;
+        }
+      } else {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn('Error fetching tile:', error);
+      return null;
     }
   }
 
+  private _updateFcOnMap(fc: GeoJSON.FeatureCollection): void {
+    const source = this._map.getSource(this._sourceId) as
+      | { setData: (data: GeoJSON.FeatureCollection) => void }
+      | undefined;
+    if (source && 'setData' in source) {
+      source.setData(fc);
+    }
+  }
+
+  private _doesTileOverlapBbox(
+    tile: [number, number, number] | [number, number, number, number],
+    bbox: [number, number][] | [[number, number], [number, number]]
+  ): boolean {
+    const tileBounds =
+      tile.length === 4 ? tile : tilebelt.tileToBBOX(tile as [number, number, number]);
+    if (tileBounds[2] < bbox[0][0]) return false;
+    if (tileBounds[0] > bbox[1][0]) return false;
+    if (tileBounds[3] < bbox[0][1]) return false;
+    if (tileBounds[1] > bbox[1][1]) return false;
+    return true;
+  }
+
+  private async _getServiceMetadata(): Promise<ExtendedServiceMetadata> {
+    if (this._serviceMetadata !== null) return this._serviceMetadata;
+
+    const params = new URLSearchParams({ f: 'json' });
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(
+      `${this._esriServiceOptions.url}?${params.toString()}`,
+      this._esriServiceOptions.fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch service metadata: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(JSON.stringify(data.error));
+    }
+
+    this._serviceMetadata = data as ExtendedServiceMetadata;
+    return this._serviceMetadata;
+  }
+
+  /**
+   * Query features by longitude/latitude with optional radius
+   */
+  async getFeaturesByLonLat(
+    lnglat: { lng: number; lat: number },
+    radius: number = 20,
+    returnGeometry: boolean = false
+  ): Promise<GeoJSON.FeatureCollection> {
+    const params = new URLSearchParams({
+      sr: '4326',
+      geometryType: 'esriGeometryPoint',
+      geometry: JSON.stringify({
+        x: lnglat.lng,
+        y: lnglat.lat,
+        spatialReference: { wkid: 4326 },
+      }),
+      returnGeometry: returnGeometry.toString(),
+      outFields: '*',
+      spatialRel: 'esriSpatialRelIntersects',
+      units: 'esriSRUnit_Meter',
+      distance: radius.toString(),
+      f: 'geojson',
+    });
+
+    if (this._time) {
+      params.append('time', this._time);
+    }
+
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(
+      `${this._esriServiceOptions.url}/query?${params.toString()}`,
+      this._esriServiceOptions.fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Query failed: HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Query features by object IDs
+   */
+  async getFeaturesByObjectIds(
+    objectIds: number[] | string,
+    returnGeometry: boolean = false
+  ): Promise<GeoJSON.FeatureCollection> {
+    const idsString = Array.isArray(objectIds) ? objectIds.join(',') : objectIds;
+
+    const params = new URLSearchParams({
+      sr: '4326',
+      objectIds: idsString,
+      returnGeometry: returnGeometry.toString(),
+      outFields: '*',
+      f: 'geojson',
+    });
+
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(
+      `${this._esriServiceOptions.url}/query?${params.toString()}`,
+      this._esriServiceOptions.fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Query failed: HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Query features with custom options
+   */
   async queryFeatures(
     options?: Partial<FeatureServiceOptions>
   ): Promise<GeoJSON.FeatureCollection> {
-    const queryOptions = { ...this.esriServiceOptions, ...options };
-    const queryUrl = this._buildQueryUrlWithOptions(queryOptions);
+    const queryOptions = { ...this._esriServiceOptions, ...options };
+    const params = new URLSearchParams();
+
+    params.append('f', 'geojson');
+    params.append('where', queryOptions.where || '1=1');
+    params.append(
+      'outFields',
+      typeof queryOptions.outFields === 'string'
+        ? queryOptions.outFields
+        : queryOptions.outFields?.join(',') || '*'
+    );
+    params.append('returnGeometry', (queryOptions.returnGeometry !== false).toString());
+
+    if (queryOptions.geometry) {
+      params.append('geometry', JSON.stringify(queryOptions.geometry));
+      if (queryOptions.geometryType) params.append('geometryType', queryOptions.geometryType);
+      if (queryOptions.spatialRel) params.append('spatialRel', queryOptions.spatialRel);
+      if (queryOptions.inSR) params.append('inSR', queryOptions.inSR);
+    }
+    if (queryOptions.outSR) params.append('outSR', queryOptions.outSR);
+    if (queryOptions.orderByFields) params.append('orderByFields', queryOptions.orderByFields);
+    if (queryOptions.groupByFieldsForStatistics)
+      params.append('groupByFieldsForStatistics', queryOptions.groupByFieldsForStatistics);
+    if (queryOptions.outStatistics && queryOptions.outStatistics.length > 0)
+      params.append('outStatistics', JSON.stringify(queryOptions.outStatistics));
+    if (queryOptions.having) params.append('having', queryOptions.having);
+    if (queryOptions.resultOffset)
+      params.append('resultOffset', queryOptions.resultOffset.toString());
+    if (queryOptions.resultRecordCount)
+      params.append('resultRecordCount', queryOptions.resultRecordCount.toString());
+    if (queryOptions.token) params.append('token', queryOptions.token);
 
     try {
-      const response = await fetch(queryUrl, this.esriServiceOptions.fetchOptions);
+      const response = await fetch(
+        `${this._esriServiceOptions.url}/query?${params.toString()}`,
+        this._esriServiceOptions.fetchOptions
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
       return await response.json();
     } catch (error) {
       const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
@@ -517,42 +850,121 @@ export class FeatureService {
     }
   }
 
-  private _buildQueryUrlWithOptions(options: Partial<FeatureServiceOptions>): string {
-    const mergedOptions = { ...this._defaultEsriOptions, ...options };
-    const baseUrl = `${mergedOptions.url}/query`;
-    const params = new URLSearchParams();
+  private async _projectBounds(): Promise<void> {
+    if (!this._serviceMetadata?.extent) return;
 
-    // Add query parameters using the same logic as _buildQueryUrl (omit 'layers')
+    const params = new URLSearchParams({
+      geometries: JSON.stringify({
+        geometryType: 'esriGeometryEnvelope',
+        geometries: [this._serviceMetadata.extent],
+      }),
+      inSR: (this._serviceMetadata.extent.spatialReference?.wkid || 4326).toString(),
+      outSR: '4326',
+      f: 'json',
+    });
 
-    params.append('where', mergedOptions.where || '1=1');
-    params.append(
-      'outFields',
-      Array.isArray(mergedOptions.outFields)
-        ? mergedOptions.outFields.join(',')
-        : mergedOptions.outFields || '*'
-    );
-    params.append('f', mergedOptions.f || 'geojson');
-    params.append('returnGeometry', (mergedOptions.returnGeometry !== false).toString());
-
-    if (mergedOptions.geometry) {
-      params.append('geometry', JSON.stringify(mergedOptions.geometry));
-      if (mergedOptions.geometryType) params.append('geometryType', mergedOptions.geometryType);
-      if (mergedOptions.spatialRel) params.append('spatialRel', mergedOptions.spatialRel);
-      if (mergedOptions.inSR) params.append('inSR', mergedOptions.inSR);
+    let fetchOptions = this._esriServiceOptions.fetchOptions;
+    if (!this._projectionEndpointIsFallback()) {
+      this._appendTokenIfExists(params);
+    } else {
+      fetchOptions = undefined;
     }
-    if (mergedOptions.outSR) params.append('outSR', mergedOptions.outSR);
-    if (mergedOptions.orderByFields) params.append('orderByFields', mergedOptions.orderByFields);
-    if (mergedOptions.groupByFieldsForStatistics)
-      params.append('groupByFieldsForStatistics', mergedOptions.groupByFieldsForStatistics);
-    if (mergedOptions.outStatistics && mergedOptions.outStatistics.length > 0)
-      params.append('outStatistics', JSON.stringify(mergedOptions.outStatistics));
-    if (mergedOptions.having) params.append('having', mergedOptions.having);
-    if (mergedOptions.resultOffset)
-      params.append('resultOffset', mergedOptions.resultOffset.toString());
-    if (mergedOptions.resultRecordCount)
-      params.append('resultRecordCount', mergedOptions.resultRecordCount.toString());
-    if (mergedOptions.token) params.append('token', mergedOptions.token);
 
-    return `${baseUrl}?${params.toString()}`;
+    try {
+      const response = await fetch(
+        `${this._esriServiceOptions.projectionEndpoint}?${params.toString()}`,
+        fetchOptions
+      );
+
+      if (!response.ok) {
+        throw new Error(`Projection failed: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(JSON.stringify(data.error));
+      }
+
+      const extent = data.geometries[0];
+      this._maxExtent = [extent.xmin, extent.ymin, extent.xmax, extent.ymax];
+    } catch (error) {
+      // If projection endpoint fails, try fallback
+      if (!this._projectionEndpointIsFallback()) {
+        this._esriServiceOptions.projectionEndpoint = this._fallbackProjectionEndpoint;
+        await this._projectBounds();
+      } else {
+        console.warn('Could not project service bounds:', error);
+      }
+    }
+  }
+
+  private _projectionEndpointIsFallback(): boolean {
+    return this._esriServiceOptions.projectionEndpoint === this._fallbackProjectionEndpoint;
+  }
+
+  private _setAttribution(): void {
+    if (!this._esriServiceOptions.setAttributionFromService) return;
+
+    const copyrightText = this._serviceMetadata?.copyrightText;
+    if (copyrightText) {
+      updateAttribution(copyrightText, this._sourceId, this._map);
+    } else {
+      // Add default Esri attribution
+      updateAttribution('', this._sourceId, this._map);
+    }
+  }
+
+  private _appendTokenIfExists(params: URLSearchParams): void {
+    const token = this._esriServiceOptions.token;
+    if (token) {
+      params.append('token', token);
+    }
+  }
+
+  // Legacy method aliases for backwards compatibility
+
+  /** @deprecated Use setWhere instead */
+  updateSource(): void {
+    this._clearAndRefreshTiles();
+  }
+
+  /** @deprecated Use setWhere instead */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setLayers(_layers: number[] | number): void {
+    // FeatureService doesn't support layers parameter (single layer only)
+    console.warn('setLayers is not applicable to FeatureService. Use the layer URL directly.');
+  }
+
+  /** @deprecated Use clearWhere instead */
+  setGeometry(geometry: Record<string, unknown>, geometryType?: string): void {
+    // For compatibility, but recommend using queryFeatures with geometry parameter
+    console.warn(
+      'setGeometry is not recommended. Use queryFeatures({ geometry: ... }) for spatial queries.'
+    );
+    this._esriServiceOptions.geometry = geometry;
+    if (geometryType) {
+      this._esriServiceOptions.geometryType = geometryType;
+    }
+  }
+
+  /** @deprecated */
+  clearGeometry(): void {
+    delete this._esriServiceOptions.geometry;
+    delete this._esriServiceOptions.geometryType;
+  }
+
+  /** @deprecated Use enableRequests/disableRequests instead */
+  setBoundingBoxFilter(enabled: boolean): void {
+    if (enabled) {
+      this.enableRequests();
+    } else {
+      this.disableRequests();
+    }
+  }
+
+  /** @deprecated Use _clearAndRefreshTiles instead */
+  updateData(): void {
+    this._clearAndRefreshTiles();
   }
 }

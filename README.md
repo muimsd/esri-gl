@@ -162,17 +162,31 @@ const service = new TiledMapService('source-id', map, {
 ```
 
 ### FeatureService
-Vector data with intelligent vector tile detection and automatic GeoJSON fallback.
+Efficient tile-based feature loading from ArcGIS FeatureServers with PBF (Protocol Buffer) support for minimal payload size.
 
 ```typescript
 const service = new FeatureService('source-id', map, {
   url: 'https://example.com/arcgis/rest/services/MyService/FeatureServer/0',
-  useVectorTiles: true, // Smart detection with fallback
-  useBoundingBox: true, // Viewport-based loading
   where: '1=1',
   outFields: '*',
-  maxRecordCount: 2000
+  // PBF options (requires ArcGIS Server 10.7+)
+  minZoom: 2, // Minimum zoom level for data requests
+  simplifyFactor: 0.3, // Geometry simplification (0-1)
+  precision: 8, // Coordinate decimal precision
+  useServiceBounds: true, // Limit requests to service extent
+  setAttributionFromService: true // Auto-set attribution
 });
+
+// Update filters dynamically
+service.setWhere("STATUS = 'Active'");
+service.setDate(new Date(), new Date('2024-01-01'));
+service.setToken('your-token');
+
+// Query features by location
+const features = await service.getFeaturesByLonLat({ lng: -118, lat: 34 }, 100);
+
+// Query by object IDs
+const specific = await service.getFeaturesByObjectIds([1, 2, 3], true);
 ```
 
 ### VectorTileService
@@ -684,6 +698,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **MapLibre GL JS** & **Mapbox GL JS** - Incredible WebGL mapping libraries
 - **Esri ArcGIS Platform** - Comprehensive GIS services and APIs
 - **[mapbox-gl-esri-sources](https://github.com/frontiersi/mapbox-gl-esri-sources/)** - Reference implementation for Esri service integration patterns
+- **[mapbox-gl-arcgis-featureserver](https://github.com/rowanwins/mapbox-gl-arcgis-featureserver)** by **Rowan Winsemius** - The FeatureService implementation with PBF support is based on this excellent library. It provides efficient tile-based feature loading with Protocol Buffer Format (PBF) support for minimal payload size.
 
 ## Fork Notice
 

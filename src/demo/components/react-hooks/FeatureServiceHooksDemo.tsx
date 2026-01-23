@@ -33,8 +33,9 @@ const FeatureServiceHooksDemo: React.FC = () => {
       url: FEATURE_SERVICE_URL,
       outFields: '*',
       where: '1=1',
-      useVectorTiles: true,
-      useBoundingBox: true,
+      // PBF options - uses tile-based loading with PBF format when supported
+      minZoom: 7,
+      useServiceBounds: true,
     }),
     []
   );
@@ -159,10 +160,11 @@ const FeatureServiceHooksDemo: React.FC = () => {
     <div style={DEMO_CONTAINER_STYLE}>
       <aside style={DEMO_SIDEBAR_STYLE}>
         <div>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Feature Service (Hooks)</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Feature Service (Hooks + PBF)</h2>
           <p style={{ margin: 0, color: '#4b5563' }}>
-            Loads live Tennessee bridge features using <code>useFeatureService</code> with automatic
-            vector tile support and GeoJSON fallback. and get default style from the service.
+            Loads live Tennessee bridge features using <code>useFeatureService</code> with
+            tile-based PBF loading. Uses Protocol Buffer Format for efficient data transfer, falls
+            back to GeoJSON if not supported.
           </p>
         </div>
 
@@ -211,8 +213,8 @@ const FeatureServiceHooksDemo: React.FC = () => {
         </div>
 
         <div style={DEMO_FOOTER_STYLE}>
-          Demonstrates vector tile detection, custom styling, and server-side queries with Esri
-          Feature Services.
+          Demonstrates tile-based PBF loading, automatic format detection, and server-side queries
+          with Esri Feature Services.
         </div>
       </aside>
 

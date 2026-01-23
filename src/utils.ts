@@ -4,16 +4,51 @@ export function cleanTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
 }
 
-export function getServiceDetails(
+/**
+ * Check if an error represents an AbortError (request was cancelled)
+ * Handles various error shapes from different browsers and environments
+ */
+export function isAbortError(error: unknown): boolean {
+  if (!error) return false;
+
+  // Standard DOMException check
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError';
+  }
+
+  // Error instance checks
+  if (error instanceof Error) {
+    if (error.name === 'AbortError') return true;
+    if (error.message?.toLowerCase().includes('abort')) return true;
+  }
+
+  // Duck typing for error-like objects
+  const errorObj = error as { name?: string; message?: string; constructor?: { name?: string } };
+  if (errorObj.name === 'AbortError') return true;
+  if (errorObj.constructor?.name === 'AbortError') return true;
+
+  // String check
+  const stringified = String(error).toLowerCase();
+  return stringified.includes('abort');
+}
+
+export async function getServiceDetails(
   url: string,
   fetchOptions: RequestInit = {}
 ): Promise<ServiceMetadata> {
-  return new Promise((resolve, reject) => {
-    fetch(`${url}?f=json`, fetchOptions)
-      .then(response => response.json())
-      .then(data => resolve(data))
-      .catch(error => reject(error));
-  });
+  const response = await fetch(`${url}?f=json`, fetchOptions);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch service details: HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message || 'Service returned an error');
+  }
+
+  return data;
 }
 
 const POWERED_BY_ESRI_ATTRIBUTION_STRING = 'Powered by <a href="https://www.esri.com">Esri</a>';

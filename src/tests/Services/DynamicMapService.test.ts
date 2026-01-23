@@ -927,6 +927,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -948,6 +949,7 @@ describe('DynamicMapService', () => {
 
       it('should handle statistics query with grouping', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve({ features: [] }),
         } as Response);
 
@@ -984,6 +986,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -999,6 +1002,7 @@ describe('DynamicMapService', () => {
 
       it('should handle spatial queries', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve({ features: [] }),
         } as Response);
 
@@ -1093,6 +1097,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -1104,6 +1109,7 @@ describe('DynamicMapService', () => {
 
       it('should generate legend for specific layers', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve({ layers: [] }),
         } as Response);
 
@@ -1126,6 +1132,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -1144,6 +1151,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -1162,6 +1170,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
 
@@ -1180,6 +1189,7 @@ describe('DynamicMapService', () => {
         };
 
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve({ extent: mockExtent }),
         } as Response);
 
@@ -1240,6 +1250,7 @@ describe('DynamicMapService', () => {
     describe('Advanced Error Handling', () => {
       it('should handle statistics query errors', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () =>
             Promise.resolve({
               error: { message: 'Statistics query failed' },
@@ -1259,6 +1270,7 @@ describe('DynamicMapService', () => {
 
       it('should handle feature query errors', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () =>
             Promise.resolve({
               error: { message: 'Query failed' },
@@ -1286,6 +1298,7 @@ describe('DynamicMapService', () => {
 
       it('should handle legend generation errors', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () =>
             Promise.resolve({
               error: { message: 'Legend generation failed' },
@@ -1299,6 +1312,7 @@ describe('DynamicMapService', () => {
 
       it('should handle layer info errors', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () =>
             Promise.resolve({
               error: { message: 'Layer not found' },
@@ -1312,6 +1326,7 @@ describe('DynamicMapService', () => {
 
       it('should handle missing extent error', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
           json: () => Promise.resolve({ name: 'Layer without extent' }),
         } as Response);
 

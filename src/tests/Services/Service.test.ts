@@ -131,7 +131,10 @@ describe('Service', () => {
       it('should make GET request with no parameters', async () => {
         await service.get('/layers');
 
-        expect(mockFetch).toHaveBeenCalledWith('https://example.com/test/layers?');
+        expect(mockFetch).toHaveBeenCalledWith(
+          'https://example.com/test/layers?',
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
 
       it('should make GET request with parameters', async () => {
@@ -139,14 +142,20 @@ describe('Service', () => {
 
         const expectedUrl =
           'https://example.com/test/layers?f=json&where=STATE_NAME%3D%27California%27';
-        expect(mockFetch).toHaveBeenCalledWith(expectedUrl);
+        expect(mockFetch).toHaveBeenCalledWith(
+          expectedUrl,
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
 
       it('should handle array parameters', async () => {
         await service.get('/query', { outFields: ['NAME', 'POP'], f: 'json' });
 
         const expectedUrl = 'https://example.com/test/query?outFields=NAME%2CPOP&f=json';
-        expect(mockFetch).toHaveBeenCalledWith(expectedUrl);
+        expect(mockFetch).toHaveBeenCalledWith(
+          expectedUrl,
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
 
       it('should handle object parameters', async () => {
@@ -158,7 +167,8 @@ describe('Service', () => {
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining(
             'geometry=%7B%22xmin%22%3A-180%2C%22ymin%22%3A-90%2C%22xmax%22%3A180%2C%22ymax%22%3A90%7D'
-          )
+          ),
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
         );
       });
 
@@ -166,14 +176,20 @@ describe('Service', () => {
         service.testOptions.token = 'test-token';
         await service.get('/layers', { f: 'json' });
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('token=test-token'));
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('token=test-token'),
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
 
       it('should include request parameters', async () => {
         service.testOptions.requestParams = { customParam: 'customValue' };
         await service.get('/layers', { f: 'json' });
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('customParam=customValue'));
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('customParam=customValue'),
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
     });
 
@@ -186,6 +202,7 @@ describe('Service', () => {
           expect.objectContaining({
             method: 'POST',
             body: expect.any(FormData),
+            signal: expect.any(AbortSignal),
           })
         );
       });
@@ -214,7 +231,10 @@ describe('Service', () => {
         const fetchSpy = jest.spyOn(global, 'fetch');
         await service.request('/layers', { f: 'json' });
 
-        expect(fetchSpy).toHaveBeenCalledWith('https://example.com/test/layers?f=json');
+        expect(fetchSpy).toHaveBeenCalledWith(
+          'https://example.com/test/layers?f=json',
+          expect.objectContaining({ signal: expect.any(AbortSignal) })
+        );
       });
     });
 
@@ -299,7 +319,10 @@ describe('Service', () => {
 
       const metadata = await service.metadata();
       expect(metadata).toEqual(mockMetadata);
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/test?f=json');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/test?f=json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
     });
 
     it('should return cached metadata on subsequent calls', async () => {

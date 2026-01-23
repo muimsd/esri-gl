@@ -13,6 +13,32 @@ import {
   useVectorTileService,
 } from '@/react';
 
+// Mock the tilebelt module (required by FeatureService)
+jest.mock('@mapbox/tilebelt', () => ({
+  bboxToTile: jest.fn(() => [0, 0, 10]),
+  tileToBBOX: jest.fn(() => [-180, -90, 180, 90]),
+  tileToQuadkey: jest.fn(() => '0000000000'),
+  getChildren: jest.fn((tile: [number, number, number]) => {
+    const z = tile[2] + 1;
+    return [
+      [0, 0, z],
+      [1, 0, z],
+      [0, 1, z],
+      [1, 1, z],
+    ];
+  }),
+}));
+
+// Mock the arcgis-pbf-parser module (required by FeatureService)
+jest.mock('arcgis-pbf-parser', () =>
+  jest.fn(() => ({
+    featureCollection: {
+      type: 'FeatureCollection',
+      features: [],
+    },
+  }))
+);
+
 // Mock maplibre-gl
 const sources: Record<string, any> = {};
 const mockMap = {
@@ -22,7 +48,7 @@ const mockMap = {
   removeSource: jest.fn((id: string) => {
     delete sources[id];
   }),
-  getSource: jest.fn((id: string) => sources[id]),
+  getSource: jest.fn((id: string) => sources[id] || { setData: jest.fn() }),
   getStyle: jest.fn().mockReturnValue({ layers: [] }),
   getLayer: jest.fn(),
   removeLayer: jest.fn(),
@@ -30,13 +56,21 @@ const mockMap = {
   on: jest.fn(),
   off: jest.fn(),
   isStyleLoaded: jest.fn(() => true), // Mock map is always ready
+  getZoom: jest.fn().mockReturnValue(10),
+  getCanvas: jest.fn().mockReturnValue({ width: 800 }),
+  getBounds: jest.fn().mockReturnValue({
+    toArray: () => [
+      [-120, 30],
+      [-100, 50],
+    ],
+  }),
 };
 
 jest.mock('maplibre-gl', () => ({
   Map: jest.fn().mockImplementation(() => mockMap),
 }));
 
-// Mock fetch for service requests
+// Mock fetch for service requests - include supportedQueryFormats for FeatureService
 global.fetch = jest.fn().mockResolvedValue({
   json: () =>
     Promise.resolve({
@@ -50,7 +84,17 @@ global.fetch = jest.fn().mockResolvedValue({
           geometry: null,
         },
       ],
+      supportedQueryFormats: 'JSON, geoJSON, PBF',
+      uniqueIdField: { name: 'OBJECTID', type: 'esriFieldTypeOID' },
+      extent: {
+        xmin: -180,
+        ymin: -90,
+        xmax: 180,
+        ymax: 90,
+        spatialReference: { wkid: 4326 },
+      },
     }),
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
   ok: true,
   status: 200,
 }) as jest.Mock;

@@ -1,6 +1,6 @@
 {
   "name": "esri-gl",
-  "version": "0.9.0-alpha.16",
+  "version": "0.9.0-alpha.17",
   "type": "module",
   "description": "A module for making it easier to use Esri services in mapbox-gl or maplibre-gl.",
   "main": "dist/index.js",
@@ -29,8 +29,8 @@
   ],
   "scripts": {
     "dev": "vite",
-  "build": "npm run clean && npm run type-check && rollup -c && node ./scripts/prepare-dist-package.mjs",
-  "build:prod": "npm run clean && npm run type-check && npm run lint && rollup -c && node ./scripts/prepare-dist-package.mjs",
+    "build": "npm run clean && npm run type-check && rollup -c && node ./scripts/prepare-dist-package.mjs",
+    "build:prod": "npm run clean && npm run type-check && npm run lint && rollup -c && node ./scripts/prepare-dist-package.mjs",
     "build:watch": "rollup -c --watch",
     "build:example": "vite build",
     "preview:example": "vite preview",
@@ -154,5 +154,9 @@
     "react-map-gl": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@mapbox/tilebelt": "^2.0.3",
+    "arcgis-pbf-parser": "^0.0.4"
   }
 }

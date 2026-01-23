@@ -118,10 +118,12 @@ const FeatureServiceReactMapGLDemo: React.FC = () => {
     <div style={DEMO_CONTAINER_STYLE}>
       <aside style={DEMO_SIDEBAR_STYLE}>
         <div>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Feature Service (react-map-gl)</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>
+            Feature Service (react-map-gl + PBF)
+          </h2>
           <p style={{ margin: 0, color: '#4b5563' }}>
             Render ArcGIS FeatureServer data through the <code>EsriFeatureLayer</code> bridge
-            component and inspect attributes directly from MapLibre.
+            component with tile-based PBF loading. Features load efficiently as tiles.
           </p>
         </div>
 
@@ -217,8 +219,8 @@ const FeatureServiceReactMapGLDemo: React.FC = () => {
         </div>
 
         <div style={DEMO_FOOTER_STYLE}>
-          The feature layer automatically switches between GeoJSON and vector tile delivery based on
-          service capabilities.
+          The feature layer uses tile-based PBF loading for efficient data transfer, with automatic
+          GeoJSON fallback for older servers.
         </div>
       </aside>
 
