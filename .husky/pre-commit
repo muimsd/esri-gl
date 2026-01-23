@@ -28,9 +28,17 @@ run_step "npx lint-staged" \
 	"Lint-staged format & quick fixes" \
 	"Run 'npm run format:check' to check formatting locally."
 
+run_step "npm run type-check" \
+	"TypeScript type check" \
+	"Run 'npm run type-check' to inspect type errors locally."
+
 run_step "npm run lint" \
 	"ESLint" \
 	"Run 'npm run lint' to inspect lint errors locally."
+
+run_step "npm run format:check" \
+	"Prettier format check (all files)" \
+	"Run 'npm run format' to fix formatting issues."
 
 run_step "npm run test -- --bail --watchAll=false" \
 	"Jest unit tests" \
