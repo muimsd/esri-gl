@@ -49,7 +49,6 @@ interface GeoJSONSourceOptions {
   clusterProperties?: Record<string, unknown>;
   clusterRadius?: number;
   data?: string | GeoJSON.FeatureCollection;
-  filter?: unknown[];
   generateId?: boolean;
   lineMetrics?: boolean;
   maxzoom?: number;
