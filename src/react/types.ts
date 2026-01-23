@@ -29,8 +29,7 @@ export interface UseEsriServiceResult<T> {
 export interface UseDynamicMapServiceOptions extends UseEsriServiceOptions<EsriServiceOptions> {}
 export interface UseTiledMapServiceOptions extends UseEsriServiceOptions<EsriServiceOptions> {}
 export interface UseImageServiceOptions extends UseEsriServiceOptions<ImageServiceOptions> {}
-export interface UseVectorTileServiceOptions
-  extends UseEsriServiceOptions<VectorTileServiceOptions> {}
+export interface UseVectorTileServiceOptions extends UseEsriServiceOptions<VectorTileServiceOptions> {}
 export interface UseVectorBasemapStyleOptions {
   sourceId?: string;
   map?: Map | null;
