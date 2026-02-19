@@ -229,9 +229,11 @@ export class DynamicMapService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if ((this._map as any).style._otherSourceCaches) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
+        (this._map as any).style._otherSourceCaches[this._sourceId].clearTiles();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+        (this._map as any).style._otherSourceCaches[this._sourceId].update(
+          (this._map as any).transform
+        );
       }
     } catch (error) {
       // Silently ignore aborted tile operations - MapLibre will retry

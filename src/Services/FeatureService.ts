@@ -159,7 +159,7 @@ export class FeatureService {
 
     this._fallbackProjectionEndpoint =
       'https://tasks.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer/project';
-    this._maxExtent = [-Infinity, Infinity, -Infinity, Infinity];
+    this._maxExtent = [-Infinity, -Infinity, Infinity, Infinity];
 
     this.geojsonSourceOptions = geojsonSourceOptions || {};
 

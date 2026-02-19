@@ -88,21 +88,21 @@ jobs:
           script: |
             const packageName = require('./package.json').name;
             const version = require('./package.json').version;
-            
-            github.rest.repos.createReleaseComment({
+
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: ${{ github.event.release.id }},
-              body: `📦 **Published to GitHub Packages**
-            
+              body: context.payload.release.body + `\n\n📦 **Published to GitHub Packages**
+
             This release has been published to GitHub Packages as \`${packageName}@${version}\`.
-            
+
             **Install from GitHub Packages:**
             \`\`\`bash
             npm config set @muimsd:registry https://npm.pkg.github.com/
             npm install ${packageName}@${{ steps.npm-tag.outputs.tag }}
             \`\`\`
-            
+
             **Or using .npmrc:**
             \`\`\`
             @muimsd:registry=https://npm.pkg.github.com/

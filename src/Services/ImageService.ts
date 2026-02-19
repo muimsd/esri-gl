@@ -124,8 +124,10 @@ export class ImageService {
       (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
       (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
     } else if ((this._map as any).style._otherSourceCaches) {
-      (this._map as any).style.sourceCaches[this._sourceId].clearTiles();
-      (this._map as any).style.sourceCaches[this._sourceId].update((this._map as any).transform);
+      (this._map as any).style._otherSourceCaches[this._sourceId].clearTiles();
+      (this._map as any).style._otherSourceCaches[this._sourceId].update(
+        (this._map as any).transform
+      );
     }
   }
 

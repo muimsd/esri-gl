@@ -25,7 +25,6 @@ export default {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/tests/react-map-gl/setup.js', '<rootDir>/src/tests/react-map-gl/mapbox-setup.js'],
-  testEnvironment: 'jsdom',
   globals: {
     'process.env.NODE_ENV': 'test'
   },

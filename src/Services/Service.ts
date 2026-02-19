@@ -3,7 +3,7 @@ import type { Map, ServiceMetadata } from '@/types';
 
 export interface ServiceOptions {
   url: string;
-  proxy?: boolean;
+  proxy?: string | boolean;
   useCors?: boolean;
   timeout?: number;
   token?: string;
@@ -38,7 +38,7 @@ export interface ServiceEvents {
  */
 export class Service {
   protected options: ServiceOptions & {
-    proxy: boolean;
+    proxy: string | boolean;
     useCors: boolean;
     timeout: number;
     getAttributionFromService: boolean;

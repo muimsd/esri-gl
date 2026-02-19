@@ -5,13 +5,13 @@ This repository includes GitHub Actions workflows for automated publishing to NP
 ## Workflows
 
 ### 1. CI Workflow (`ci.yml`)
-- **Triggers**: Push to `main`/`develop`, Pull Requests
+- **Triggers**: Push to `main`/`dev`, Pull Requests
 - **Purpose**: Run tests, linting, type checking, and build validation
-- **Node versions**: Tests on Node 16, 18, and 20
+- **Node versions**: Tests on Node 20 and 22
 
 ### 2. Publish Alpha (`publish-alpha.yml`)
 - **Triggers**: 
-  - Push to `alpha` or `develop` branches
+  - Push to `alpha` branch
   - Manual workflow dispatch
 - **Purpose**: Publish alpha/prerelease versions to NPM
 - **NPM Tag**: `alpha`
@@ -53,7 +53,7 @@ This repository includes GitHub Actions workflows for automated publishing to NP
 npm run publish:alpha-current  # Publishes v0.1.0-alpha.0 with @alpha tag
 ```
 
-**Option B: Push to alpha/develop branch**
+**Option B: Push to alpha branch**
 ```bash
 git checkout -b alpha
 # Make your changes

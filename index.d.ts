@@ -14,6 +14,7 @@ import {
 } from './types';
 
 export * from './types';
+export { VectorBasemapStyleAuthOptions } from './src/Services/VectorBasemapStyle';
 
 export declare class DynamicMapService {
   constructor(
@@ -84,13 +85,11 @@ export declare class VectorTileService {
 }
 
 export declare class VectorBasemapStyle {
-  constructor(styleId: string, map: Map, vectorBasemapStyleOptions: VectorBasemapStyleOptions);
+  constructor(styleName?: string, auth?: string | VectorBasemapStyleAuthOptions);
 
-  readonly options: Required<VectorBasemapStyleOptions>;
-  vectorBasemapStyleOptions: VectorBasemapStyleOptions;
+  readonly styleName: string;
 
-  update(): void;
-  remove(): void;
+  getStyle(): Promise<unknown>;
 }
 
 // Utility functions

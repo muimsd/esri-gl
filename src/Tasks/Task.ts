@@ -4,7 +4,7 @@ import type { ServiceCallback } from '@/Services/Service';
 
 export interface TaskOptions {
   url?: string;
-  proxy?: boolean;
+  proxy?: string | boolean;
   useCors?: boolean;
   requestParams?: Record<string, unknown>;
   token?: string;
