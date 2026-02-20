@@ -24,6 +24,7 @@ For accessing [ArcGIS Dynamic Map Services](https://developers.arcgis.com/rest/s
 | layerDefs | `object` | | SQL filters for features. Object with keys mapping queries to layers (e.g., `{ 3: "STATE_NAME='Kansas'", 9: "POP2007>25000" }`) |
 | from | `Date` | | Start date for time-enabled layers |
 | to | `Date` | | End date for time-enabled layers |
+| token | `string` | | Authentication token for secured services |
 | getAttributionFromService | `boolean` | `true` | Retrieve copyrightText from service and add as map attribution |
 
 ## Dynamic Layers
@@ -75,6 +76,7 @@ type LayerFilter =
 | `setLayerVisibility(layerId, visible)` | `void` | Show/hide a specific layer |
 | `setLayerDefinition(layerId, expression)` | `void` | Apply SQL filter to a layer |
 | `setLayerFilter(layerId, filter)` | `void` | Apply structured filter to a layer |
+| `setToken(token)` | `void` | Update the authentication token and refresh tiles |
 
 ### Advanced Labeling Methods
 

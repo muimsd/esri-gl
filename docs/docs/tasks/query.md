@@ -168,6 +168,27 @@ const page2 = await queryTask
   .run();
 ```
 
+### Automatic Pagination with runAll()
+
+Use `runAll()` to automatically fetch all pages of results:
+
+```javascript
+const queryTask = new Query({
+  url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/1'
+});
+
+// Automatically paginates through all results
+const allResults = await queryTask
+  .where('pop1990 > 100000')
+  .outFields(['city_name', 'pop1990'])
+  .runAll();
+
+// With a safety limit on pages
+const limitedResults = await queryTask
+  .where('1=1')
+  .runAll({ maxPages: 10 });
+```
+
 ### Complex Query with Multiple Filters
 ```javascript
 const queryTask = new Query({

@@ -119,15 +119,24 @@ map.setStyle(style);
 
 ### Feature Services
 
-#### FeatureService
-GeoJSON features from ArcGIS Feature Services for client-side rendering.
+#### [FeatureService](./feature-service)
+GeoJSON features from ArcGIS Feature Services for client-side rendering, with editing, attachments, and AGOL support.
 
-- **Use Cases**: Point data, interactive features, client-side analysis
+- **Use Cases**: Point data, interactive features, client-side analysis, feature editing
 - **Performance**: ⭐⭐⭐⭐ Good (client-rendered)
 - **Customization**: ⭐⭐⭐⭐⭐ Full (client-side)
 - **Data Freshness**: ⭐⭐⭐⭐⭐ Real-time
 
-*Documentation coming soon*
+```typescript
+const featureService = new FeatureService('features-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  token: 'your-token'
+});
+
+// Edit features
+await featureService.addFeatures([feature]);
+await featureService.applyEdits({ adds: [], updates: [], deletes: [1] });
+```
 
 ## Service Comparison Matrix
 

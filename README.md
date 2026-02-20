@@ -649,7 +649,7 @@ const featureService = new FeatureService('api-key-source', map, {
 - **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
 - **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 83.46% with 717 comprehensive test cases
+- **Test Coverage**: 717 comprehensive test cases across 31 test suites
 
 ### Development Commands
 

@@ -25,3 +25,4 @@ For accessing [ArcGIS Tiled Map Services](https://developers.arcgis.com/rest/ser
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `getMetadata()` | `Promise<ServiceMetadata>` | Fetch service metadata |
+| `setToken(token)` | `void` | Update authentication token and refresh tiles |

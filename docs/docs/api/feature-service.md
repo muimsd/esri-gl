@@ -37,8 +37,8 @@ For accessing [ArcGIS Feature Services](https://developers.arcgis.com/rest/servi
 
 The FeatureService automatically detects if vector tiles are available for the service and falls back to GeoJSON if not:
 
-
-
+```typescript
+const service = new FeatureService('smart-source', map, {
   url: 'https://services.arcgis.com/.../FeatureServer/0',
   useVectorTiles: true, // Automatically detects vector tile support
   useBoundingBox: true, // Optimize with viewport filtering
@@ -70,6 +70,8 @@ const optimizedService = new FeatureService('big-dataset-source', map, {
 map.on('moveend', () => {
   // Service automatically refreshes with new bbox
 });
+```
+
 ## Methods
 
 | Method                              | Returns                              | Description                           |
@@ -177,7 +179,7 @@ Listen for service events.
 | `authenticationrequired` | Fired when the service receives a 498/499 auth error |
 
 ```typescript
-service.on('authenticationrequired', (error) => {
+service.on('authenticationrequired', async (error) => {
   // Handle token refresh
   const newToken = await refreshToken();
   service.setToken(newToken);

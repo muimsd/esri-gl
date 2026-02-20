@@ -34,3 +34,4 @@ For accessing [ArcGIS Image Services](https://developers.arcgis.com/rest/service
 | `identify(lngLat, options?)` | `Promise<IdentifyResponse>` | Get pixel values at a point |
 | `setRenderingRule(rule)` | `void` | Update rendering rule |
 | `setMosaicRule(rule)` | `void` | Update mosaic rule |
+| `setToken(token)` | `void` | Update authentication token and refresh tiles |
