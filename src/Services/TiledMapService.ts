@@ -92,9 +92,8 @@ export class TiledMapService {
   }
 
   update(): void {
-    // For tiled services, we would typically need to recreate the source
-    // but for now we'll just call getSource to satisfy the test
-    this._map.getSource(this._sourceId);
+    // Tiled sources use static tile URLs and don't support hot-updates.
+    // This is a no-op to satisfy the common service interface.
   }
 
   remove(): void {

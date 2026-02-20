@@ -73,7 +73,11 @@ export class ImageService {
     return `${from},${to}`;
   }
 
-  get _source(): any {
+  get _source(): {
+    type: 'raster';
+    tiles: string[];
+    tileSize: number;
+  } & Partial<RasterSourceOptions> {
     const tileSize = this.rasterSrcOptions?.tileSize ?? 256;
     // These are the bare minimum parameters
     const params = new URLSearchParams({
@@ -137,12 +141,12 @@ export class ImageService {
     this._updateSource();
   }
 
-  setRenderingRule(rule: Record<string, any>): void {
+  setRenderingRule(rule: Record<string, unknown>): void {
     this.esriServiceOptions.renderingRule = rule;
     this._updateSource();
   }
 
-  setMosaicRule(rule: Record<string, any>): void {
+  setMosaicRule(rule: Record<string, unknown>): void {
     this.esriServiceOptions.mosaicRule = rule;
     this._updateSource();
   }
@@ -170,8 +174,13 @@ export class ImageService {
     });
   }
 
-  identify(lnglat: { lng: number; lat: number }, returnGeometry: boolean = false): Promise<any> {
+  async identify(
+    lnglat: { lng: number; lat: number },
+    returnGeometry: boolean = false
+  ): Promise<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const canvas = (this._map as any).getCanvas();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bounds = (this._map as any).getBounds().toArray();
 
     const params = new URLSearchParams({
@@ -193,15 +202,22 @@ export class ImageService {
 
     if (this._time) params.append('time', this._time);
 
-    return new Promise((resolve, reject) => {
-      fetch(
-        `${this.esriServiceOptions.url}/identify?${params.toString()}`,
-        this.esriServiceOptions.fetchOptions
-      )
-        .then(response => response.json())
-        .then(data => resolve(data))
-        .catch(error => reject(error));
-    });
+    const response = await fetch(
+      `${this.esriServiceOptions.url}/identify?${params.toString()}`,
+      this.esriServiceOptions.fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Identify request failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(`Identify request failed: ${data.error.message}`);
+    }
+
+    return data;
   }
 
   update(): void {

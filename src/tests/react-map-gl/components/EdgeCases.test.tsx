@@ -27,6 +27,8 @@ const mockMapInstance = {
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
   getLayer: jest.fn(),
+  isStyleLoaded: jest.fn(() => true),
+  getStyle: jest.fn(() => ({ layers: [] })),
 };
 
 describe('React-Map-GL Component Edge Cases', () => {
@@ -68,13 +70,14 @@ describe('React-Map-GL Component Edge Cases', () => {
     });
 
     it('should handle map without getMap method gracefully', () => {
-      // This test verifies the component doesn't crash, but it will throw due to getMap call
-      // The component expects a valid map with getMap method
+      // The component uses optional chaining on getMap, so it handles missing method gracefully
       mockUseMap.mockReturnValue({ current: {} as any });
 
       expect(() => {
         render(<EsriFeatureLayer id="test-layer" url="http://test.com" />);
-      }).toThrow('map.getMap is not a function');
+      }).not.toThrow();
+
+      expect(MockedFeatureService).not.toHaveBeenCalled();
     });
 
     it('should handle custom paint and layout properties', () => {

@@ -20,5 +20,5 @@ export type {
   EsriFeatureLayerProps as ReactMapGLEsriFeatureLayerProps,
 } from './react-map-gl/types';
 
-// Re-export everything from main
-export * from './main';
+// Re-export everything from index
+export * from './index';

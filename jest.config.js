@@ -11,8 +11,7 @@ export default {
     '/__mocks__/',
     '/setup\\.js$',
     '/mapbox-setup\\.js$',
-    '/integration-examples/',
-    '/react-map-gl/'
+    '/integration-examples/'
   ],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {

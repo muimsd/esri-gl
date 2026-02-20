@@ -1,5 +1,4 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import terser from '@rollup/plugin-terser'
 import typescript from '@rollup/plugin-typescript'
 import alias from '@rollup/plugin-alias'
 import babel from '@rollup/plugin-babel'
@@ -96,42 +95,6 @@ const umdConfig = {
   }
 };
 
-// Legacy builds for backward compatibility
-const legacyGlobals = {
-  'mapbox-gl': 'mapboxgl',
-  'maplibre-gl': 'maplibregl',
-  '@mapbox/tilebelt': 'tilebelt',
-  'arcgis-pbf-parser': 'arcgisPbfParser'
-};
-
-const legacyConfig = {
-  input: 'src/main.ts',
-  external: ['mapbox-gl', 'maplibre-gl', '@mapbox/tilebelt', 'arcgis-pbf-parser'],
-  output: [
-    {
-      file: 'dist/esri-gl.js',
-      format: 'umd',
-      name: 'esrigl',
-      sourcemap: true,
-      globals: legacyGlobals
-    },
-    {
-      file: 'dist/esri-gl.min.js',
-      format: 'umd',
-      name: 'esrigl',
-      sourcemap: true,
-      globals: legacyGlobals,
-      plugins: [terser()]
-    },
-    {
-      file: 'dist/esri-gl.esm.js',
-      format: 'es',
-      sourcemap: true
-    }
-  ],
-  plugins: basePlugins
-};
-
 // Type definitions build
 const dtsConfig = {
   input: {
@@ -158,4 +121,4 @@ const dtsConfig = {
   external: commonExternal
 };
 
-export default [esConfig, umdConfig, legacyConfig, dtsConfig]
+export default [esConfig, umdConfig, dtsConfig]

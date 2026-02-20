@@ -18,6 +18,8 @@ export function useIdentifyImage(options: UseIdentifyImageOptions): UseIdentifyI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const { url, token, returnGeometry } = options;
+
   const identifyImage = useCallback<UseIdentifyImageResult['identifyImage']>(
     async (point, additionalOptions) => {
       setLoading(true);
@@ -41,7 +43,7 @@ export function useIdentifyImage(options: UseIdentifyImageOptions): UseIdentifyI
         setLoading(false);
       }
     },
-    [options]
+    [url, token, returnGeometry]
   );
 
   return {

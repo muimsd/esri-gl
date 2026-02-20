@@ -1,4 +1,4 @@
-import * as esrigl from '@/main';
+import * as esrigl from '@/index';
 import {
   // Services
   Service,
@@ -21,7 +21,7 @@ import {
   cleanTrailingSlash,
   getServiceDetails,
   updateAttribution,
-} from '@/main';
+} from '@/index';
 
 // Mock the tilebelt module (required by FeatureService)
 jest.mock('@mapbox/tilebelt', () => ({

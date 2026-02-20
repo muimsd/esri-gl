@@ -23,6 +23,8 @@ const mockMapInstance = {
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
   getLayer: jest.fn(),
+  isStyleLoaded: jest.fn(() => true),
+  getStyle: jest.fn(() => ({ layers: [] })),
 };
 
 describe('EsriTiledLayer', () => {

@@ -18,5 +18,5 @@ export { EsriLayer } from './react/components/EsriLayer';
 // Types
 export type * from './react/types';
 
-// Re-export everything from main
-export * from './main';
+// Re-export everything from index
+export * from './index';

@@ -9,6 +9,8 @@ export function useQuery(options: UseQueryOptions) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const { url, where, outFields, returnGeometry } = options;
+
   const query = useCallback(
     async (additionalOptions?: Record<string, unknown>) => {
       setLoading(true);
@@ -30,7 +32,7 @@ export function useQuery(options: UseQueryOptions) {
         setLoading(false);
       }
     },
-    [options]
+    [url, where, outFields, returnGeometry]
   );
 
   return {

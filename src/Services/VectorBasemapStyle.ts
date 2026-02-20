@@ -92,7 +92,7 @@ export class VectorBasemapStyle {
         ? 'https://basemapstyles-api.arcgis.com'
         : 'https://basemaps-api.arcgis.com');
     // For v2 we default to 'style' so the response is directly consumable by map.setStyle
-    this._format = opts.format || (this._version === 'v2' ? 'style' : 'style');
+    this._format = opts.format || 'style';
 
     if (!this._apiKey && !this._token) {
       // Keep legacy error string for backwards compatibility with existing tests / consumers

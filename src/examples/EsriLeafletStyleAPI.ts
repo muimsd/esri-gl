@@ -4,7 +4,7 @@
  * Updated to use Services-only approach
  */
 
-import { mapService } from '../Services/SimpleMapService';
+import { mapService } from '../Services/MapService';
 
 // Example API showing how Esri Leaflet-style API can work with esri-gl
 const service = mapService({
