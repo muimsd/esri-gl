@@ -172,7 +172,7 @@ const FindDemo: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '10px', background: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
         <h3 style={{ margin: '0 0 10px 0' }}>Find Task Demo</h3>
 

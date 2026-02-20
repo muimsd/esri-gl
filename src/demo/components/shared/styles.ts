@@ -7,27 +7,30 @@ export const DEMO_CONTAINER_STYLE: CSSProperties = {
 };
 
 export const DEMO_SIDEBAR_STYLE: CSSProperties = {
-  width: '320px',
-  padding: '16px',
-  borderRight: '1px solid #e5e7eb',
-  backgroundColor: '#f9fafb',
+  width: '280px',
+  padding: '14px 16px',
+  borderRight: '1px solid #e4e4e7',
+  backgroundColor: '#fafafa',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '10px',
   overflow: 'auto',
 };
 
 export const DEMO_SECTION_TITLE_STYLE: CSSProperties = {
-  margin: '0 0 6px 0',
-  fontSize: '14px',
+  margin: '0 0 4px 0',
+  fontSize: '11px',
+  fontWeight: 600,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#6b7280',
+  letterSpacing: '0.06em',
+  color: '#71717a',
+  paddingLeft: '8px',
+  borderLeft: '2px solid #059669',
 };
 
 export const DEMO_FOOTER_STYLE: CSSProperties = {
   fontSize: '12px',
-  color: '#9ca3af',
+  color: '#a1a1aa',
   marginTop: 'auto',
 };
 
@@ -40,18 +43,16 @@ export const DEMO_STATUS_BADGE_STYLE: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
-  padding: '4px 8px',
-  borderRadius: '999px',
   fontSize: '12px',
-  fontWeight: 600,
-  backgroundColor: '#e5e7eb',
-  color: '#1f2937',
+  color: '#71717a',
 };
 
-export function createBadgeStyle(background: string, color = '#1f2937'): CSSProperties {
+export function createBadgeStyle(dotColor: string, textColor = '#71717a'): CSSProperties {
   return {
     ...DEMO_STATUS_BADGE_STYLE,
-    backgroundColor: background,
-    color,
+    color: textColor,
+    paddingLeft: '13px',
+    backgroundImage: `radial-gradient(circle 3.5px at 3.5px 50%, ${dotColor} 3.5px, transparent 3.5px)`,
+    backgroundRepeat: 'no-repeat',
   };
 }

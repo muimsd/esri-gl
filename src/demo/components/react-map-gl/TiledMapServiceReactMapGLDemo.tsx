@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapRef } from '@vis.gl/react-maplibre';
 import { Map, NavigationControl, ScaleControl } from 'react-map-gl/maplibre';
 import { EsriTiledLayer } from '../../../react-map-gl';

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useVectorBasemapStyle } from '../../../react';
 import {
   DEMO_CONTAINER_STYLE,

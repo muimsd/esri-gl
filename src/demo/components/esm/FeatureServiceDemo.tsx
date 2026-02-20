@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-// @ts-ignore - CSS type declarations not provided
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { FeatureService } from '@/index';
 
 type PopupLike = {

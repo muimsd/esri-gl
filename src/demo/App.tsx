@@ -43,7 +43,6 @@ interface DemoTab {
 interface CategoryDefinition {
   id: CategoryId;
   label: string;
-  description: string;
   tabs: DemoTab[];
 }
 
@@ -158,19 +157,16 @@ const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
   {
     id: 'esm',
     label: 'ESM Services',
-    description: 'Direct MapLibre integrations using the esri-gl services and tasks APIs.',
     tabs: ESM_TABS,
   },
   {
     id: 'react-hooks',
     label: 'React Hooks',
-    description: 'Lifecycle-managed ArcGIS services powered by esri-gl React hooks.',
     tabs: HOOK_TABS,
   },
   {
     id: 'react-map-gl',
     label: 'react-map-gl',
-    description: 'Drop-in react-map-gl components and hooks for MapLibre and Mapbox projects.',
     tabs: REACT_MAP_GL_TABS,
   },
 ];
@@ -251,97 +247,46 @@ const App: React.FC = () => {
     (() => null);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          backgroundColor: '#1f2937',
-          color: 'white',
-          padding: '14px 24px',
-          borderBottom: '1px solid #111827',
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: '24px' }}>esri-gl Demo Gallery</h1>
-        <p style={{ margin: '6px 0 0 0', fontSize: '14px', opacity: 0.85 }}>
-          Compare direct MapLibre integrations, React hooks, and react-map-gl examples side by side.
-        </p>
-      </header>
-
-      <nav
-        style={{
-          backgroundColor: '#f3f4f6',
-          borderBottom: '1px solid #d1d5db',
-          padding: '0 16px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            minWidth: 'max-content',
-            padding: '12px 0',
-          }}
-        >
+    <div className="shell">
+      <header className="shell-header">
+        <span className="shell-logo">esri-gl</span>
+        <span className="shell-version">v0.10.0</span>
+        <nav className="shell-categories">
           {CATEGORY_DEFINITIONS.map(category => (
             <button
               key={category.id}
+              className="shell-category"
+              data-active={activeCategory === category.id}
               onClick={() => handleCategoryChange(category.id)}
-              style={{
-                padding: '10px 18px',
-                borderRadius: '999px',
-                border: '1px solid',
-                borderColor: activeCategory === category.id ? '#2563eb' : '#d1d5db',
-                backgroundColor: activeCategory === category.id ? '#2563eb' : 'white',
-                color: activeCategory === category.id ? '#ffffff' : '#1f2937',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 600,
-                transition: 'background-color 0.2s ease, color 0.2s ease',
-                whiteSpace: 'nowrap',
-              }}
             >
               {category.label}
             </button>
           ))}
-        </div>
-      </nav>
-
-      <section
-        style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e5e7eb',
-          padding: '0 16px 12px 16px',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <p style={{ margin: 0, color: '#4b5563', fontSize: '14px' }}>
-            {selectedCategory.description}
-          </p>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
-            {selectedCategory.tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(selectedCategory.id, tab.id)}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid',
-                  borderColor: activeTabId === tab.id ? '#1d4ed8' : '#d1d5db',
-                  backgroundColor: activeTabId === tab.id ? '#1d4ed8' : '#f9fafb',
-                  color: activeTabId === tab.id ? '#ffffff' : '#1f2937',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <main style={{ flex: 1, overflow: 'hidden' }}>
+        </nav>
+        <a
+          className="shell-github"
+          href="https://github.com/esri-gl/esri-gl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+        </a>
+      </header>
+      <div className="shell-tabs">
+        {selectedCategory.tabs.map(tab => (
+          <button
+            key={tab.id}
+            className="shell-tab"
+            data-active={activeTabId === tab.id}
+            onClick={() => handleTabChange(selectedCategory.id, tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <main className="shell-main">
         <ActiveComponent />
       </main>
     </div>

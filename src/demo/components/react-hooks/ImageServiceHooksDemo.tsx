@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useImageService } from '../../../react';
 import type { ImageServiceOptions } from '../../../types';
 import {

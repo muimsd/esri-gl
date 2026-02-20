@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { ImageService } from '@/index';
 
 const ImageServiceDemo: React.FC = () => {

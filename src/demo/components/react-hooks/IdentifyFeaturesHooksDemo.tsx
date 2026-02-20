@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useDynamicMapService, useIdentifyFeatures } from '../../../react';
 import {
   DEMO_CONTAINER_STYLE,

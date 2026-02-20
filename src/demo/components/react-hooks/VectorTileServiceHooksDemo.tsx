@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useVectorTileService } from '../../../react';
 import type {
   LayerSpecification,

@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapLayerMouseEvent, MapRef } from '@vis.gl/react-maplibre';
 import { Map, NavigationControl, ScaleControl } from 'react-map-gl/maplibre';
 import { EsriImageLayer, IdentifyImage } from '../../../react-map-gl';

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { Map, NavigationControl, ScaleControl } from 'react-map-gl/maplibre';
 import { EsriDynamicLayer, EsriFeatureLayer, EsriVectorTileLayer } from '../../../react-map-gl';
 

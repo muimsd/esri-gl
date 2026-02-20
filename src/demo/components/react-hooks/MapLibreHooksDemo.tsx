@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useDynamicMapService, useIdentifyFeatures } from '../../../react';
 import type { Map as EsriMap } from '../../../types';
 
