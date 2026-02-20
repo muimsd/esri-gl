@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { IdentifyFeatures } from '@/Tasks/IdentifyFeatures';
+import type { Map } from '@/types';
 import type { UseIdentifyFeaturesOptions } from '../types';
 
 /**
@@ -14,19 +15,27 @@ export function useIdentifyFeatures({
   const [error, setError] = useState<Error | null>(null);
 
   const identify = useCallback(
-    async (point: { lng: number; lat: number }, additionalOptions?: Record<string, unknown>) => {
+    async (
+      point: { lng: number; lat: number },
+      additionalOptions?: Record<string, unknown> & { map?: Map }
+    ) => {
       setLoading(true);
       setError(null);
 
       try {
+        const { map, ...rest } = additionalOptions ?? {};
+
         const identifyTask = new IdentifyFeatures({
           url,
           tolerance,
           returnGeometry,
-          ...additionalOptions,
+          ...rest,
         });
 
-        const results = await identifyTask.at(point).run();
+        identifyTask.at(point);
+        if (map) identifyTask.on(map);
+
+        const results = await identifyTask.run();
         return results;
       } catch (err) {
         const errorObj = err instanceof Error ? err : new Error('Identify failed');

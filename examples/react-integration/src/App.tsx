@@ -30,7 +30,7 @@ const TABS: TabDefinition[] = [
 	{
 		id: 'identify',
 		label: 'Identify Features',
-		description: 'Task-based identify workflow on MapLibre maps.',
+		description: 'Click-to-identify workflow on a MapLibre map.',
 		component: <IdentifyExample />,
 	},
 	{
@@ -42,7 +42,7 @@ const TABS: TabDefinition[] = [
 	{
 		id: 'advanced',
 		label: 'Advanced Config',
-		description: 'Demonstrates live layer filtering and metadata.',
+		description: 'Live layer filtering, SQL definitions, and identify on a real map.',
 		component: <AdvancedFeaturesExample />,
 	},
 ];
@@ -62,39 +62,24 @@ function App() {
 					Explore the same examples that power the interactive docs site. Tabs below swap between hook-based
 					and component-based integrations for MapLibre GL JS and react-map-gl.
 				</p>
-				<nav
-					role="tablist"
-					aria-label="Esri GL example picker"
-					style={{
-						display: 'flex',
-						flexWrap: 'wrap',
-						gap: 8,
-					}}
-				>
+				<nav className="tab-nav" role="tablist" aria-label="Esri GL example picker">
 					{TABS.map(tab => {
 						const isActive = tab.id === activeDefinition.id;
 						return (
 							<button
 								key={tab.id}
 								role="tab"
+								className={`tab-button${isActive ? ' active' : ''}`}
 								aria-selected={isActive}
 								aria-controls={`tab-panel-${tab.id}`}
 								onClick={() => setActiveTab(tab.id)}
-								style={{
-									padding: '8px 16px',
-									borderRadius: 18,
-									border: '1px solid #cbd5f5',
-									background: isActive ? '#1d4ed8' : '#f1f5f9',
-									color: isActive ? '#fff' : '#1e293b',
-									cursor: 'pointer',
-								}}
 							>
 								{tab.label}
 							</button>
 						);
 					})}
 				</nav>
-				<p style={{ marginTop: 12, color: '#475569' }}>{activeDefinition.description}</p>
+				<p className="tab-description">{activeDefinition.description}</p>
 			</header>
 			<main>
 				{TABS.map(tab => (
