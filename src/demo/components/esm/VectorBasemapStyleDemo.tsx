@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 //@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { VectorBasemapStyle } from '../../../main';
+import { VectorBasemapStyle } from '@/index';
 
 // Session storage keys
 const STORAGE_KEYS = {

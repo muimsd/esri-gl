@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 //@ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { DynamicMapService, IdentifyFeatures } from '../../../main';
+import { DynamicMapService, IdentifyFeatures } from '@/index';
 
 type PopupLike = {
   setLngLat(lngLat: { lng: number; lat: number }): PopupLike;

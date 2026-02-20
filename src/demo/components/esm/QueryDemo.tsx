@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { Map as MaplibreMap } from 'maplibre-gl';
-import { DynamicMapService, Query } from '../../../main';
+import { DynamicMapService, Query } from '@/index';
 
 interface QueryResults {
   features?: Array<GeoJSON.Feature>;

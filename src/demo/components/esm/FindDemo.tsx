@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import { DynamicMapService, Find } from '../../../main';
+import { DynamicMapService, Find } from '@/index';
 
 interface FindResults {
   features?: Array<GeoJSON.Feature>;
