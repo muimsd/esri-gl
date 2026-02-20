@@ -10,7 +10,7 @@
     "postinstall": "node ./scripts/link-local-esri-gl.mjs"
   },
   "dependencies": {
-    "esri-gl": "file:../../dist",
+    "esri-gl": "latest",
     "mapbox-gl": "^3.15.0",
     "maplibre-gl": "^4.7.1",
     "react": "^19.1.1",
