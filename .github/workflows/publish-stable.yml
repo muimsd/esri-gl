@@ -114,6 +114,7 @@ jobs:
           echo "$NOTES" > release_notes.md
 
       - name: Create GitHub Release (Stable)
+        if: steps.version-check.outputs.exists != 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
