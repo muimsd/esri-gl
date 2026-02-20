@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-### v0.10.0-alpha.1
+### v0.9.0
 **ArcGIS Online (AGOL) Support & Feature Editing**
 
 #### Critical Bug Fixes
@@ -33,7 +33,7 @@ Change Log
 - 717 tests (up from 693), all passing
 - 24 new tests covering AGOL error handling, token support, editing, pagination, and attachments
 
-### v0.9.0-alpha.4
+### v0.9.0-alpha
 **🎉 First Stable Release**
 - **Stable Release**: Graduated from alpha to stable release
 - **Code Quality**: 92.94% test coverage with 651 comprehensive tests
@@ -43,7 +43,7 @@ Change Log
 - **CI/CD**: Automated publishing and GitHub releases
 - **Documentation**: Complete API documentation and examples
 
-### v0.9.0-alpha.3
+### v0.9.0-alpha.3 (pre-release)
 **Major Improvements**
 - **Code Quality**: Removed duplicate test files and legacy source files, improving test coverage from 77.69% to 92.94%
 - **Build System**: Consolidated TypeScript declarations into single `dist/types/` directory using `@rollup/plugin-typescript`
