@@ -94,6 +94,64 @@ function IdentifyExample() {
 }
 ```
 
+### Feature Editing Hook
+
+```tsx
+import { useFeatureService, useFeatureEditing } from 'esri-gl/react';
+
+function EditableFeatureLayer() {
+  const { service } = useFeatureService({
+    sourceId: 'editable-source',
+    map,
+    options: {
+      url: 'https://services.arcgis.com/.../FeatureServer/0',
+      token: 'your-token'
+    }
+  });
+
+  const { addFeatures, updateFeatures, deleteFeatures, applyEdits, loading, error } = useFeatureEditing(service);
+
+  const handleAdd = async () => {
+    const results = await addFeatures([
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [-95, 37] }, properties: { name: 'New' } }
+    ]);
+    console.log('Added:', results);
+  };
+
+  return (
+    <div>
+      <button onClick={handleAdd} disabled={loading}>Add Feature</button>
+      {error && <p>Error: {error.message}</p>}
+    </div>
+  );
+}
+```
+
+### Query with Pagination
+
+```tsx
+import { useQuery } from 'esri-gl/react';
+
+function PaginatedQuery() {
+  const { query, queryAll, loading, error } = useQuery({
+    url: 'https://services.arcgis.com/.../FeatureServer/0'
+  });
+
+  const handleQueryAll = async () => {
+    // Automatically paginates through all results
+    const allFeatures = await queryAll();
+    console.log('Total features:', allFeatures.features.length);
+  };
+
+  return (
+    <div>
+      <button onClick={handleQueryAll} disabled={loading}>Query All</button>
+      {loading && <p>Loading all pages...</p>}
+    </div>
+  );
+}
+```
+
 ## React Components
 
 ### Service Provider
@@ -181,8 +239,9 @@ import { EsriFeatureLayer } from 'esri-gl/react-map-gl';
 
 ### Task Hooks
 - `useIdentifyFeatures` - Identify features at a point
-- `useQuery` - Query features from a service
+- `useQuery` - Query features from a service (includes `queryAll` for pagination)
 - `useFind` - Find features by text
+- `useFeatureEditing` - Edit features (add, update, delete, applyEdits)
 
 ## Available Components
 

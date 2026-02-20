@@ -528,4 +528,29 @@ describe('Task', () => {
       await expect(task.request()).rejects.toThrow('Network error');
     });
   });
+
+  describe('AGOL JSON Error Handling', () => {
+    it('should detect JSON-level errors in _request() and return error with code and details', done => {
+      const task = new TestableTask('https://example.com/FeatureServer/0');
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          error: {
+            code: 400,
+            message: 'Layer not found',
+            details: ['Layer 99'],
+          },
+        }),
+      } as Response);
+
+      task.testRequest('POST', 'query', {}, (error?: Error) => {
+        expect(error).toBeDefined();
+        expect(error!.message).toBe('Layer not found');
+        expect((error as Error & { code?: number }).code).toBe(400);
+        expect((error as Error & { details?: string[] }).details).toEqual(['Layer 99']);
+        done();
+      });
+    });
+  });
 });

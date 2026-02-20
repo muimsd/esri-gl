@@ -378,14 +378,29 @@ describe('Service', () => {
       (authError as Error & { code: number }).code = 498;
 
       mockFetch.mockRejectedValueOnce(authError);
+      // After auth error, the request is queued (not called back immediately).
+      // The authenticationrequired event fires with an authenticate function.
+      // Once authenticate is called, the queued request replays.
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
 
-      service.requestWithCallback('GET', '/secure', { f: 'json' }, error => {
-        expect(error).toBeDefined();
-        const errorWithAuth = error as Error & { authenticate?: (token: string) => void };
-        expect(errorWithAuth.authenticate).toBeDefined();
-        expect(typeof errorWithAuth.authenticate).toBe('function');
+      const authHandler = jest.fn();
+      service.on('authenticationrequired', authHandler);
+
+      service.requestWithCallback('GET', '/secure', { f: 'json' }, (error, response) => {
+        // After authentication completes, the callback is called with the replayed response
+        expect(error).toBeUndefined();
+        expect(response).toEqual({ success: true });
+        expect(authHandler).toHaveBeenCalled();
         done();
       });
+
+      // Simulate async: let the rejection propagate, then authenticate
+      setTimeout(() => {
+        service.authenticate('new-token');
+      }, 10);
     });
   });
 
@@ -745,27 +760,31 @@ describe('Service', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     }, 200);
 
-    it('should fire authenticationrequired event and add authenticate method to error', async () => {
+    it('should fire authenticationrequired event and queue request on auth error', async () => {
       const authRequiredCallback = jest.fn();
       service.on('authenticationrequired', authRequiredCallback);
 
-      // Mock 498 response that would trigger authentication required (ArcGIS token error)
-      mockFetch.mockRejectedValue(Object.assign(new Error('Invalid token'), { code: 498 }));
+      // First call: 498 auth error; second call: success after re-auth
+      mockFetch
+        .mockRejectedValueOnce(Object.assign(new Error('Invalid token'), { code: 498 }))
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ layers: [] }) } as Response);
 
-      let thrownError: any;
-      try {
-        await service.get('/layers');
-      } catch (error) {
-        thrownError = error;
-      }
+      // Start the request – it will queue on 498 and not resolve yet
+      const promise = service.get('/layers');
 
-      // The authenticationrequired event should be fired for 498/499 errors
+      // Wait for the rejection to propagate and event to fire
+      await new Promise(r => setTimeout(r, 10));
+
+      // The authenticationrequired event should be fired for 498 errors
       expect(authRequiredCallback).toHaveBeenCalledWith({
         authenticate: expect.any(Function),
       });
 
-      // The error should have authenticate method added
-      expect(thrownError.authenticate).toEqual(expect.any(Function));
+      // Complete authentication – this replays the queued request
+      service.authenticate('new-token');
+
+      const result = await promise;
+      expect(result).toEqual({ layers: [] });
     });
 
     it('should use service factory function', () => {
@@ -773,6 +792,76 @@ describe('Service', () => {
       const factoryService = serviceFactory({ url: 'https://example.com/test' });
 
       expect(factoryService).toBeInstanceOf(Service);
+    });
+  });
+
+  describe('AGOL Support', () => {
+    let service: TestableService;
+
+    beforeEach(() => {
+      service = new TestableService({ url: 'https://example.com/test' });
+    });
+
+    it('should detect AGOL JSON error in _makeRequest', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          error: { code: 400, message: 'Invalid query', details: ['Bad field'] },
+        }),
+      } as Response);
+
+      await expect(service.get('/query', { f: 'json' })).rejects.toMatchObject({
+        message: 'Invalid query',
+        code: 400,
+        details: expect.arrayContaining(['Bad field']),
+      });
+    });
+
+    it('should trigger auth queue from JSON 498 error', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ error: { code: 498, message: 'Invalid token' } }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ result: 'ok' }),
+        } as Response);
+
+      const authHandler = jest.fn();
+      service.on('authenticationrequired', authHandler);
+
+      const promise = service.get('/secure');
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(authHandler).toHaveBeenCalled();
+
+      service.authenticate('new-token');
+
+      const result = await promise;
+      expect(result).toEqual({ result: 'ok' });
+    });
+
+    it('should send apiKey as X-Esri-Authorization header', async () => {
+      service = new TestableService({
+        url: 'https://example.com/test',
+        apiKey: 'my-api-key',
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: 'test' }),
+      } as Response);
+
+      await service.get('/test');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: { 'X-Esri-Authorization': 'Bearer my-api-key' },
+        })
+      );
     });
   });
 });

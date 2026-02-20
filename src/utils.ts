@@ -34,9 +34,14 @@ export function isAbortError(error: unknown): boolean {
 
 export async function getServiceDetails(
   url: string,
-  fetchOptions: RequestInit = {}
+  fetchOptions: RequestInit = {},
+  token?: string
 ): Promise<ServiceMetadata> {
-  const response = await fetch(`${url}?f=json`, fetchOptions);
+  const params = new URLSearchParams({ f: 'json' });
+  if (token) {
+    params.append('token', token);
+  }
+  const response = await fetch(`${url}?${params.toString()}`, fetchOptions);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch service details: HTTP ${response.status}`);

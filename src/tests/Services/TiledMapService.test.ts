@@ -157,6 +157,24 @@ describe('TiledMapService', () => {
     });
   });
 
+  describe('Token Support', () => {
+    it('should include token in tile URL', () => {
+      service = new TiledMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+          token: 'test-tok',
+        } as any
+      );
+
+      const addSourceCall = (mockMap.addSource as jest.Mock).mock.calls[0];
+      const sourceOptions = addSourceCall[1];
+
+      expect(sourceOptions.tiles[0]).toContain('token=test-tok');
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle network errors during metadata fetch', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));

@@ -9,6 +9,7 @@ export interface ServiceOptions {
   token?: string;
   requestParams?: Record<string, unknown>;
   getAttributionFromService?: boolean;
+  apiKey?: string;
 }
 
 export type ServiceCallback<T = unknown> = (error?: Error, response?: T) => void;
@@ -320,6 +321,13 @@ export class Service {
       let response: Response;
       const fetchOptions: RequestInit = { signal: controller.signal };
 
+      // Add API key header if present
+      if (this.options.apiKey) {
+        fetchOptions.headers = {
+          'X-Esri-Authorization': `Bearer ${this.options.apiKey}`,
+        };
+      }
+
       if (method === 'POST') {
         const formData = new FormData();
         Object.keys(params).forEach(key => {
@@ -366,6 +374,19 @@ export class Service {
       }
 
       const data = await response.json();
+
+      // Check for AGOL JSON-level errors (HTTP 200 with error body)
+      if (data && typeof data === 'object' && data.error) {
+        const err = new Error(data.error.message || 'ArcGIS service error') as Error & {
+          code?: number;
+          details?: string[];
+        };
+        err.code = data.error.code;
+        err.details = data.error.details;
+        callback(err);
+        return;
+      }
+
       callback(undefined, data);
     } catch (error) {
       // Provide clearer error message for timeout
@@ -403,6 +424,7 @@ export class Service {
         // Add authenticate method to error for callback handling
         const authError = error as Error & { authenticate?: (token: string) => void };
         authError.authenticate = (token: string) => this.authenticate(token);
+        return;
       }
 
       if (error) {

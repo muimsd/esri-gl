@@ -94,6 +94,9 @@ export class ImageService {
       params.append('mosaicRule', JSON.stringify(this.options.mosaicRule));
     if (this.options.renderingRule)
       params.append('renderingRule', JSON.stringify(this.options.renderingRule));
+    if ((this.esriServiceOptions as any).token) {
+      params.append('token', (this.esriServiceOptions as any).token);
+    }
 
     return {
       type: 'raster',
@@ -151,6 +154,11 @@ export class ImageService {
     this._updateSource();
   }
 
+  setToken(token: string | null): void {
+    (this.esriServiceOptions as any).token = token ?? undefined;
+    this._updateSource();
+  }
+
   setAttributionFromService(): Promise<void> {
     if (this._serviceMetadata) {
       updateAttribution(this._serviceMetadata.copyrightText || '', this._sourceId, this._map);
@@ -165,7 +173,11 @@ export class ImageService {
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
     return new Promise((resolve, reject) => {
-      getServiceDetails(this.esriServiceOptions.url, this.esriServiceOptions.fetchOptions)
+      getServiceDetails(
+        this.esriServiceOptions.url,
+        this.esriServiceOptions.fetchOptions,
+        (this.esriServiceOptions as any).token
+      )
         .then(data => {
           this._serviceMetadata = data;
           resolve(this._serviceMetadata);
@@ -201,6 +213,9 @@ export class ImageService {
     });
 
     if (this._time) params.append('time', this._time);
+    if ((this.esriServiceOptions as any).token) {
+      params.append('token', (this.esriServiceOptions as any).token);
+    }
 
     const response = await fetch(
       `${this.esriServiceOptions.url}/identify?${params.toString()}`,

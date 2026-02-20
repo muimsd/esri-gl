@@ -743,6 +743,7 @@ describe('ImageService', () => {
 
       expect(mockGetServiceDetails).toHaveBeenCalledWith(
         'https://example.com/ImageServer',
+        undefined,
         undefined
       );
       expect(mockUpdateAttribution).toHaveBeenCalledWith(
@@ -840,6 +841,21 @@ describe('ImageService', () => {
 
       expect(mockSourceCache.clearTiles).toHaveBeenCalled();
       expect(mockSourceCache.update).toHaveBeenCalledWith((mockMap as any).transform);
+    });
+  });
+
+  describe('Token Support', () => {
+    it('should include token in tile URL', () => {
+      const options: ImageServiceOptions = {
+        url: 'https://example.com/ImageServer',
+        getAttributionFromService: false,
+        token: 'test-tok',
+      } as any;
+
+      const service = new ImageService('test-source', mockMap, options);
+
+      const source = (service as any)._source;
+      expect(source.tiles[0]).toContain('token=test-tok');
     });
   });
 

@@ -550,6 +550,204 @@ describe('FeatureService', () => {
     });
   });
 
+  describe('Editing and AGOL Support', () => {
+    const mockFeature: GeoJSON.Feature = {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [-118.2, 34.0] },
+      properties: { NAME: 'Test Feature' },
+    };
+
+    it('should add features', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ addResults: [{ objectId: 1, success: true }] }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.addFeatures([mockFeature]);
+      expect(result).toEqual([{ objectId: 1, success: true }]);
+
+      const addCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/addFeatures')
+      );
+      expect(addCall).toBeDefined();
+    });
+
+    it('should update features', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ updateResults: [{ objectId: 1, success: true }] }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.updateFeatures([mockFeature]);
+      expect(result).toEqual([{ objectId: 1, success: true }]);
+
+      const updateCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/updateFeatures')
+      );
+      expect(updateCall).toBeDefined();
+    });
+
+    it('should delete features', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            deleteResults: [
+              { objectId: 1, success: true },
+              { objectId: 2, success: true },
+            ],
+          }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.deleteFeatures({ objectIds: [1, 2] });
+      expect(result).toEqual([
+        { objectId: 1, success: true },
+        { objectId: 2, success: true },
+      ]);
+
+      const deleteCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/deleteFeatures')
+      );
+      expect(deleteCall).toBeDefined();
+    });
+
+    it('should apply edits', async () => {
+      const applyEditsResponse = {
+        addResults: [{ objectId: 10, success: true }],
+        deleteResults: [{ objectId: 1, success: true }],
+      };
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => applyEditsResponse,
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.applyEdits({ adds: [mockFeature], deletes: [1] });
+      expect(result).toEqual(applyEditsResponse);
+
+      const applyCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/applyEdits')
+      );
+      expect(applyCall).toBeDefined();
+    });
+
+    it('should handle AGOL error responses in editing methods', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ error: { code: 400, message: 'Invalid input' } }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      await expect(service.addFeatures([mockFeature])).rejects.toThrow('Invalid input');
+    });
+
+    it('should support on/off event listener methods', async () => {
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const handler = jest.fn();
+      const returnedService = service.on('authenticationrequired', handler);
+      expect(returnedService).toBe(service);
+
+      // Verify off removes the listener and returns the service
+      const returnedFromOff = service.off('authenticationrequired', handler);
+      expect(returnedFromOff).toBe(service);
+    });
+
+    it('should query attachments', async () => {
+      const attachmentInfos = [
+        { id: 1, name: 'photo.jpg', contentType: 'image/jpeg', size: 12345 },
+      ];
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ attachmentInfos }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.queryAttachments(42);
+      expect(result).toEqual(attachmentInfos);
+
+      const attachCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/42/attachments')
+      );
+      expect(attachCall).toBeDefined();
+    });
+
+    it('should delete attachments', async () => {
+      const deleteAttachmentResults = [
+        { objectId: 5, success: true },
+        { objectId: 6, success: true },
+      ];
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ deleteAttachmentResults }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      const result = await service.deleteAttachments(42, [5, 6]);
+      expect(result).toEqual(deleteAttachmentResults);
+
+      const deleteAttachCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/42/deleteAttachments')
+      );
+      expect(deleteAttachCall).toBeDefined();
+    });
+  });
+
   describe('Advanced Query Options', () => {
     it('should handle query with ordering and statistics', async () => {
       mockFetch

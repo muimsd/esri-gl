@@ -15,7 +15,15 @@
 import * as tilebelt from '@mapbox/tilebelt';
 import tileDecode from 'arcgis-pbf-parser';
 import { cleanTrailingSlash, updateAttribution } from '@/utils';
-import type { Map, FeatureServiceOptions, ServiceMetadata, Extent } from '@/types';
+import type {
+  Map,
+  FeatureServiceOptions,
+  ServiceMetadata,
+  Extent,
+  EditResult,
+  ApplyEditsResult,
+  AttachmentInfo,
+} from '@/types';
 
 // Extended options for FeatureService
 export interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
@@ -38,6 +46,8 @@ export interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   useServiceBounds?: boolean;
   /** Custom projection endpoint URL */
   projectionEndpoint?: string;
+  /** API key sent via X-Esri-Authorization header */
+  apiKey?: string;
 }
 
 interface GeoJSONSourceOptions {
@@ -101,6 +111,7 @@ export class FeatureService {
   private _format: 'pbf' | 'geojson' = 'pbf';
   private _sourceReadyResolve: (() => void) | null = null;
   private _sourceReadyReject: ((error: Error) => void) | null = null;
+  private _eventListeners: Record<string, Array<(event: unknown) => void>> = {};
 
   /**
    * Promise that resolves when the source has been successfully added to the map
@@ -663,9 +674,12 @@ export class FeatureService {
           return null;
         }
       } else {
-        return await response.json();
+        const data = await response.json();
+        this._checkAgolError(data);
+        return data;
       }
     } catch (error) {
+      this._handleAuthError(error);
       console.warn('Error fetching tile:', error);
       return null;
     }
@@ -919,6 +933,295 @@ export class FeatureService {
     if (token) {
       params.append('token', token);
     }
+  }
+
+  private _getFetchHeaders(): HeadersInit | undefined {
+    if (this._esriServiceOptions.apiKey) {
+      return { 'X-Esri-Authorization': `Bearer ${this._esriServiceOptions.apiKey}` };
+    }
+    return undefined;
+  }
+
+  private _checkAgolError(data: unknown): void {
+    if (data && typeof data === 'object' && 'error' in data) {
+      const errorData = (data as { error: { code?: number; message?: string; details?: string[] } })
+        .error;
+      const err = new Error(errorData.message || 'ArcGIS service error') as Error & {
+        code?: number;
+        details?: string[];
+      };
+      err.code = errorData.code;
+      err.details = errorData.details;
+      throw err;
+    }
+  }
+
+  private _handleAuthError(error: unknown): void {
+    if (error && typeof error === 'object' && 'code' in error) {
+      const code = (error as { code?: number }).code;
+      if (code === 498 || code === 499) {
+        this._fireEvent('authenticationrequired', {
+          authenticate: (token: string) => this.setToken(token),
+        });
+      }
+    }
+  }
+
+  private _fireEvent(event: string, data: unknown): void {
+    const listeners = this._eventListeners[event];
+    if (listeners) {
+      listeners.forEach(cb => cb(data));
+    }
+  }
+
+  /**
+   * Add event listener
+   */
+  on(event: string, callback: (event: unknown) => void): FeatureService {
+    if (!this._eventListeners[event]) {
+      this._eventListeners[event] = [];
+    }
+    this._eventListeners[event].push(callback);
+    return this;
+  }
+
+  /**
+   * Remove event listener
+   */
+  off(event: string, callback: (event: unknown) => void): FeatureService {
+    const listeners = this._eventListeners[event];
+    if (listeners) {
+      const index = listeners.indexOf(callback);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+    return this;
+  }
+
+  // ========================================
+  // Feature Editing Methods
+  // ========================================
+
+  /**
+   * Add features to the service
+   */
+  async addFeatures(
+    features: GeoJSON.Feature[],
+    options?: { gdbVersion?: string }
+  ): Promise<EditResult[]> {
+    const params = new URLSearchParams({
+      f: 'json',
+      features: JSON.stringify(features),
+    });
+    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(`${this._esriServiceOptions.url}/addFeatures`, {
+      method: 'POST',
+      body: params,
+      headers: this._getFetchHeaders(),
+      ...this._esriServiceOptions.fetchOptions,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Add features failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.addResults;
+  }
+
+  /**
+   * Update existing features
+   */
+  async updateFeatures(
+    features: GeoJSON.Feature[],
+    options?: { gdbVersion?: string }
+  ): Promise<EditResult[]> {
+    const params = new URLSearchParams({
+      f: 'json',
+      features: JSON.stringify(features),
+    });
+    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(`${this._esriServiceOptions.url}/updateFeatures`, {
+      method: 'POST',
+      body: params,
+      headers: this._getFetchHeaders(),
+      ...this._esriServiceOptions.fetchOptions,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Update features failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.updateResults;
+  }
+
+  /**
+   * Delete features by objectIds or where clause
+   */
+  async deleteFeatures(deleteParams: {
+    objectIds?: number[];
+    where?: string;
+  }): Promise<EditResult[]> {
+    const params = new URLSearchParams({ f: 'json' });
+    if (deleteParams.objectIds) {
+      params.append('objectIds', deleteParams.objectIds.join(','));
+    }
+    if (deleteParams.where) {
+      params.append('where', deleteParams.where);
+    }
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(`${this._esriServiceOptions.url}/deleteFeatures`, {
+      method: 'POST',
+      body: params,
+      headers: this._getFetchHeaders(),
+      ...this._esriServiceOptions.fetchOptions,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Delete features failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.deleteResults;
+  }
+
+  /**
+   * Apply multiple edits in a single transaction
+   */
+  async applyEdits(
+    edits: {
+      adds?: GeoJSON.Feature[];
+      updates?: GeoJSON.Feature[];
+      deletes?: number[];
+    },
+    options?: { gdbVersion?: string }
+  ): Promise<ApplyEditsResult> {
+    const params = new URLSearchParams({ f: 'json' });
+    if (edits.adds) params.append('adds', JSON.stringify(edits.adds));
+    if (edits.updates) params.append('updates', JSON.stringify(edits.updates));
+    if (edits.deletes) params.append('deletes', edits.deletes.join(','));
+    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(`${this._esriServiceOptions.url}/applyEdits`, {
+      method: 'POST',
+      body: params,
+      headers: this._getFetchHeaders(),
+      ...this._esriServiceOptions.fetchOptions,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Apply edits failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data;
+  }
+
+  // ========================================
+  // Attachment Methods
+  // ========================================
+
+  /**
+   * Query attachments for a feature
+   */
+  async queryAttachments(
+    objectId: number,
+    options?: { globalIds?: string[] }
+  ): Promise<AttachmentInfo[]> {
+    const params = new URLSearchParams({ f: 'json' });
+    if (options?.globalIds) {
+      params.append('globalIds', options.globalIds.join(','));
+    }
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(
+      `${this._esriServiceOptions.url}/${objectId}/attachments?${params.toString()}`,
+      {
+        headers: this._getFetchHeaders(),
+        ...this._esriServiceOptions.fetchOptions,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Query attachments failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.attachmentInfos || [];
+  }
+
+  /**
+   * Add an attachment to a feature
+   */
+  async addAttachment(objectId: number, file: Blob | File, fileName?: string): Promise<EditResult> {
+    const formData = new FormData();
+    formData.append('f', 'json');
+    formData.append(
+      'attachment',
+      file,
+      fileName || (file instanceof File ? file.name : 'attachment')
+    );
+    if (this._esriServiceOptions.token) {
+      formData.append('token', this._esriServiceOptions.token);
+    }
+
+    const headers: HeadersInit = {};
+    if (this._esriServiceOptions.apiKey) {
+      headers['X-Esri-Authorization'] = `Bearer ${this._esriServiceOptions.apiKey}`;
+    }
+
+    const response = await fetch(`${this._esriServiceOptions.url}/${objectId}/addAttachment`, {
+      method: 'POST',
+      body: formData,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Add attachment failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.addAttachmentResult;
+  }
+
+  /**
+   * Delete attachments from a feature
+   */
+  async deleteAttachments(objectId: number, attachmentIds: number[]): Promise<EditResult[]> {
+    const params = new URLSearchParams({
+      f: 'json',
+      attachmentIds: attachmentIds.join(','),
+    });
+    this._appendTokenIfExists(params);
+
+    const response = await fetch(`${this._esriServiceOptions.url}/${objectId}/deleteAttachments`, {
+      method: 'POST',
+      body: params,
+      headers: this._getFetchHeaders(),
+      ...this._esriServiceOptions.fetchOptions,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Delete attachments failed: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    this._checkAgolError(data);
+    return data.deleteAttachmentResults;
   }
 
   // Legacy method aliases for backwards compatibility

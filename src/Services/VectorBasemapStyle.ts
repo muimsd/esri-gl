@@ -39,6 +39,7 @@ export interface VectorBasemapStyleAuthOptions {
   format?: 'json' | 'style'; // Output format (v2 default json, v1 uses style semantics)
   language?: string; // Optional locale
   worldview?: string; // Optional worldview parameter
+  itemId?: string; // Custom style via portal item ID
 }
 
 export class VectorBasemapStyle {
@@ -51,6 +52,7 @@ export class VectorBasemapStyle {
   private _format: 'json' | 'style';
   private _language?: string;
   private _worldview?: string;
+  private _itemId?: string;
 
   // Mapping from legacy colon form to canonical slash form
   private static readonly COLON_TO_SLASH: Record<string, string> = {
@@ -67,21 +69,22 @@ export class VectorBasemapStyle {
 
   // Overload signature: (styleName, apiKeyString) or (styleName, options)
   constructor(styleName?: EsriBasemapStyleName, auth?: string | VectorBasemapStyleAuthOptions) {
-    const provided = styleName && styleName.trim() ? styleName : 'arcgis/streets';
-    this.styleName = provided;
-    this._canonical = VectorBasemapStyle._toCanonical(provided);
-
     let opts: VectorBasemapStyleAuthOptions;
     if (typeof auth === 'string') {
       opts = { apiKey: auth };
     } else {
       opts = auth || {};
     }
+    const provided =
+      styleName && styleName.trim() ? styleName : opts.itemId ? '' : 'arcgis/streets';
+    this.styleName = provided;
+    this._canonical = VectorBasemapStyle._toCanonical(provided);
 
     this._apiKey = opts.apiKey;
     this._token = opts.token;
     this._language = opts.language;
     this._worldview = opts.worldview;
+    this._itemId = opts.itemId;
 
     // Infer version: token => v2, else apiKey => v1
     this._version = opts.version || (this._token ? 'v2' : 'v1');
@@ -101,6 +104,16 @@ export class VectorBasemapStyle {
   }
 
   get styleUrl(): string {
+    // Custom style via portal item ID
+    if (this._itemId) {
+      const portalHost = this._host.includes('basemap') ? 'https://www.arcgis.com' : this._host;
+      const params = new URLSearchParams();
+      if (this._token) params.set('token', this._token);
+      if (this._apiKey) params.set('token', this._apiKey);
+      const qs = params.toString();
+      return `${portalHost}/sharing/rest/content/items/${this._itemId}/resources/styles/root.json${qs ? '?' + qs : ''}`;
+    }
+
     // v1 pattern: https://basemaps-api.arcgis.com/arcgis/rest/services/styles/{id}?type=style&apiKey=KEY
     // v2 pattern: https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/{id}?f=json&token=TOKEN&echoToken=false
     if (this._version === 'v2') {

@@ -238,6 +238,22 @@ describe('VectorBasemapStyle', () => {
     });
   });
 
+  describe('itemId Support', () => {
+    it('should generate itemId-based style URL', () => {
+      const service = new VectorBasemapStyle(undefined, { apiKey: 'key', itemId: 'item123' });
+
+      expect(service.styleUrl).toContain(
+        '/sharing/rest/content/items/item123/resources/styles/root.json'
+      );
+    });
+
+    it('should include token in itemId-based style URL', () => {
+      const service = new VectorBasemapStyle(undefined, { token: 'tok', itemId: 'item123' });
+
+      expect(service.styleUrl).toContain('token=tok');
+    });
+  });
+
   describe('Edge Cases and Private Method Coverage', () => {
     it('should handle empty string style name (defaults to arcgis/streets)', () => {
       const service = new VectorBasemapStyle('', 'test-api-key');

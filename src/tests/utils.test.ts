@@ -176,6 +176,20 @@ describe('Utils', () => {
       );
     });
 
+    it('should include token in fetch URL when provided', async () => {
+      const mockMetadata = { serviceDescription: 'Test' };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockMetadata),
+      } as Response);
+
+      await getServiceDetails('https://example.com/MapServer', {}, 'my-token');
+
+      const fetchUrl = mockFetch.mock.calls[0][0] as string;
+      expect(fetchUrl).toContain('token=my-token');
+    });
+
     it('should handle empty URL', async () => {
       const mockMetadata = {};
 

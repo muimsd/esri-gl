@@ -1,7 +1,39 @@
 Change Log
 ==========
 
-### v0.9.0-alpha.4 
+### v0.10.0-alpha.1
+**ArcGIS Online (AGOL) Support & Feature Editing**
+
+#### Critical Bug Fixes
+- **AGOL JSON Error Detection**: Services and Tasks now properly detect ArcGIS error responses returned with HTTP 200 status (e.g., `{error: {code, message, details}}`)
+- **Auth Queue Fix**: Prevented double-callback in `_createServiceCallback` when authentication errors occur — auth errors now correctly queue and replay requests
+- **Token in Tile URLs**: DynamicMapService, TiledMapService, and ImageService now append authentication tokens to tile request URLs
+- **Secure Metadata Fetches**: `getServiceDetails()` now accepts an optional `token` parameter for fetching metadata from secured services
+
+#### New Features
+- **Feature Editing**: FeatureService now supports `addFeatures()`, `updateFeatures()`, `deleteFeatures()`, and `applyEdits()` methods
+- **Attachments**: FeatureService now supports `queryAttachments()`, `addAttachment()`, and `deleteAttachments()` methods
+- **Query Pagination**: New `Query.runAll()` method automatically paginates through all results using `exceededTransferLimit`
+- **GlobalId Support**: `Query.ids()` now returns globalIds when objectIds are not available
+- **API Key Auth**: Services support `apiKey` option for `X-Esri-Authorization: Bearer` header authentication
+- **Custom Basemap Styles**: VectorBasemapStyle supports `itemId` for loading custom portal item styles
+- **Token Management**: `setToken()` method added to DynamicMapService, TiledMapService, and ImageService
+- **Auth Events**: FeatureService supports `on('authenticationrequired', cb)` / `off()` event listeners
+
+#### React Hooks
+- **useFeatureEditing**: New hook for feature editing operations (add, update, delete, applyEdits)
+- **useQuery**: Added `queryAll` callback for automatic query pagination
+
+#### Types
+- Added `EditResult`, `ApplyEditsResult`, `AttachmentInfo`, `AGOLServiceError`, `PaginatedFeatureCollection` interfaces
+- Added AGOL capability flags to `ServiceMetadata` and `LayerMetadata`
+- Added `apiKey` option to `FeatureServiceOptions`
+
+#### Tests
+- 717 tests (up from 693), all passing
+- 24 new tests covering AGOL error handling, token support, editing, pagination, and attachments
+
+### v0.9.0-alpha.4
 **🎉 First Stable Release**
 - **Stable Release**: Graduated from alpha to stable release
 - **Code Quality**: 92.94% test coverage with 651 comprehensive tests

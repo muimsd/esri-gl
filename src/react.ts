@@ -10,6 +10,7 @@ export { useIdentifyFeatures } from './react/hooks/useIdentifyFeatures';
 export { useIdentifyImage } from './react/hooks/useIdentifyImage';
 export { useQuery } from './react/hooks/useQuery';
 export { useFind } from './react/hooks/useFind';
+export { useFeatureEditing } from './react/hooks/useFeatureEditing';
 
 // React components
 export { EsriServiceProvider, useEsriMap } from './react/components/EsriServiceProvider';

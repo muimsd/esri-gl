@@ -115,6 +115,7 @@ type EsriBasemapStyleName =
 interface VectorBasemapStyleAuthOptions {
   apiKey?: string;
   token?: string;
+  itemId?: string;       // Portal item ID for custom basemap styles
   language?: string;
   worldview?: string;
 }
@@ -164,6 +165,22 @@ VectorBasemapStyle.applyStyle(map, 'my-org/custom-style', {
 VectorBasemapStyle.applyStyle(map, 'enterprise/street-map-v2', { 
   token: 'YOUR_TOKEN' 
 });
+```
+
+### Custom Portal Item Styles
+
+Load a basemap style from a specific portal item:
+
+```typescript
+// Load custom style from portal item
+const customBasemap = new VectorBasemapStyle('arcgis/streets', {
+  token: 'YOUR_TOKEN',
+  itemId: 'abc123def456'  // Portal item ID
+});
+
+// The styleUrl will point to the portal item's style resource
+console.log(customBasemap.styleUrl);
+// → https://www.arcgis.com/sharing/rest/content/items/abc123def456/resources/styles/root.json?token=...
 ```
 
 ## Authentication

@@ -5,6 +5,10 @@ export interface ServiceMetadata {
   copyrightText?: string;
   tiles?: string[];
   defaultStyles?: string;
+  supportsApplyEditsWithGlobalIds?: boolean;
+  supportsPagination?: boolean;
+  supportsAttachments?: boolean;
+  maxRecordCount?: number;
   [key: string]: unknown;
 }
 
@@ -86,6 +90,7 @@ export interface FeatureServiceOptions {
   useBoundingBox?: boolean; // Enable screen bounding box filtering for better performance
   useVectorTiles?: boolean; // Use vector tiles instead of GeoJSON
   token?: string;
+  apiKey?: string; // API key sent via X-Esri-Authorization header
   // Not standard query params but kept for API symmetry; ignored for query URL
   layers?: number[] | number;
 }
@@ -323,6 +328,9 @@ export interface LayerMetadata extends LayerInfo {
   standardMaxRecordCount?: number;
   tileMaxRecordCount?: number;
   hasAttachments?: boolean;
+  supportsApplyEditsWithGlobalIds?: boolean;
+  supportsPagination?: boolean;
+  supportsAttachments?: boolean;
   htmlPopupType?: string;
   relationships?: Array<{
     id: number;
@@ -472,4 +480,38 @@ export interface ServiceErrorEvent {
   error: Error;
   context: string;
   timestamp: Date;
+}
+
+// AGOL-specific types
+
+export interface AGOLServiceError {
+  code: number;
+  message: string;
+  details?: string[];
+}
+
+export interface EditResult {
+  objectId: number;
+  globalId?: string;
+  success: boolean;
+  error?: AGOLServiceError;
+}
+
+export interface ApplyEditsResult {
+  addResults?: EditResult[];
+  updateResults?: EditResult[];
+  deleteResults?: EditResult[];
+}
+
+export interface AttachmentInfo {
+  id: number;
+  globalId?: string;
+  name: string;
+  contentType: string;
+  size: number;
+  keywords?: string;
+}
+
+export interface PaginatedFeatureCollection extends GeoJSON.FeatureCollection {
+  exceededTransferLimit?: boolean;
 }

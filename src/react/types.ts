@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Map } from '@/types';
+import type { Map, EditResult, ApplyEditsResult } from '@/types';
 import type {
   EsriServiceOptions,
   ImageServiceOptions,
@@ -50,6 +50,29 @@ export type UseIdentifyImageOptions = IdentifyImageOptions;
 export interface UseQueryOptions extends FeatureServiceOptions {}
 
 export type UseFindOptions = FindOptions;
+
+export interface UseFeatureEditingResult {
+  addFeatures: (
+    features: GeoJSON.Feature[],
+    options?: { gdbVersion?: string }
+  ) => Promise<EditResult[]>;
+  updateFeatures: (
+    features: GeoJSON.Feature[],
+    options?: { gdbVersion?: string }
+  ) => Promise<EditResult[]>;
+  deleteFeatures: (params: { objectIds?: number[]; where?: string }) => Promise<EditResult[]>;
+  applyEdits: (
+    edits: {
+      adds?: GeoJSON.Feature[];
+      updates?: GeoJSON.Feature[];
+      deletes?: number[];
+    },
+    options?: { gdbVersion?: string }
+  ) => Promise<ApplyEditsResult>;
+  loading: boolean;
+  error: Error | null;
+  lastResult: EditResult[] | ApplyEditsResult | null;
+}
 
 // Component types
 export interface EsriServiceProviderProps {

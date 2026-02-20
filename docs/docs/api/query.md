@@ -70,4 +70,28 @@ Get the count of features matching the query.
 
 Get only the object IDs of matching features.
 
-**Returns:** `Promise<Array<number>>`
+**Returns:** `Promise<Array<number | string>>`
+
+Returns object IDs, or global IDs if object IDs are not available.
+
+### `.runAll(options?)`
+
+Execute the query with automatic pagination. Loops while `exceededTransferLimit` is `true`, incrementing `resultOffset` and collecting all features.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| maxPages | `number` | `100` | Safety limit for maximum number of pages to fetch |
+
+**Returns:** `Promise<FeatureCollection>`
+
+```typescript
+// Fetch all features, automatically handling pagination
+const allFeatures = await query({
+  url: 'https://example.com/FeatureServer/0'
+}).where('1=1').runAll();
+
+// With custom page limit
+const limitedFeatures = await query({
+  url: 'https://example.com/FeatureServer/0'
+}).where('1=1').runAll({ maxPages: 10 });
+```

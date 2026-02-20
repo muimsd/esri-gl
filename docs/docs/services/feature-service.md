@@ -274,6 +274,110 @@ try {
 }
 ```
 
+## Feature Editing
+
+FeatureService supports creating, updating, and deleting features on editable ArcGIS Feature Services:
+
+```typescript
+const service = new FeatureService('editable-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  token: 'your-agol-token'
+});
+
+// Add new features
+const addResults = await service.addFeatures([
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [-118.24, 34.05] },
+    properties: { name: 'Los Angeles', population: 3979576 }
+  }
+]);
+
+// Update existing features (must include OBJECTID)
+const updateResults = await service.updateFeatures([
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [-118.24, 34.05] },
+    properties: { OBJECTID: 1, population: 4000000 }
+  }
+]);
+
+// Delete features by ID
+const deleteResults = await service.deleteFeatures({ objectIds: [1, 2, 3] });
+
+// Or delete by WHERE clause
+const deleteByQuery = await service.deleteFeatures({ where: "STATUS = 'INACTIVE'" });
+
+// Batch edits in a single request
+const batchResults = await service.applyEdits({
+  adds: [newFeature1, newFeature2],
+  updates: [updatedFeature],
+  deletes: [10, 11, 12]
+});
+```
+
+## Attachments
+
+Query, add, and delete file attachments on features:
+
+```typescript
+// Query attachments for a feature
+const attachments = await service.queryAttachments(objectId);
+console.log(attachments); // [{ id: 1, name: 'photo.jpg', contentType: 'image/jpeg', size: 12345 }]
+
+// Add an attachment
+const file = new File(['content'], 'document.pdf', { type: 'application/pdf' });
+const result = await service.addAttachment(objectId, file);
+
+// Delete attachments
+await service.deleteAttachments(objectId, [1, 2]);
+```
+
+## Authentication
+
+FeatureService supports multiple authentication methods:
+
+```typescript
+// Token-based authentication (URL parameter)
+const tokenService = new FeatureService('source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  token: 'your-auth-token'
+});
+
+// Update token dynamically
+tokenService.setToken('refreshed-token');
+
+// API Key authentication (X-Esri-Authorization header)
+const apiKeyService = new FeatureService('source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  apiKey: 'your-api-key'
+});
+
+// Listen for authentication errors
+apiKeyService.on('authenticationrequired', async (error) => {
+  console.log('Auth required, refreshing token...');
+  const newToken = await refreshToken();
+  apiKeyService.setToken(newToken);
+});
+```
+
+## AGOL Error Handling
+
+The service automatically detects ArcGIS Online error responses (HTTP 200 with JSON error body) and surfaces them as proper errors:
+
+```typescript
+try {
+  const results = await service.addFeatures([feature]);
+} catch (error) {
+  if (error.code === 498 || error.code === 499) {
+    // Token expired or invalid - refresh and retry
+    service.setToken(await refreshToken());
+  } else {
+    console.error('Service error:', error.message, error.details);
+  }
+}
+```
+
 ## Next Steps
 
 - 📚 [API Reference](../api/feature-service) - Complete FeatureService API

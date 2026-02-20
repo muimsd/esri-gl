@@ -163,6 +163,8 @@ export class DynamicMapService {
     if (this._layerDefs) params.append('layerDefs', this._layerDefs);
     if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
 
+    this._appendTokenIfExists(params);
+
     const tileUrl = `${this.options.url}/export?bbox={bbox-epsg-3857}&${params.toString()}`;
 
     return {
@@ -343,6 +345,13 @@ export class DynamicMapService {
     if (where) this.setLayerDefinition(layerId, where);
   }
 
+  private _appendTokenIfExists(params: URLSearchParams): void {
+    const token = (this.esriServiceOptions as any).token;
+    if (token) {
+      params.append('token', token);
+    }
+  }
+
   private _escapeValue(val: unknown): string {
     if (val === null) return 'NULL';
     if (val instanceof Date) return `${val.valueOf()}`; // epoch ms for time-enabled services
@@ -450,6 +459,11 @@ export class DynamicMapService {
     this._updateSource();
   }
 
+  setToken(token: string | null): void {
+    (this.esriServiceOptions as any).token = token ?? undefined;
+    this._updateSource();
+  }
+
   setAttributionFromService(): Promise<void> {
     if (this._serviceMetadata) {
       updateAttribution(this._serviceMetadata.copyrightText || '', this._sourceId, this._map);
@@ -464,7 +478,11 @@ export class DynamicMapService {
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
     return new Promise((resolve, reject) => {
-      getServiceDetails(this.esriServiceOptions.url, this.esriServiceOptions.fetchOptions)
+      getServiceDetails(
+        this.esriServiceOptions.url,
+        this.esriServiceOptions.fetchOptions,
+        (this.esriServiceOptions as any).token
+      )
         .then(data => {
           this._serviceMetadata = data;
           resolve(this._serviceMetadata);
@@ -508,6 +526,8 @@ export class DynamicMapService {
     if (this._layerDefs) params.append('layerDefs', this._layerDefs);
     if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
     if (this._time) params.append('time', this._time);
+
+    this._appendTokenIfExists(params);
 
     const response = await fetch(
       `${this.esriServiceOptions.url}/identify?${params.toString()}`,
@@ -669,6 +689,8 @@ export class DynamicMapService {
       params.append('groupByFieldsForStatistics', options.groupByFieldsForStatistics);
     }
 
+    this._appendTokenIfExists(params);
+
     const response = await fetch(`${queryUrl}?${params.toString()}`);
 
     if (!response.ok) {
@@ -722,6 +744,8 @@ export class DynamicMapService {
       params.append('returnIdsOnly', 'true');
     }
 
+    this._appendTokenIfExists(params);
+
     const response = await fetch(`${queryUrl}?${params.toString()}`);
 
     if (!response.ok) {
@@ -768,6 +792,8 @@ export class DynamicMapService {
       params.append('historicMoment', options.historicMoment.toString());
     }
 
+    this._appendTokenIfExists(params);
+
     const response = await fetch(`${exportUrl}?${params.toString()}`);
 
     if (!response.ok) {
@@ -788,6 +814,8 @@ export class DynamicMapService {
       params.append('layers', layerIds.join(','));
     }
 
+    this._appendTokenIfExists(params);
+
     const response = await fetch(`${legendUrl}?${params.toString()}`);
 
     if (!response.ok) {
@@ -807,6 +835,8 @@ export class DynamicMapService {
   async getLayerInfo(layerId: number): Promise<LayerMetadata> {
     const layerUrl = `${this.esriServiceOptions.url}/${layerId}`;
     const params = new URLSearchParams({ f: 'json' });
+
+    this._appendTokenIfExists(params);
 
     const response = await fetch(`${layerUrl}?${params.toString()}`);
 
@@ -842,6 +872,8 @@ export class DynamicMapService {
   async discoverLayers(): Promise<LayerInfo[]> {
     const serviceUrl = this.esriServiceOptions.url;
     const params = new URLSearchParams({ f: 'json' });
+
+    this._appendTokenIfExists(params);
 
     const response = await fetch(`${serviceUrl}?${params.toString()}`);
 

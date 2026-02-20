@@ -185,7 +185,20 @@ export class Task {
         }
         return response.json();
       })
-      .then(data => callback(undefined, data))
+      .then(data => {
+        // Check for AGOL JSON-level errors (HTTP 200 with error body)
+        if (data && typeof data === 'object' && data.error) {
+          const err = new Error(data.error.message || 'ArcGIS service error') as Error & {
+            code?: number;
+            details?: string[];
+          };
+          err.code = data.error.code;
+          err.details = data.error.details;
+          callback(err);
+          return;
+        }
+        callback(undefined, data);
+      })
       .catch(error => callback(error));
   }
 }

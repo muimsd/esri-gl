@@ -1334,4 +1334,96 @@ describe('DynamicMapService', () => {
       });
     });
   });
+
+  describe('Token Support', () => {
+    it('should include token in tile URL when provided in esriServiceOptions', () => {
+      service = new DynamicMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+          token: 'test-token',
+        } as any
+      );
+
+      const source = (service as any)._source;
+      expect(source.tiles[0]).toContain('token=test-token');
+    });
+
+    it('should include token in tile URL after calling setToken', () => {
+      service = new DynamicMapService('test-source', mockMap as Map, {
+        url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+      });
+
+      (service as any).setToken('new-token');
+
+      const source = (service as any)._source;
+      expect(source.tiles[0]).toContain('token=new-token');
+    });
+
+    it('should include token in identify fetch URL', async () => {
+      service = new DynamicMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+          token: 'test-token',
+        } as any
+      );
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            results: [
+              {
+                layerId: 0,
+                layerName: 'Test Layer',
+                attributes: { OBJECTID: 1, NAME: 'Test Feature' },
+                geometry: { x: -122.4194, y: 37.7749 },
+              },
+            ],
+          }),
+      } as Response);
+
+      await service.identify({ lng: -122.4194, lat: 37.7749 });
+
+      const identifyCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+      const identifyUrl = identifyCall[0] as string;
+
+      expect(identifyUrl).toContain('/identify?');
+      expect(identifyUrl).toContain('token=test-token');
+    });
+
+    it('should pass token to getServiceDetails when fetching metadata', async () => {
+      service = new DynamicMapService(
+        'test-source',
+        mockMap as Map,
+        {
+          url: 'https://example.com/arcgis/rest/services/TestService/MapServer',
+          token: 'test-token',
+          getAttributionFromService: false,
+        } as any
+      );
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            serviceDescription: 'Test Service',
+            copyrightText: 'Test Copyright',
+            layers: [],
+            spatialReference: { wkid: 3857 },
+          }),
+      } as Response);
+
+      await service.getMetadata();
+
+      // getServiceDetails appends token as a URL param to the fetch call
+      const metadataCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+      const metadataUrl = metadataCall[0] as string;
+
+      expect(metadataUrl).toContain('token=test-token');
+    });
+  });
 });

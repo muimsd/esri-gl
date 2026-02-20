@@ -314,6 +314,44 @@ export class Query extends Task {
   }
 
   /**
+   * Execute the query with automatic pagination, collecting all pages of results.
+   * Loops while exceededTransferLimit is true, incrementing resultOffset.
+   */
+  async runAll(options?: { maxPages?: number }): Promise<GeoJSON.FeatureCollection> {
+    const maxPages = options?.maxPages ?? 100;
+    const allFeatures: GeoJSON.Feature[] = [];
+    let page = 0;
+    let offset = (this.params.resultOffset as number) || 0;
+
+    while (page < maxPages) {
+      this.params.resultOffset = offset;
+      this._cleanParams();
+      this.params.f = 'geojson';
+
+      const response = await this.request<
+        GeoJSON.FeatureCollection & { exceededTransferLimit?: boolean }
+      >();
+      const features = response.features || [];
+      allFeatures.push(...features);
+
+      if (!response.exceededTransferLimit || features.length === 0) {
+        break;
+      }
+
+      offset += features.length;
+      page++;
+    }
+
+    // Reset offset
+    delete this.params.resultOffset;
+
+    return {
+      type: 'FeatureCollection',
+      features: allFeatures,
+    };
+  }
+
+  /**
    * Execute the query and return only the count
    */
   async count(): Promise<number> {
@@ -326,11 +364,14 @@ export class Query extends Task {
   /**
    * Execute the query and return only feature IDs
    */
-  async ids(): Promise<number[]> {
+  async ids(): Promise<(number | string)[]> {
     this._cleanParams();
     this.params.returnIdsOnly = true;
-    const response = await this.request<{ objectIds: number[] }>();
-    return response.objectIds;
+    const response = await this.request<{
+      objectIds?: (number | string)[];
+      globalIds?: string[];
+    }>();
+    return response.objectIds || response.globalIds || [];
   }
 
   /**

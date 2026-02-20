@@ -598,6 +598,71 @@ describe('Query Task', () => {
     });
   });
 
+  describe('AGOL Features', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should paginate with runAll() collecting all pages', async () => {
+      const query = new Query('https://example.com/FeatureServer/0');
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              type: 'FeatureCollection',
+              features: [{ type: 'Feature', properties: { id: 1 }, geometry: null }],
+              exceededTransferLimit: true,
+            }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              type: 'FeatureCollection',
+              features: [{ type: 'Feature', properties: { id: 2 }, geometry: null }],
+              exceededTransferLimit: false,
+            }),
+        } as Response);
+
+      const result = await query.runAll();
+
+      expect(result.features).toHaveLength(2);
+    });
+
+    it('should respect maxPages limit in runAll()', async () => {
+      const query = new Query('https://example.com/FeatureServer/0');
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', properties: { id: 1 }, geometry: null }],
+            exceededTransferLimit: true,
+          }),
+      } as Response);
+
+      const result = await query.runAll({ maxPages: 3 });
+
+      expect(result.features).toHaveLength(3);
+    });
+
+    it('should return globalIds when objectIds is not present', async () => {
+      const query = new Query('https://example.com/FeatureServer/0');
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ globalIds: ['abc', 'def'] }),
+      } as Response);
+
+      const ids = await query.ids();
+
+      expect(ids).toEqual(['abc', 'def']);
+    });
+  });
+
   describe('Geometry Processing', () => {
     let query: Query;
 

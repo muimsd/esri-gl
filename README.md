@@ -40,6 +40,10 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 - **React Integration** - Hooks and components for React applications
 - **React Map GL Support** - Direct integration with react-map-gl
 - **TypeScript Support** - Full type safety with comprehensive interfaces
+- **ArcGIS Online (AGOL) Support** - Proper JSON error handling, token auth, and API key support
+- **Feature Editing** - Add, update, delete features and apply batch edits
+- **Attachments** - Query, add, and delete feature attachments
+- **Query Pagination** - Automatic pagination through large result sets
 
 ## Installation
 
@@ -189,6 +193,36 @@ const features = await service.getFeaturesByLonLat({ lng: -118, lat: 34 }, 100);
 const specific = await service.getFeaturesByObjectIds([1, 2, 3], true);
 ```
 
+#### Feature Editing (AGOL)
+
+```typescript
+// Edit features on an AGOL Feature Service
+const service = new FeatureService('editable-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  token: 'your-agol-token'
+});
+
+// Add features
+const addResults = await service.addFeatures([
+  { type: 'Feature', geometry: { type: 'Point', coordinates: [-95, 37] }, properties: { name: 'New Point' } }
+]);
+
+// Update features
+const updateResults = await service.updateFeatures([
+  { type: 'Feature', geometry: { type: 'Point', coordinates: [-95, 37] }, properties: { OBJECTID: 1, name: 'Updated' } }
+]);
+
+// Delete features
+const deleteResults = await service.deleteFeatures({ objectIds: [1, 2, 3] });
+
+// Batch edits
+const batchResults = await service.applyEdits({
+  adds: [newFeature],
+  updates: [updatedFeature],
+  deletes: [4, 5]
+});
+```
+
 ### VectorTileService
 Client-rendered vector tiles for fast styling and interaction.
 
@@ -226,6 +260,15 @@ const service = new VectorBasemapStyle('source-id', map, {
   style: 'arcgis/streets', // or 'arcgis/navigation', 'arcgis/topographic', etc.
   language: 'en',
   worldview: 'USA'
+});
+```
+
+```typescript
+// Custom portal item style
+const customBasemap = new VectorBasemapStyle('source-id', map, {
+  style: 'arcgis/streets',
+  itemId: 'your-portal-item-id',
+  token: 'your-token'
 });
 ```
 
@@ -282,6 +325,17 @@ const results = await query({
   coordinates: [-118, 34]
 })
 .run();
+```
+
+```typescript
+// Automatic pagination through all results
+import { query } from 'esri-gl';
+
+const allResults = await query({
+  url: 'https://example.com/arcgis/rest/services/MyService/FeatureServer/0'
+})
+.where("STATE_NAME = 'California'")
+.runAll(); // Automatically paginates through all pages
 ```
 
 ## React Integration
@@ -569,6 +623,25 @@ const service = new FeatureService('optimized-source', map, {
 });
 ```
 
+### Authentication
+
+```typescript
+// Token-based authentication (URL parameter)
+const service = new DynamicMapService('secure-source', map, {
+  url: 'https://example.com/arcgis/rest/services/SecureService/MapServer',
+  token: 'your-auth-token'
+});
+
+// Update token dynamically
+service.setToken('new-token');
+
+// API Key authentication (X-Esri-Authorization header)
+const featureService = new FeatureService('api-key-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  apiKey: 'your-api-key' // Sent as X-Esri-Authorization: Bearer header
+});
+```
+
 ## Development
 
 ### Build System
@@ -576,7 +649,7 @@ const service = new FeatureService('optimized-source', map, {
 - **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
 - **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 83.46% with 609 comprehensive test cases
+- **Test Coverage**: 83.46% with 717 comprehensive test cases
 
 ### Development Commands
 

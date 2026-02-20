@@ -27,6 +27,7 @@ For accessing [ArcGIS Feature Services](https://developers.arcgis.com/rest/servi
 | resultOffset       | `number`                  |                              | Starting record for pagination                                   |
 | orderByFields      | `string`                  |                              | Fields to sort results by                                        |
 | token              | `string`                  |                              | Authentication token                                             |
+| apiKey             | `string`                  |                              | API key for X-Esri-Authorization header auth                     |
 | fetchOptions       | `object`                  |                              | Fetch request options                                            |
 | **useVectorTiles** | `boolean`                 | `false`                      | **NEW** Enable smart vector tile detection with GeoJSON fallback |
 | **useBoundingBox** | `boolean`                 | `true`                       | **NEW** Enable viewport-based data loading for performance       |
@@ -79,4 +80,106 @@ map.on('moveend', () => {
 | `setBoundingBox(enabled)`           | `void`                               | Enable/disable bounding box filtering |
 | `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResult[]>`          | Identify features at point            |
 | `remove()`                          | `void`                               | Remove service and clean up resources |
-  | `remove()`                          | `void`                               | Remove service and clean up resources |
+
+## Editing Methods
+
+Methods for creating, updating, and deleting features on editable Feature Services.
+
+### `addFeatures(features, options?)`
+
+Add new features to the service.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| features | `GeoJSON.Feature[]` | Features to add |
+| options | `{ gdbVersion?: string }` | Optional geodatabase version |
+
+**Returns:** `Promise<EditResult[]>`
+
+### `updateFeatures(features, options?)`
+
+Update existing features.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| features | `GeoJSON.Feature[]` | Features to update (must include OBJECTID) |
+| options | `{ gdbVersion?: string }` | Optional geodatabase version |
+
+**Returns:** `Promise<EditResult[]>`
+
+### `deleteFeatures(params)`
+
+Delete features by object IDs or WHERE clause.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| params.objectIds | `number[]` | Object IDs to delete |
+| params.where | `string` | SQL WHERE clause to select features for deletion |
+
+**Returns:** `Promise<EditResult[]>`
+
+### `applyEdits(edits, options?)`
+
+Apply batch edits (add, update, and delete in a single request).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| edits.adds | `GeoJSON.Feature[]` | Features to add |
+| edits.updates | `GeoJSON.Feature[]` | Features to update |
+| edits.deletes | `number[]` | Object IDs to delete |
+| options | `{ gdbVersion?: string }` | Optional geodatabase version |
+
+**Returns:** `Promise<ApplyEditsResult>`
+
+## Attachment Methods
+
+### `queryAttachments(objectId, options?)`
+
+Query attachments for a feature.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| objectId | `number` | Object ID of the feature |
+
+**Returns:** `Promise<AttachmentInfo[]>`
+
+### `addAttachment(objectId, file, fileName?)`
+
+Add an attachment to a feature.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| objectId | `number` | Object ID of the feature |
+| file | `Blob \| File` | The file to attach |
+| fileName | `string` | Optional file name |
+
+**Returns:** `Promise<EditResult>`
+
+### `deleteAttachments(objectId, attachmentIds)`
+
+Delete attachments from a feature.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| objectId | `number` | Object ID of the feature |
+| attachmentIds | `number[]` | IDs of attachments to delete |
+
+**Returns:** `Promise<EditResult[]>`
+
+## Events
+
+### `on(event, callback)` / `off(event, callback)`
+
+Listen for service events.
+
+| Event | Description |
+|-------|-------------|
+| `authenticationrequired` | Fired when the service receives a 498/499 auth error |
+
+```typescript
+service.on('authenticationrequired', (error) => {
+  // Handle token refresh
+  const newToken = await refreshToken();
+  service.setToken(newToken);
+});
+```

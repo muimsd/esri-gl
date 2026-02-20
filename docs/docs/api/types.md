@@ -354,3 +354,67 @@ const features = await service.queryLayerFeatures(2, queryOptions);
 ```
 
 All types are exported from the main esri-gl module and can be imported for use in your applications.
+
+## AGOL Types
+
+### AGOLServiceError
+
+Error object returned by ArcGIS Online services:
+
+```typescript
+interface AGOLServiceError {
+  code: number;           // Error code (e.g., 498, 499, 400)
+  message: string;        // Error message
+  details?: string[];     // Additional error details
+}
+```
+
+### EditResult
+
+Result from a feature editing operation:
+
+```typescript
+interface EditResult {
+  objectId: number;       // Object ID of the affected feature
+  globalId?: string;      // Global ID if available
+  success: boolean;       // Whether the operation succeeded
+  error?: AGOLServiceError; // Error details if operation failed
+}
+```
+
+### ApplyEditsResult
+
+Result from a batch apply edits operation:
+
+```typescript
+interface ApplyEditsResult {
+  addResults?: EditResult[];    // Results for added features
+  updateResults?: EditResult[]; // Results for updated features
+  deleteResults?: EditResult[]; // Results for deleted features
+}
+```
+
+### AttachmentInfo
+
+Metadata for a feature attachment:
+
+```typescript
+interface AttachmentInfo {
+  id: number;             // Attachment ID
+  globalId?: string;      // Global ID if available
+  name: string;           // File name
+  contentType: string;    // MIME type
+  size: number;           // File size in bytes
+  keywords?: string;      // Keywords/tags
+}
+```
+
+### PaginatedFeatureCollection
+
+GeoJSON FeatureCollection with pagination indicator:
+
+```typescript
+interface PaginatedFeatureCollection extends GeoJSON.FeatureCollection {
+  exceededTransferLimit?: boolean;  // True if more results are available
+}
+```
