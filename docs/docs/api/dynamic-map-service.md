@@ -66,6 +66,8 @@ type LayerFilter =
 | `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResponse>` | Identify features at a point |
 | `setLayers(layers)` | `void` | Update which layers are visible |
 | `setLayerDefs(layerDefs)` | `void` | Update layer definition filters |
+| `update()` | `void` | Refresh tiles with current parameters |
+| `remove()` | `void` | Remove the service source and layers from the map |
 
 ### Dynamic Layer Methods
 
@@ -109,6 +111,8 @@ type LayerFilter =
 
 | Method | Returns | Description |
 |--------|---------|-------------|
+| `getMetadata()` | `Promise<ServiceMetadata>` | Retrieve full service metadata |
+| `setAttributionFromService()` | `Promise<void>` | Set map attribution from service copyrightText |
 | `generateLegend(layerIds?)` | `Promise<LegendInfo[]>` | Retrieve layer symbology information |
 | `getLayerInfo(layerId)` | `Promise<LayerMetadata>` | Get detailed layer metadata and capabilities |
 | `getLayerFields(layerId)` | `Promise<FieldInfo[]>` | Get field definitions and types |

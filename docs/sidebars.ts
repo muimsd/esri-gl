@@ -36,8 +36,16 @@ const sidebars: SidebarsConfig = {
         'tasks/overview',
         'tasks/identify-features',
         'tasks/identify-image',
-        'tasks/query', 
+        'tasks/query',
         'tasks/find',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'React Integration',
+      items: [
+        'react/hooks',
+        'react/react-map-gl',
       ],
     },
         {
