@@ -313,34 +313,21 @@ describe('Utils', () => {
       expect(mockAttributionController._updateAttributions).toHaveBeenCalled();
     });
 
-    it('should warn when source is not found', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should silently skip when source is not found', () => {
       const mapWithSourceCaches = mockMap as unknown as Map & { style: MockMapStyle };
       delete mapWithSourceCaches.style.sourceCaches['test-source'];
 
       updateAttribution('New Attribution', 'nonexistent-source', mockMap as Map);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Source nonexistent-source not found when trying to update attribution'
-      );
       expect(mockAttributionController._updateAttributions).not.toHaveBeenCalled();
-
-      consoleWarnSpy.mockRestore();
     });
 
-    it('should handle undefined map style', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should handle undefined map style gracefully', () => {
       const mapWithUndefinedStyle = { ...mockMap, style: undefined } as unknown as Map;
 
-      // The function should handle undefined style gracefully and warn about missing source
       expect(() => {
         updateAttribution('New Attribution', 'test-source', mapWithUndefinedStyle);
       }).not.toThrow();
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Source test-source not found when trying to update attribution'
-      );
-      consoleWarnSpy.mockRestore();
     });
 
     it('should handle missing _controls array', () => {

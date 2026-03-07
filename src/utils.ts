@@ -92,8 +92,9 @@ export function updateAttribution(newAttribution: string, sourceId: string, map:
   } else if (mapStyle?._otherSourceCaches?.[sourceId]?._source) {
     mapStyle._otherSourceCaches[sourceId]._source.attribution = newAttribution;
   } else {
-    console.warn(`Source ${sourceId} not found when trying to update attribution`);
-    return; // Don't try to update attributions if source doesn't exist
+    // Source may not be registered in style caches yet (async attribution fetch race).
+    // Silently skip — attribution will be set when the source is ready.
+    return;
   }
 
   // Call undocumented method to update attribution display
