@@ -205,7 +205,7 @@ describe('Utils', () => {
   });
 
   describe('updateAttribution', () => {
-    let mockMap: Partial<Map>;
+    let mockMap: any;
     let mockAttributionController: MockAttributionController;
     let mockSourceCache: MockSourceCache;
 

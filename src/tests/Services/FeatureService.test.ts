@@ -39,7 +39,7 @@ jest.mock('arcgis-pbf-parser', () =>
 );
 
 describe('FeatureService', () => {
-  let mockMap: Partial<Map>;
+  let mockMap: any;
 
   const mockServiceOptions = {
     url: 'https://example.com/arcgis/rest/services/TestService/FeatureServer/0',

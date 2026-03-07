@@ -1,4 +1,4 @@
-import { Service, ServiceOptions } from './Service';
+import { Service, type ServiceOptions } from './Service';
 import { IdentifyFeatures } from '../Tasks/IdentifyFeatures';
 import { Query } from '../Tasks/Query';
 import { Find } from '../Tasks/Find';

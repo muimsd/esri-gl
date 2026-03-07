@@ -49,7 +49,7 @@ jest.mock('../../utils', () => ({
 
 const { cleanTrailingSlash, updateAttribution } = require('../../utils');
 
-const createMockMap = (): Partial<Map> => ({
+const createMockMap = (): any => ({
   addSource: jest.fn(),
   removeSource: jest.fn(),
   getSource: jest.fn(),

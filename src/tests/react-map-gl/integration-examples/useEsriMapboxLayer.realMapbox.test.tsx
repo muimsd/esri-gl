@@ -114,7 +114,7 @@ describe('useEsriMapboxLayer with Real Mapbox GL', () => {
           // Verify this is a real mapbox map with expected properties
           expect(map.getContainer).toBeDefined();
           expect(map.getCanvas).toBeDefined();
-          expect(map.getStyle).toBeDefined();
+          expect((map as any).getStyle).toBeDefined();
           expect(map.getBounds).toBeDefined();
 
           done();

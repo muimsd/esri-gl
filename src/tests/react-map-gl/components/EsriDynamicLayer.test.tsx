@@ -139,7 +139,7 @@ describe('EsriDynamicLayer', () => {
   });
 
   it('should not create service when map is not available', () => {
-    mockUseMap.mockReturnValue({ current: undefined });
+    mockUseMap.mockReturnValue({ current: undefined } as any);
 
     render(<EsriDynamicLayer {...defaultProps} />);
 

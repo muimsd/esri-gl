@@ -49,7 +49,7 @@ describe('useEsriMapboxLayer', () => {
   });
 
   it('should return null map when no map ref', () => {
-    mockUseMap.mockReturnValue({ current: undefined });
+    mockUseMap.mockReturnValue({ current: undefined } as any);
 
     const { result } = renderHook(() => useEsriMapboxLayer());
 

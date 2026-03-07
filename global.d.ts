@@ -1,4 +1,5 @@
 declare module 'maplibre-gl/dist/maplibre-gl.css';
+declare module '*.css';
 
 declare module 'react-map-gl/mapbox' {
   export * from '@vis.gl/react-mapbox';

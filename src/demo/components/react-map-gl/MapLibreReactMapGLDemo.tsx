@@ -104,7 +104,7 @@ const ReactMapGLMapLibreDemo: React.FC = () => {
 
       <div style={{ flex: 1 }}>
         <Map
-          mapLib={maplibregl}
+          mapLib={maplibregl as any}
           initialViewState={{ longitude: -98, latitude: 39.5, zoom: 4 }}
           mapStyle="https://demotiles.maplibre.org/style.json"
           style={{ width: '100%', height: '100%' }}
