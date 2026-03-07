@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { FeatureService } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 type PopupLike = {
   setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
@@ -12,6 +20,7 @@ const FeatureServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Initializing map...');
 
   useEffect(() => {
@@ -95,11 +104,11 @@ const FeatureServiceDemo: React.FC = () => {
             paint: (style.paint as Record<string, unknown>) || {},
           });
 
-          setLoadingMessage('Loading complete!');
-          setTimeout(() => setIsLoading(false), 500);
+          setLoadingMessage('Ready');
+          setIsLoading(false);
         } catch (error) {
           console.error('Error adding layer with style:', error);
-          setLoadingMessage('Adding fallback layer...');
+          setLoadingMessage('Fallback style applied');
 
           // Fallback to basic circle layer
           mapInstance.addLayer({
@@ -114,8 +123,7 @@ const FeatureServiceDemo: React.FC = () => {
             },
           });
 
-          setLoadingMessage('Loading complete!');
-          setTimeout(() => setIsLoading(false), 500);
+          setIsLoading(false);
         }
       };
 
@@ -140,8 +148,9 @@ const FeatureServiceDemo: React.FC = () => {
           mapInstance.off('sourcedata', onSourceData);
           // Ensure loading is disabled if we timeout
           if (attempts > 50) {
-            setLoadingMessage('Loading timeout - layer may not be visible');
-            setTimeout(() => setIsLoading(false), 1000);
+            setLoadingMessage('Loading timeout');
+            setHasError(true);
+            setIsLoading(false);
           }
         }
       }, 100);
@@ -184,70 +193,37 @@ const FeatureServiceDemo: React.FC = () => {
     };
   }, []);
 
+  const statusBadge = () => {
+    if (hasError) {
+      return <span style={createBadgeStyle('#ef4444', '#ef4444')}>Error: {loadingMessage}</span>;
+    }
+    if (isLoading) {
+      return <span style={createBadgeStyle('#f59e0b', '#92400e')}>{loadingMessage}</span>;
+    }
+    return <span style={createBadgeStyle('#059669', '#065f46')}>Ready</span>;
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <div
-        style={{
-          padding: '10px',
-          backgroundColor: '#f5f5f5',
-          borderBottom: '1px solid #ddd',
-          fontSize: '14px',
-        }}
-      >
-        <strong>Feature Service Demo (PBF)</strong> - Tennessee Bridges from ArcGIS FeatureServer
-        using tile-based PBF loading. Automatically uses Protocol Buffer Format (PBF) for efficient
-        data transfer when supported (ArcGIS Server 10.7+), falls back to GeoJSON otherwise.
-        Features load dynamically as tiles. Click features for details.
-      </div>
-      <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Feature Service (ESM)</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#52525b', lineHeight: 1.5 }}>
+          Tennessee Bridges loaded via ArcGIS FeatureServer using tile-based PBF format.
+          Automatically uses Protocol Buffer Format for efficient data transfer when supported
+          (ArcGIS Server 10.7+), falls back to GeoJSON otherwise. Click features for details.
+        </p>
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              marginBottom: '16px',
-            }}
-          />
-          <div
-            style={{
-              fontSize: '16px',
-              color: '#374151',
-              fontWeight: '500',
-            }}
-          >
-            {loadingMessage}
-          </div>
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+          {statusBadge()}
         </div>
-      )}
 
-      {/* CSS Animation for Spinner */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+        <p style={DEMO_FOOTER_STYLE}>esri-gl &middot; FeatureService with PBF</p>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+      </div>
     </div>
   );
 };

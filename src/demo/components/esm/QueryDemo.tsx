@@ -2,11 +2,34 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { DynamicMapService, Query } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+} from '../shared/styles';
 
 interface QueryResults {
   features?: Array<GeoJSON.Feature>;
   error?: string;
 }
+
+const inputStyle: React.CSSProperties = {
+  padding: '8px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  cursor: 'pointer',
+  width: '100%',
+};
 
 const QueryDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -176,130 +199,138 @@ const QueryDemo: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '10px', background: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-        <h3 style={{ margin: '0 0 10px 0' }}>Query Task Demo</h3>
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Query Task (ESM)</h2>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            WHERE Clause:
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Query Parameters</h3>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
+            WHERE Clause
           </label>
           <input
             type="text"
             value={whereClause}
             onChange={e => setWhereClause(e.target.value)}
-            style={{ width: '300px', padding: '5px' }}
+            style={inputStyle}
             placeholder="pop2000 > 1000000"
           />
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Output Fields (comma-separated):
+        <div>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
+            Output Fields (comma-separated)
           </label>
           <input
             type="text"
             value={outFields}
             onChange={e => setOutFields(e.target.value)}
-            style={{ width: '300px', padding: '5px' }}
+            style={inputStyle}
             placeholder="state_name,pop2000,state_abbr"
           />
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <div>
+          <label style={{ display: 'inline-flex', alignItems: 'center', fontSize: '13px' }}>
             <input
               type="checkbox"
               checked={returnGeometry}
               onChange={e => setReturnGeometry(e.target.checked)}
-              style={{ marginRight: '5px' }}
+              style={{ marginRight: '6px' }}
             />
             Return Geometry
           </label>
         </div>
 
-        <div>
-          <button
-            onClick={executeQuery}
-            disabled={!isLoaded || isQuerying}
-            style={{
-              padding: '8px 16px',
-              marginRight: '10px',
-              backgroundColor: isQuerying ? '#ccc' : '#007cba',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isQuerying ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isQuerying ? 'Querying...' : 'Execute Query'}
-          </button>
-          <button
-            onClick={clearResults}
-            disabled={!queryResults}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: queryResults ? 'pointer' : 'not-allowed',
-            }}
-          >
-            Clear Results
-          </button>
-        </div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Actions</h3>
 
-        {queryResults && (
+        <button
+          onClick={executeQuery}
+          disabled={!isLoaded || isQuerying}
+          style={{
+            ...buttonStyle,
+            backgroundColor: isQuerying ? '#ccc' : '#2563eb',
+            color: '#ffffff',
+            border: 'none',
+            cursor: !isLoaded || isQuerying ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {isQuerying ? 'Querying...' : 'Execute Query'}
+        </button>
+
+        <button
+          onClick={clearResults}
+          disabled={!queryResults}
+          style={{
+            ...buttonStyle,
+            cursor: queryResults ? 'pointer' : 'not-allowed',
+          }}
+        >
+          Clear Results
+        </button>
+
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Results</h3>
+
+        {queryResults ? (
           <div
             style={{
-              marginTop: '10px',
-              padding: '10px',
-              background: 'white',
-              borderRadius: '4px',
-              maxHeight: '200px',
+              padding: '12px',
+              backgroundColor: '#eff6ff',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe',
+              maxHeight: '220px',
               overflowY: 'auto',
             }}
           >
             {queryResults.error ? (
-              <div style={{ color: '#dc3545' }}>
+              <div style={{ color: '#dc3545', fontSize: '13px' }}>
                 <strong>Error:</strong> {queryResults.error}
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Results:</strong> {queryResults.features?.length || 0} features found
+                <div style={{ marginBottom: '8px', fontSize: '13px' }}>
+                  <strong>{queryResults.features?.length || 0}</strong> features found
                 </div>
                 {queryResults.features?.slice(0, 5).map((feature, index) => (
                   <div
                     key={index}
                     style={{
-                      marginBottom: '5px',
-                      padding: '5px',
-                      background: '#f8f9fa',
-                      borderRadius: '3px',
+                      marginBottom: '6px',
+                      padding: '6px',
+                      background: '#ffffff',
+                      borderRadius: '4px',
+                      fontSize: '12px',
                     }}
                   >
                     <strong>Feature {index + 1}:</strong>
                     {Object.entries(feature.properties || {}).map(([key, value]) => (
-                      <div key={key} style={{ marginLeft: '10px' }}>
+                      <div key={key} style={{ marginLeft: '8px' }}>
                         <strong>{key}:</strong> {String(value)}
                       </div>
                     ))}
                   </div>
                 ))}
                 {(queryResults.features?.length || 0) > 5 && (
-                  <div style={{ fontStyle: 'italic', color: '#6c757d' }}>
+                  <div style={{ fontStyle: 'italic', color: '#6c757d', fontSize: '12px' }}>
                     ... and {(queryResults.features?.length || 0) - 5} more features
                   </div>
                 )}
               </>
             )}
           </div>
+        ) : (
+          <div style={{ fontSize: '13px', color: '#a1a1aa' }}>
+            No results yet. Execute a query to see results.
+          </div>
         )}
-      </div>
 
-      <div ref={mapContainer} style={{ flex: 1 }} />
+        <p style={DEMO_FOOTER_STYLE}>Query Task demo using ESM imports</p>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+      </div>
     </div>
   );
 };

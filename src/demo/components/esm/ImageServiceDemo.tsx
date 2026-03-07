@@ -1,6 +1,25 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { ImageService } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
+
+type RenderingRuleOption = {
+  label: string;
+  value: string | null;
+};
+
+const RENDERING_RULES: RenderingRuleOption[] = [
+  { label: 'Natural Color', value: 'Natural Color' },
+  { label: 'Color Infrared', value: 'Color Infrared' },
+  { label: 'Default', value: null },
+];
 
 const ImageServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -8,6 +27,8 @@ const ImageServiceDemo: React.FC = () => {
   const service = useRef<ImageService | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [opacity, setOpacity] = useState(0.8);
+  const [activeRule, setActiveRule] = useState<RenderingRuleOption>(RENDERING_RULES[2]);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -32,7 +53,7 @@ const ImageServiceDemo: React.FC = () => {
             },
           ],
         },
-        center: [-95.7129, 37.0902], // Center of USA
+        center: [-95.7129, 37.0902],
         zoom: 4,
       });
 
@@ -49,7 +70,7 @@ const ImageServiceDemo: React.FC = () => {
             type: 'raster',
             source: 'image-source',
             paint: {
-              'raster-opacity': 0.8,
+              'raster-opacity': opacity,
             },
           });
 
@@ -72,131 +93,89 @@ const ImageServiceDemo: React.FC = () => {
     };
   }, []);
 
-  const applyColorInfraredRule = (): void => {
-    if (service.current) {
-      service.current.setRenderingRule({
-        rasterFunction: 'Color Infrared',
-      });
+  useEffect(() => {
+    if (map.current && map.current.getLayer('image-layer')) {
+      map.current.setPaintProperty('image-layer', 'raster-opacity', opacity);
     }
-  };
+  }, [opacity]);
 
-  const applyNaturalColorRule = (): void => {
-    if (service.current) {
-      service.current.setRenderingRule({
-        rasterFunction: 'Natural Color',
-      });
-    }
-  };
-
-  const clearRenderingRule = (): void => {
-    if (service.current) {
+  const applyRenderingRule = (option: RenderingRuleOption): void => {
+    if (!service.current) return;
+    setActiveRule(option);
+    if (!option.value) {
       service.current.setRenderingRule({});
+    } else {
+      service.current.setRenderingRule({
+        rasterFunction: option.value,
+      });
     }
   };
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
 
   return (
-    <div className="map-container" style={{ position: 'relative', height: '100%' }}>
-      <div ref={mapContainer} className="map" style={{ flex: 1, width: '100%', height: '100%' }} />
-
-      {/* Controls */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            background: 'white',
-            padding: '10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Rendering Rules</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <button
-              onClick={applyNaturalColorRule}
-              disabled={loading || !!error}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: '#fff',
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Natural Color
-            </button>
-            <button
-              onClick={applyColorInfraredRule}
-              disabled={loading || !!error}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: '#fff',
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Color Infrared
-            </button>
-            <button
-              onClick={clearRenderingRule}
-              disabled={loading || !!error}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: '#fff',
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Default
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {loading && (
-        <div className="loading" style={{}}>
-          Loading Image Service...
-        </div>
-      )}
-
-      {!loading && (
-        <div
-          className="info-panel"
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            background: 'white',
-            padding: '8px 10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          <h3 style={{ margin: '0 0 6px 0' }}>Image Service</h3>
-          <p style={{ margin: 0 }}>
-            Dynamic raster imagery from ArcGIS Image Server with rendering rules and analysis.
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <div>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Image Service (ESM)</h2>
+          <p style={{ margin: 0, color: '#4b5563' }}>
+            Landsat multispectral imagery delivered via <code>ImageService</code> with live
+            rendering rule swaps.
           </p>
-          <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
-            https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+          {loading && <span style={createBadgeStyle('#fde68a', '#78350f')}>Loading imagery…</span>}
+          {error && <span style={createBadgeStyle('#fecaca', '#7f1d1d')}>Error: {error}</span>}
+          {!loading && !error && (
+            <span style={createBadgeStyle('#bbf7d0', '#064e3b')}>Image layer ready</span>
+          )}
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Rendering Rules</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {RENDERING_RULES.map(option => (
+              <button
+                key={option.label}
+                onClick={() => applyRenderingRule(option)}
+                disabled={loading || !!error}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: activeRule.label === option.label ? '#2563eb' : '#ffffff',
+                  color: activeRule.label === option.label ? '#ffffff' : '#1f2937',
+                  cursor: loading || error ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Opacity</h3>
+          <input
+            type="range"
+            min={0.3}
+            max={1}
+            step={0.05}
+            value={opacity}
+            onChange={event => setOpacity(Number(event.target.value))}
+            style={{ width: '100%' }}
+          />
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>{(opacity * 100).toFixed(0)}%</p>
+        </div>
+
+        <div style={DEMO_FOOTER_STYLE}>
+          Compare different Landsat spectral composites instantly without tearing down the service.
+        </div>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+      </div>
     </div>
   );
 };

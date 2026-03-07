@@ -254,6 +254,17 @@ describe('Utils', () => {
       );
     });
 
+    it('should not duplicate Esri attribution in string when called multiple times', () => {
+      mockAttributionController.options.customAttribution = 'Existing Attribution';
+
+      updateAttribution('Attribution 1', 'test-source', mockMap as Map);
+      updateAttribution('Attribution 2', 'test-source', mockMap as Map);
+
+      const attribution = mockAttributionController.options.customAttribution as string;
+      const matches = attribution.match(/Powered by/g);
+      expect(matches).toHaveLength(1);
+    });
+
     it('should add Esri attribution to array attribution if not present', () => {
       mockAttributionController.options.customAttribution = ['Attribution 1', 'Attribution 2'];
 

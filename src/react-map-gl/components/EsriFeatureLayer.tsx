@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FeatureService } from '@/Services/FeatureService';
 import type { FeatureServiceOptions } from '@/types';
 import type { EsriFeatureLayerProps } from '../types';
@@ -11,6 +11,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
   const { current: map } = useReactMapGL();
   const sourceId = props.sourceId || `esri-feature-${props.id}`;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const serviceRef = useRef<FeatureService | null>(null);
 
   // Wait for map to be loaded before creating service
   useEffect(() => {
@@ -35,39 +36,36 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
     };
   }, [map]);
 
-  const service = useMemo(() => {
-    if (!map || !isMapLoaded) return null;
+  // Create FeatureService, add layer, and clean up on unmount
+  useEffect(() => {
+    if (!map || !isMapLoaded) return;
 
     const mapInstance = map.getMap?.();
-    if (!mapInstance) return null;
+    if (!mapInstance) return;
+
+    const mi = mapInstance as any;
 
     // Only include defined properties to avoid overriding defaults with undefined
     const options: Partial<FeatureServiceOptions> & { url: string } = { url: props.url };
     if (props.where !== undefined) options.where = props.where;
     if (props.outFields !== undefined) options.outFields = props.outFields;
 
-    return new FeatureService(sourceId, mapInstance as unknown as import('@/types').Map, options);
-  }, [map, isMapLoaded, sourceId, props.url, props.where, props.outFields]);
-
-  useEffect(() => {
-    if (!map || !service) return;
-
-    const mapInstance = map.getMap?.() as any;
-    if (
-      !mapInstance ||
-      typeof mapInstance.getLayer !== 'function' ||
-      typeof mapInstance.addLayer !== 'function'
-    ) {
-      return () => {
-        service.remove();
-      };
-    }
+    const service = new FeatureService(
+      sourceId,
+      mapInstance as unknown as import('@/types').Map,
+      options
+    );
+    serviceRef.current = service;
 
     // Add GeoJSON layer
-    if (!mapInstance.getLayer(props.id)) {
+    if (
+      typeof mi.getLayer === 'function' &&
+      typeof mi.addLayer === 'function' &&
+      !mi.getLayer(props.id)
+    ) {
       const layerConfig = {
         id: props.id,
-        type: 'fill' as const, // Default to fill, can be customized
+        type: 'fill' as const,
         source: sourceId,
         paint: props.paint || {
           'fill-color': '#888888',
@@ -80,22 +78,32 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
       };
 
       if (props.beforeId) {
-        (mapInstance as any).addLayer(layerConfig as any, props.beforeId as any);
+        mi.addLayer(layerConfig as any, props.beforeId as any);
       } else {
-        (mapInstance as any).addLayer(layerConfig as any);
+        mi.addLayer(layerConfig as any);
       }
     }
 
-    // Cleanup function
     return () => {
-      if ((mapInstance as any).getStyle?.() && (mapInstance as any).getLayer?.(props.id)) {
-        (mapInstance as any).removeLayer(props.id);
+      if (mi.getStyle?.() && mi.getLayer?.(props.id)) {
+        mi.removeLayer(props.id);
       }
-      if (service) {
-        service.remove();
-      }
+      service.remove();
+      serviceRef.current = null;
     };
-  }, [map, service, props.id, props.beforeId, props.visible, props.paint, props.layout, sourceId]);
+  }, [
+    map,
+    isMapLoaded,
+    sourceId,
+    props.url,
+    props.where,
+    props.outFields,
+    props.id,
+    props.beforeId,
+    props.visible,
+    props.paint,
+    props.layout,
+  ]);
 
   return null;
 }

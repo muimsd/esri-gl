@@ -1,6 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { TiledMapService } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 const TiledMapServiceDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -9,6 +17,7 @@ const TiledMapServiceDemo: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showTiled, setShowTiled] = useState<boolean>(true);
+  const [opacity, setOpacity] = useState<number>(0.7);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -33,7 +42,7 @@ const TiledMapServiceDemo: React.FC = () => {
             },
           ],
         },
-        center: [-95.7129, 37.0902], // Center of USA
+        center: [-95.7129, 37.0902],
         zoom: 4,
       });
 
@@ -48,7 +57,7 @@ const TiledMapServiceDemo: React.FC = () => {
             type: 'raster',
             source: 'tiled-source',
             paint: {
-              'raster-opacity': 0.7,
+              'raster-opacity': opacity,
             },
             layout: {
               visibility: showTiled ? 'visible' : 'none',
@@ -74,82 +83,84 @@ const TiledMapServiceDemo: React.FC = () => {
     };
   }, []);
 
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
+  useEffect(() => {
+    if (!map.current || !map.current.getLayer('tiled-layer')) return;
+    map.current.setPaintProperty('tiled-layer', 'raster-opacity', opacity);
+  }, [opacity]);
 
   return (
-    <div className="map-container" style={{ position: 'relative', height: '100%' }}>
-      <div ref={mapContainer} className="map" style={{ flex: 1, width: '100%', height: '100%' }} />
-
-      {/* Toggle control */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          display: 'flex',
-          gap: 8,
-        }}
-      >
-        <button
-          onClick={() => {
-            setShowTiled(prev => {
-              const next = !prev;
-              if (map.current && map.current.getLayer('tiled-layer')) {
-                map.current.setLayoutProperty(
-                  'tiled-layer',
-                  'visibility',
-                  next ? 'visible' : 'none'
-                );
-              }
-              return next;
-            });
-          }}
-          disabled={loading || !!error}
-          style={{
-            padding: '6px 10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            background: '#fff',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          }}
-        >
-          {showTiled ? 'Hide Tiled Layer' : 'Show Tiled Layer'}
-        </button>
-      </div>
-
-      {loading && (
-        <div className="loading" style={{}}>
-          Loading Tiled Map Service...
-        </div>
-      )}
-
-      {!loading && (
-        <div
-          className="info-panel"
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            background: 'white',
-            padding: '8px 10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          <h3 style={{ margin: '0 0 6px 0' }}>Tiled Map Service</h3>
-          <p style={{ margin: 0 }}>
-            Pre-rendered cached map tiles from ArcGIS Server for fast performance.
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <div>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Tiled Map Service (ESM)</h2>
+          <p style={{ margin: 0, color: '#4b5563' }}>
+            Pre-rendered cached map tiles from ArcGIS Server overlaid using direct ESM imports with{' '}
+            <code>maplibre-gl</code>.
           </p>
-          <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
-            https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer
-          </div>
         </div>
-      )}
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+          {loading && <span style={createBadgeStyle('#fde68a', '#78350f')}>Loading tiles...</span>}
+          {error && <span style={createBadgeStyle('#fecaca', '#7f1d1d')}>Error: {error}</span>}
+          {!loading && !error && (
+            <span style={createBadgeStyle('#bbf7d0', '#064e3b')}>Tiled layer ready</span>
+          )}
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Visibility</h3>
+          <button
+            onClick={() => {
+              setShowTiled(prev => {
+                const next = !prev;
+                if (map.current && map.current.getLayer('tiled-layer')) {
+                  map.current.setLayoutProperty(
+                    'tiled-layer',
+                    'visibility',
+                    next ? 'visible' : 'none'
+                  );
+                }
+                return next;
+              });
+            }}
+            disabled={loading || !!error}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              backgroundColor: '#ffffff',
+              cursor: loading || !!error ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {showTiled ? 'Hide Tiled Layer' : 'Show Tiled Layer'}
+          </button>
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Opacity</h3>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={opacity}
+            onChange={e => setOpacity(Number(e.target.value))}
+            disabled={loading || !!error}
+            style={{ width: '100%' }}
+          />
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>{(opacity * 100).toFixed(0)}%</p>
+        </div>
+
+        <div style={DEMO_FOOTER_STYLE}>
+          Esri World Topo Map served as tiled raster overlay. Adjust opacity to compare with the
+          underlying OpenStreetMap basemap.
+        </div>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+      </div>
     </div>
   );
 };

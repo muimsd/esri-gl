@@ -1,6 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { VectorTileService } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 type VTLStyleLayer = {
   type: 'fill' | 'line' | 'symbol' | 'circle' | string;
@@ -11,21 +19,6 @@ type VTLStyleLayer = {
 };
 
 const VectorTileServiceDemo: React.FC = () => {
-  // Add spinner animation styles
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const service = useRef<VectorTileService | null>(null);
@@ -57,13 +50,12 @@ const VectorTileServiceDemo: React.FC = () => {
             },
           ],
         },
-        zoom: 12, // starting zoom
-        center: [-118.805, 34.027], // starting location [longitude, latitude]
+        zoom: 12,
+        center: [-118.805, 34.027],
       });
 
       map.current.on('load', async () => {
         try {
-          // Example Vector Tile Service URL
           const serviceUrl =
             'https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer';
 
@@ -93,7 +85,6 @@ const VectorTileServiceDemo: React.FC = () => {
     };
   }, []);
 
-  // Function to add vector tile layer - used both automatically and manually
   const addVectorTileLayer = async (): Promise<void> => {
     if (service.current && map.current && !layerAdded && !layerLoading) {
       setLayerLoading(true);
@@ -104,10 +95,8 @@ const VectorTileServiceDemo: React.FC = () => {
           throw new Error('Style data is empty or invalid.');
         }
         const styleLayer = style as VTLStyleLayer;
-        // Add layer with dynamic type checking
         const layerConfig = {
           id: 'vector-tiles-layer',
-          // Use the service-mapped source id to ensure it matches the added source
           source: styleLayer.source || 'vector-tiles-demo',
           'source-layer': styleLayer['source-layer'],
           layout: styleLayer.layout || {},
@@ -123,19 +112,16 @@ const VectorTileServiceDemo: React.FC = () => {
         } else if (style.type === 'circle') {
           map.current.addLayer({ ...layerConfig, type: 'circle' });
         } else {
-          // Default to fill
           map.current.addLayer({ ...layerConfig, type: 'fill' });
         }
 
         setLayerAdded(true);
       } catch (error) {
         console.error('Error adding vector tile layer:', error);
-        // Fallback style
         map.current.addLayer({
           id: 'vector-tiles-layer',
           type: 'fill',
           source: 'vector-tiles-demo',
-          // Known source-layer for Santa Monica Parcels dataset
           'source-layer': 'Santa_Monica_Mountains_Parcels',
           paint: {
             'fill-color': '#088',
@@ -160,129 +146,64 @@ const VectorTileServiceDemo: React.FC = () => {
     }
   };
 
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
+  const getStatusBadge = () => {
+    if (error) return <span style={createBadgeStyle('#ef4444', '#ef4444')}>Error</span>;
+    if (loading) return <span style={createBadgeStyle('#f59e0b', '#92400e')}>Loading...</span>;
+    if (layerLoading)
+      return <span style={createBadgeStyle('#f59e0b', '#92400e')}>Adding Layer...</span>;
+    if (layerAdded) return <span style={createBadgeStyle('#059669', '#065f46')}>Layer Active</span>;
+    return <span style={createBadgeStyle('#71717a')}>Ready</span>;
+  };
+
+  const buttonStyle = (disabled: boolean): React.CSSProperties => ({
+    padding: '8px 12px',
+    borderRadius: '6px',
+    border: '1px solid #d1d5db',
+    background: disabled ? '#f3f4f6' : '#fff',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    fontSize: '13px',
+  });
 
   return (
-    <div className="map-container" style={{ position: 'relative', height: '100%' }}>
-      <div ref={mapContainer} className="map" style={{ flex: 1, width: '100%', height: '100%' }} />
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Vector Tile Service (ESM)</h2>
 
-      {/* Controls */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            background: 'white',
-            padding: '10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Vector Tile Layer</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <button
-              onClick={addLayer}
-              disabled={layerAdded || loading || layerLoading || !!error}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: layerAdded || layerLoading ? '#ccc' : '#fff',
-                cursor: layerAdded || loading || layerLoading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {layerLoading ? 'Adding Layer...' : layerAdded ? 'Layer Added' : 'Add Layer'}
-            </button>
-            <button
-              onClick={removeLayer}
-              disabled={!layerAdded || loading || layerLoading || !!error}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: !layerAdded ? '#ccc' : '#fff',
-                cursor: !layerAdded || loading || layerLoading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Remove Layer
-            </button>
-          </div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+        {getStatusBadge()}
+        {error && (
+          <span style={{ fontSize: '12px', color: '#ef4444', wordBreak: 'break-word' }}>
+            {error}
+          </span>
+        )}
+
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Layer Control</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <button
+            onClick={addLayer}
+            disabled={layerAdded || loading || layerLoading || !!error}
+            style={buttonStyle(layerAdded || loading || layerLoading || !!error)}
+          >
+            {layerLoading ? 'Adding Layer...' : layerAdded ? 'Layer Added' : 'Add Layer'}
+          </button>
+          <button
+            onClick={removeLayer}
+            disabled={!layerAdded || loading || layerLoading || !!error}
+            style={buttonStyle(!layerAdded || loading || layerLoading || !!error)}
+          >
+            Remove Layer
+          </button>
         </div>
+
+        <p style={DEMO_FOOTER_STYLE}>
+          Vector tiles from ArcGIS Server load automatically on map initialization for scalable,
+          interactive mapping with dynamic styling.
+        </p>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
       </div>
-
-      {loading && (
-        <div className="loading" style={{}}>
-          Loading Vector Tile Service...
-        </div>
-      )}
-
-      {layerLoading && (
-        <div
-          className="layer-loading"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'rgba(255, 255, 255, 0.9)',
-            padding: '10px 20px',
-            borderRadius: 4,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <div
-            style={{
-              width: 16,
-              height: 16,
-              border: '2px solid #ccc',
-              borderTop: '2px solid #088',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-          Adding Vector Tile Layer...
-        </div>
-      )}
-
-      {!loading && (
-        <div
-          className="info-panel"
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            background: 'white',
-            padding: '8px 10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          <h3 style={{ margin: '0 0 6px 0' }}>Vector Tile Service</h3>
-          <p style={{ margin: 0 }}>
-            Vector tiles from ArcGIS Server load automatically on map initialization for scalable,
-            interactive mapping with dynamic styling.
-          </p>
-          <div className="url" style={{ fontSize: 12, marginTop: 6 }}>
-            https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -71,7 +71,9 @@ export function updateAttribution(newAttribution: string, sourceId: string, map:
   const customAttribution = attributionController.options?.customAttribution;
 
   if (typeof customAttribution === 'string') {
-    attributionController.options.customAttribution = `${customAttribution} | ${POWERED_BY_ESRI_ATTRIBUTION_STRING}`;
+    if (!customAttribution.includes(POWERED_BY_ESRI_ATTRIBUTION_STRING)) {
+      attributionController.options.customAttribution = `${customAttribution} | ${POWERED_BY_ESRI_ATTRIBUTION_STRING}`;
+    }
   } else if (customAttribution === undefined) {
     if (attributionController.options) {
       attributionController.options.customAttribution = POWERED_BY_ESRI_ATTRIBUTION_STRING;

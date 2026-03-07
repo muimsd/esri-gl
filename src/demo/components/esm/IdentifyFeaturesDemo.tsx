@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { DynamicMapService, IdentifyFeatures } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 type PopupLike = {
   setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
@@ -8,11 +16,20 @@ type PopupLike = {
   addTo(target: unknown): PopupLike;
 };
 
+interface IdentifyResult {
+  layerName: string;
+  attributes: Record<string, unknown>;
+}
+
 const IdentifyFeaturesDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const service = useRef<DynamicMapService | null>(null);
   const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2]);
+  const [identifyStatus, setIdentifyStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    'idle'
+  );
+  const [identifyResults, setIdentifyResults] = useState<IdentifyResult[]>([]);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -70,6 +87,9 @@ const IdentifyFeaturesDemo: React.FC = () => {
         const e = event as { lngLat: { lng: number; lat: number } };
         if (!service.current || !map.current) return;
 
+        setIdentifyStatus('loading');
+        setIdentifyResults([]);
+
         try {
           const url: string = service.current.esriServiceOptions.url;
           const identify = new IdentifyFeatures(url);
@@ -84,6 +104,15 @@ const IdentifyFeaturesDemo: React.FC = () => {
             .layers(layersParam)
             .tolerance(5)
             .run();
+
+          const results: IdentifyResult[] = fc.features.map(feature => ({
+            layerName:
+              ((feature.properties as Record<string, unknown>)?.layerName as string) || 'Unknown',
+            attributes: (feature.properties as Record<string, unknown>) || {},
+          }));
+
+          setIdentifyResults(results);
+          setIdentifyStatus('done');
 
           const feature = fc.features[0];
           if (feature) {
@@ -102,6 +131,7 @@ const IdentifyFeaturesDemo: React.FC = () => {
           }
         } catch (error) {
           console.error('Identify (task) error:', error);
+          setIdentifyStatus('error');
         }
       });
 
@@ -146,21 +176,18 @@ const IdentifyFeaturesDemo: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div
-        style={{
-          padding: '10px',
-          backgroundColor: '#f5f5f5',
-          borderBottom: '1px solid #ddd',
-          fontSize: '14px',
-        }}
-      >
-        <div style={{ marginBottom: '10px' }}>
-          <strong>Dynamic Map Service Demo</strong> - USA MapServer with layer controls and identify
-        </div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Identify Features (ESM)</h2>
+
+        {/* Visible Sublayers section */}
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Visible Sublayers</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {layerOptions.map(layer => (
-            <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <label
+              key={layer.id}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+            >
               <input
                 type="checkbox"
                 checked={selectedLayers.includes(layer.id)}
@@ -170,11 +197,74 @@ const IdentifyFeaturesDemo: React.FC = () => {
             </label>
           ))}
         </div>
-        <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-          Click on the map to identify features
+
+        {/* Identify section */}
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Identify</h3>
+        <div>
+          {identifyStatus === 'idle' && (
+            <span style={createBadgeStyle('#a1a1aa')}>Waiting for click</span>
+          )}
+          {identifyStatus === 'loading' && (
+            <span style={createBadgeStyle('#f59e0b', '#92400e')}>Identifying...</span>
+          )}
+          {identifyStatus === 'error' && (
+            <span style={createBadgeStyle('#ef4444', '#991b1b')}>Identify failed</span>
+          )}
+          {identifyStatus === 'done' && identifyResults.length === 0 && (
+            <span style={createBadgeStyle('#a1a1aa')}>No features found</span>
+          )}
+          {identifyStatus === 'done' && identifyResults.length > 0 && (
+            <>
+              <span style={createBadgeStyle('#059669', '#065f46')}>
+                {identifyResults.length} feature{identifyResults.length !== 1 ? 's' : ''} found
+              </span>
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '12px',
+                  backgroundColor: '#eff6ff',
+                  borderRadius: '8px',
+                  border: '1px solid #bfdbfe',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                }}
+              >
+                {identifyResults.map((result, idx) => (
+                  <div
+                    key={idx}
+                    style={{ marginBottom: idx < identifyResults.length - 1 ? '8px' : 0 }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: '#1e40af',
+                        marginBottom: '2px',
+                      }}
+                    >
+                      {result.layerName}
+                    </div>
+                    {Object.entries(result.attributes).map(([key, val]) => {
+                      if (val === null || val === '' || typeof val === 'object') return null;
+                      return (
+                        <div key={key} style={{ fontSize: '11px', color: '#374151' }}>
+                          <strong>{key}:</strong> {String(val)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
+
+        <p style={DEMO_FOOTER_STYLE}>Click the map to identify features from visible sublayers.</p>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
       </div>
-      <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
     </div>
   );
 };

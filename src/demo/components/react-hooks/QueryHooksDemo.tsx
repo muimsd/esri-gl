@@ -83,7 +83,7 @@ const QueryHooksDemo: React.FC = () => {
 
     return () => {
       eventedMap.off('load', onLoad);
-      if (map.getLayer(LAYER_ID)) {
+      if (map.getStyle?.() && map.getLayer(LAYER_ID)) {
         map.removeLayer(LAYER_ID);
       }
     };

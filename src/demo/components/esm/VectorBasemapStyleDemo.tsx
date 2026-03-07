@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { VectorBasemapStyle } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 // Session storage keys
 const STORAGE_KEYS = {
@@ -39,6 +47,18 @@ const safeSessionStorage = {
   },
 };
 
+// Valid Esri vector basemap style names (Basemap Styles Service)
+const styleOptions = [
+  { id: 'arcgis/streets', name: 'Streets' },
+  { id: 'arcgis/topographic', name: 'Topographic' },
+  { id: 'arcgis/navigation', name: 'Navigation' },
+  { id: 'arcgis/streets-relief', name: 'Streets Relief' },
+  { id: 'arcgis/dark-gray', name: 'Dark Gray' },
+  { id: 'arcgis/light-gray', name: 'Light Gray' },
+  { id: 'arcgis/oceans', name: 'Oceans' },
+  { id: 'arcgis/imagery', name: 'Imagery' },
+];
+
 const VectorBasemapStyleDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -51,19 +71,7 @@ const VectorBasemapStyleDemo: React.FC = () => {
   const [language, setLanguage] = useState<string>('');
   const [worldview, setWorldview] = useState<string>('');
   const [resolvedUrl, setResolvedUrl] = useState<string>('');
-
-  // Valid Esri vector basemap style names (Basemap Styles Service)
-  // Reference: https://developers.arcgis.com/documentation/mapping-apis-and-services/maps/services/#item-2
-  const styleOptions = [
-    { id: 'arcgis/streets', name: 'Streets' },
-    { id: 'arcgis/topographic', name: 'Topographic' },
-    { id: 'arcgis/navigation', name: 'Navigation' },
-    { id: 'arcgis/streets-relief', name: 'Streets Relief' },
-    { id: 'arcgis/dark-gray', name: 'Dark Gray' },
-    { id: 'arcgis/light-gray', name: 'Light Gray' },
-    { id: 'arcgis/oceans', name: 'Oceans' },
-    { id: 'arcgis/imagery', name: 'Imagery' },
-  ];
+  const [testStatus, setTestStatus] = useState<string>('');
 
   // Load saved data from session storage on component mount
   useEffect(() => {
@@ -128,7 +136,7 @@ const VectorBasemapStyleDemo: React.FC = () => {
       map.current.on('load', () => {
         console.log('Map loaded successfully');
         // Apply initial style once map core is ready
-        setStyle(currentStyle);
+        applyStyle(currentStyle);
       });
 
       map.current.on('error', (e: { error?: Error }) => {
@@ -180,9 +188,11 @@ const VectorBasemapStyleDemo: React.FC = () => {
     safeSessionStorage.setItem(STORAGE_KEYS.CURRENT_STYLE, currentStyle);
     // Trigger map initialization via hasAuth change; style will be set on map load.
     setHasAuth(true);
+    setError('');
+    setTestStatus('');
   };
 
-  const setStyle = (styleId: string): void => {
+  const applyStyle = (styleId: string): void => {
     if (!map.current) {
       return;
     }
@@ -289,253 +299,360 @@ const VectorBasemapStyleDemo: React.FC = () => {
     }
   };
 
-  if (!hasAuth) {
-    return (
+  const handleTestCredential = async () => {
+    const trimmed = credential.trim();
+    if (!trimmed) return;
+
+    const isToken = trimmed.includes('.') && trimmed.length > 60;
+    const testUrl = isToken
+      ? `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles?f=json&token=${encodeURIComponent(trimmed)}`
+      : `https://basemaps-api.arcgis.com/arcgis/rest/services/styles?f=json&apiKey=${encodeURIComponent(trimmed)}`;
+
+    setTestStatus('Testing credential...');
+    try {
+      const response = await fetch(testUrl);
+      setTestStatus(`Credential test: ${response.status} ${response.statusText}`);
+    } catch (fetchError) {
+      const message = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      setTestStatus(`Credential test failed: ${message}`);
+    }
+  };
+
+  const handleChangeCredentials = () => {
+    setHasAuth(false);
+    setResolvedUrl('');
+    setError('');
+    setTestStatus('');
+    // Clear session storage
+    safeSessionStorage.removeItem(STORAGE_KEYS.CREDENTIAL);
+    safeSessionStorage.removeItem(STORAGE_KEYS.AUTH_MODE);
+    safeSessionStorage.removeItem(STORAGE_KEYS.LANGUAGE);
+    safeSessionStorage.removeItem(STORAGE_KEYS.WORLDVIEW);
+    safeSessionStorage.removeItem(STORAGE_KEYS.CURRENT_STYLE);
+    // Reset form values
+    setCredential('');
+    setAuthMode('auto');
+    setLanguage('');
+    setWorldview('');
+    setCurrentStyle('arcgis/streets');
+  };
+
+  // ---------- Auth sidebar content ----------
+  const renderAuthSidebar = () => (
+    <aside style={DEMO_SIDEBAR_STYLE}>
+      <div>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Vector Basemap Style (ESM)</h2>
+        <p style={{ margin: 0, color: '#4b5563', fontSize: '13px' }}>
+          Enter an Esri API Key (v1) or Token (v2) to load vector basemap styles via the ESM class
+          API.
+        </p>
+      </div>
+
+      <div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Credentials</h3>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
+          Auth Mode
+          <select
+            value={authMode}
+            onChange={e => {
+              const newAuthMode = e.target.value as 'auto' | 'apiKey' | 'token';
+              setAuthMode(newAuthMode);
+              safeSessionStorage.setItem(STORAGE_KEYS.AUTH_MODE, newAuthMode);
+            }}
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '13px',
+            }}
+          >
+            <option value="auto">Auto Detect</option>
+            <option value="apiKey">API Key (v1)</option>
+            <option value="token">Token (v2)</option>
+          </select>
+        </label>
+
+        <label
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            fontSize: '13px',
+            marginTop: '10px',
+          }}
+        >
+          Credential
+          <input
+            type="password"
+            placeholder={authMode === 'token' ? 'Enter Esri Token' : 'Enter Esri API Key or Token'}
+            value={credential}
+            onChange={e => {
+              const newCredential = e.target.value;
+              setCredential(newCredential);
+              safeSessionStorage.setItem(STORAGE_KEYS.CREDENTIAL, newCredential);
+            }}
+            style={{
+              padding: '10px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '13px',
+            }}
+          />
+        </label>
+
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={activateAuth}
+            disabled={!credential.trim()}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '6px',
+              border: '1px solid',
+              borderColor: credential.trim() ? '#2563eb' : '#d1d5db',
+              backgroundColor: credential.trim() ? '#2563eb' : '#f3f4f6',
+              color: credential.trim() ? '#ffffff' : '#9ca3af',
+              cursor: credential.trim() ? 'pointer' : 'not-allowed',
+              fontWeight: 600,
+            }}
+          >
+            Activate
+          </button>
+          <button
+            onClick={handleTestCredential}
+            disabled={!credential.trim()}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '6px',
+              border: '1px solid #10b981',
+              backgroundColor: credential.trim() ? '#10b981' : '#f3f4f6',
+              color: credential.trim() ? '#ffffff' : '#9ca3af',
+              cursor: credential.trim() ? 'pointer' : 'not-allowed',
+              fontWeight: 600,
+            }}
+          >
+            Test
+          </button>
+        </div>
+        {testStatus && (
+          <div style={{ marginTop: '8px', fontSize: '12px', color: '#2563eb' }}>{testStatus}</div>
+        )}
+      </div>
+
+      <div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Internationalization</h3>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
+          Language
+          <input
+            type="text"
+            placeholder="e.g. en"
+            value={language}
+            onChange={e => {
+              const newLanguage = e.target.value;
+              setLanguage(newLanguage);
+              safeSessionStorage.setItem(STORAGE_KEYS.LANGUAGE, newLanguage);
+            }}
+            style={{
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '13px',
+            }}
+          />
+        </label>
+        <label
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            fontSize: '13px',
+            marginTop: '10px',
+          }}
+        >
+          Worldview
+          <input
+            type="text"
+            placeholder="e.g. US, AR, IN"
+            value={worldview}
+            onChange={e => {
+              const newWorldview = e.target.value;
+              setWorldview(newWorldview);
+              safeSessionStorage.setItem(STORAGE_KEYS.WORLDVIEW, newWorldview);
+            }}
+            style={{
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '13px',
+            }}
+          />
+        </label>
+      </div>
+
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          fontSize: '12px',
+          color: '#6b7280',
+          padding: '8px',
+          backgroundColor: '#f3f4f6',
+          borderRadius: '6px',
         }}
       >
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <h3>Vector Basemap Style Demo</h3>
-          <p>Enter an Esri API Key (v1) or Token (v2 Basemap Styles):</p>
-          <div style={{ marginTop: '8px' }}>
-            <label style={{ fontSize: '12px', color: '#444', marginRight: '6px' }}>
-              Auth Mode:
-            </label>
-            <select
-              value={authMode}
-              onChange={e => {
-                const newAuthMode = e.target.value as 'auto' | 'apiKey' | 'token';
-                setAuthMode(newAuthMode);
-                safeSessionStorage.setItem(STORAGE_KEYS.AUTH_MODE, newAuthMode);
-              }}
-              style={{ padding: '4px 6px', fontSize: '12px' }}
-            >
-              <option value="auto">Auto Detect</option>
-              <option value="apiKey">API Key (v1)</option>
-              <option value="token">Token (v2)</option>
-            </select>
-          </div>
-          <div style={{ marginTop: '20px' }}>
-            <input
-              type="password"
-              placeholder={
-                authMode === 'token' ? 'Enter Esri Token' : 'Enter Esri API Key or Token'
-              }
-              value={credential}
-              onChange={e => {
-                const newCredential = e.target.value;
-                setCredential(newCredential);
-                // Save to session storage as user types (for convenience)
-                safeSessionStorage.setItem(STORAGE_KEYS.CREDENTIAL, newCredential);
-              }}
-              style={{
-                padding: '10px',
-                width: '300px',
-                marginRight: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '3px',
-              }}
-            />
-            <button
-              onClick={activateAuth}
-              disabled={!credential.trim()}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: credential.trim() ? '#007acc' : '#ccc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: credential.trim() ? 'pointer' : 'not-allowed',
-                marginRight: '10px',
-              }}
-            >
-              Activate
-            </button>
-            <button
-              onClick={async () => {
-                const trimmed = credential.trim();
-                if (!trimmed) return;
+        <p style={{ margin: '0 0 6px 0' }}>
+          <strong>API Key (v1):</strong> Get a free API key from{' '}
+          <a href="https://developers.arcgis.com/" target="_blank" rel="noopener noreferrer">
+            ArcGIS Developers
+          </a>
+        </p>
+        <p style={{ margin: 0 }}>
+          <strong>Token (v2):</strong> OAuth tokens from ArcGIS Online/Portal with basemap styles
+          access
+        </p>
+      </div>
 
-                const isToken = trimmed.includes('.') && trimmed.length > 60;
-                const testUrl = isToken
-                  ? `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles?f=json&token=${encodeURIComponent(trimmed)}`
-                  : `https://basemaps-api.arcgis.com/arcgis/rest/services/styles?f=json&apiKey=${encodeURIComponent(trimmed)}`;
+      <div style={DEMO_FOOTER_STYLE}>
+        Requires an Esri API key (v1) or OAuth token (v2). The resolved style URL updates as options
+        change.
+      </div>
+    </aside>
+  );
 
-                console.log('Testing credential with URL:', testUrl);
-                try {
-                  const response = await fetch(testUrl);
-                  console.log('Test result:', response.status, response.statusText);
-                  alert(`Credential test: ${response.status} ${response.statusText}`);
-                } catch (error) {
-                  console.error('Test error:', error);
-                  alert(`Test error: ${error}`);
-                }
-              }}
-              disabled={!credential.trim()}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: credential.trim() ? '#28a745' : '#ccc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: credential.trim() ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
-              }}
-            >
-              Test
-            </button>
-          </div>
-          <div style={{ marginTop: '14px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-            <input
-              type="text"
-              placeholder="language (optional)"
-              value={language}
-              onChange={e => {
-                const newLanguage = e.target.value;
-                setLanguage(newLanguage);
-                safeSessionStorage.setItem(STORAGE_KEYS.LANGUAGE, newLanguage);
-              }}
-              style={{
-                padding: '6px 8px',
-                width: '140px',
-                fontSize: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '3px',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="worldview (optional)"
-              value={worldview}
-              onChange={e => {
-                const newWorldview = e.target.value;
-                setWorldview(newWorldview);
-                safeSessionStorage.setItem(STORAGE_KEYS.WORLDVIEW, newWorldview);
-              }}
-              style={{
-                padding: '6px 8px',
-                width: '160px',
-                fontSize: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '3px',
-              }}
-            />
-          </div>
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#666',
-              marginTop: '10px',
-              padding: '8px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '4px',
-            }}
+  // ---------- Authenticated sidebar content ----------
+  const renderMainSidebar = () => (
+    <aside style={DEMO_SIDEBAR_STYLE}>
+      <div>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Vector Basemap Style (ESM)</h2>
+        <p style={{ margin: 0, color: '#4b5563', fontSize: '13px' }}>
+          Switch between Esri vector basemap styles using the <code>VectorBasemapStyle</code> class
+          ({determineMode()} mode).
+        </p>
+      </div>
+
+      <div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Style Status</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span
+            style={createBadgeStyle(
+              hasAuth ? '#dbeafe' : '#fee2e2',
+              hasAuth ? '#1e3a8a' : '#7f1d1d'
+            )}
           >
-            <p style={{ margin: '0 0 8px 0' }}>
-              <strong>API Key (v1):</strong> Get a free API key from{' '}
-              <a href="https://developers.arcgis.com/" target="_blank" rel="noopener noreferrer">
-                ArcGIS Developers
-              </a>
-            </p>
-            <p style={{ margin: '0' }}>
-              <strong>Token (v2):</strong> OAuth tokens from ArcGIS Online/Portal with basemap
-              styles access
-            </p>
-          </div>
+            {hasAuth
+              ? `Credential mode: ${determineMode()}`
+              : 'Credential required to load Esri basemap'}
+          </span>
+          {isLoading && (
+            <span style={createBadgeStyle('#bfdbfe', '#1e3a8a')}>Loading style...</span>
+          )}
+          {error && <span style={createBadgeStyle('#fecaca', '#7f1d1d')}>{error}</span>}
+          {resolvedUrl && (
+            <span
+              style={{
+                display: 'block',
+                fontSize: '11px',
+                color: '#6b7280',
+                wordBreak: 'break-all',
+              }}
+            >
+              Resolved URL: <code>{resolvedUrl}</code>
+            </span>
+          )}
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-        <h3>Vector Basemap Style Demo</h3>
-        <p>Switch between different Esri vector basemap styles ({determineMode()} mode)</p>
-
-        <div style={{ marginTop: '4px', fontSize: '11px', color: '#555' }}>
-          <strong>Resolved URL:</strong>{' '}
-          <span style={{ wordBreak: 'break-all' }}>{resolvedUrl || '— select / loading —'}</span>
-        </div>
-        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '10px' }}>
-          {styleOptions.map(option => (
-            <button
-              key={option.id}
-              onClick={() => setStyle(option.id)}
-              disabled={isLoading}
-              style={{
-                padding: '5px 10px',
-                backgroundColor: currentStyle === option.id ? '#007acc' : '#f0f0f0',
-                color: currentStyle === option.id ? 'white' : '#333',
-                border: '1px solid #ddd',
-                borderRadius: '3px',
-                cursor: isLoading ? 'wait' : 'pointer',
-                fontSize: '12px',
-                opacity: isLoading ? 0.6 : 1,
-              }}
-            >
-              {option.name}
-            </button>
-          ))}
-        </div>
-        {isLoading && (
-          <div style={{ marginTop: '10px', color: '#007acc', fontSize: '14px' }}>
-            Loading style...
-          </div>
-        )}
-        {error && (
-          <div
-            style={{
-              marginTop: '10px',
-              color: '#d32f2f',
-              fontSize: '12px',
-              backgroundColor: '#ffebee',
-              padding: '8px',
-              borderRadius: '3px',
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <button
-          onClick={() => {
-            setHasAuth(false);
-            setResolvedUrl('');
-            setError('');
-            // Clear session storage
-            safeSessionStorage.removeItem(STORAGE_KEYS.CREDENTIAL);
-            safeSessionStorage.removeItem(STORAGE_KEYS.AUTH_MODE);
-            safeSessionStorage.removeItem(STORAGE_KEYS.LANGUAGE);
-            safeSessionStorage.removeItem(STORAGE_KEYS.WORLDVIEW);
-            safeSessionStorage.removeItem(STORAGE_KEYS.CURRENT_STYLE);
-            // Reset form values
-            setCredential('');
-            setAuthMode('auto');
-            setLanguage('');
-            setWorldview('');
-            setCurrentStyle('arcgis/streets');
-          }}
+      <div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Basemap Styles</h3>
+        <div
           style={{
-            marginTop: '10px',
-            padding: '5px 10px',
-            backgroundColor: '#f0f0f0',
-            color: '#333',
-            border: '1px solid #ddd',
-            borderRadius: '3px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: '8px',
+          }}
+        >
+          {styleOptions.map(option => {
+            const isActive = option.id === currentStyle;
+            return (
+              <button
+                key={option.id}
+                onClick={() => applyStyle(option.id)}
+                disabled={isLoading}
+                style={{
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: '1px solid',
+                  borderColor: isActive ? '#2563eb' : '#d1d5db',
+                  backgroundColor: isActive ? '#2563eb' : '#ffffff',
+                  color: isActive ? '#ffffff' : '#1f2937',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: isLoading ? 'wait' : 'pointer',
+                  opacity: isLoading ? 0.6 : 1,
+                }}
+              >
+                {option.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Credentials</h3>
+        <button
+          onClick={handleChangeCredentials}
+          style={{
+            padding: '8px 14px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+            backgroundColor: '#ffffff',
+            color: '#374151',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontWeight: 600,
           }}
         >
           Change Credentials
         </button>
       </div>
-      <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
+
+      <div style={DEMO_FOOTER_STYLE}>
+        Requires an Esri API key (v1) or OAuth token (v2). The resolved style URL updates as options
+        change.
+      </div>
+    </aside>
+  );
+
+  return (
+    <div style={DEMO_CONTAINER_STYLE}>
+      {hasAuth ? renderMainSidebar() : renderAuthSidebar()}
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        {hasAuth && <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />}
+        {!hasAuth && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: 'rgba(249, 250, 251, 0.92)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '24px',
+              color: '#1f2937',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <div
+              style={{ maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <h3 style={{ margin: 0 }}>Awaiting credentials</h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#4b5563' }}>
+                Enter an Esri API key or token in the sidebar, then click <strong>Activate</strong>{' '}
+                to stream the basemap directly from ArcGIS services.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,11 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { DynamicMapService, IdentifyFeatures } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+  createBadgeStyle,
+} from '../shared/styles';
 
 type PopupLike = {
   setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
   setHTML(html: string): PopupLike;
   addTo(target: unknown): PopupLike;
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: '6px 10px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  backgroundColor: '#ffffff',
+  cursor: 'pointer',
+};
+
+const disabledButtonStyle: React.CSSProperties = {
+  ...buttonStyle,
+  opacity: 0.6,
+  cursor: 'not-allowed',
 };
 
 const DynamicMapServiceDemo: React.FC = () => {
@@ -17,6 +39,7 @@ const DynamicMapServiceDemo: React.FC = () => {
   const [filterApplied, setFilterApplied] = useState<boolean>(false);
   const [labelsApplied, setLabelsApplied] = useState<boolean>(false);
   const [selectedLabelType, setSelectedLabelType] = useState<string>('none');
+  const [serviceStatus, setServiceStatus] = useState<'loading' | 'active' | 'error'>('loading');
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -63,6 +86,8 @@ const DynamicMapServiceDemo: React.FC = () => {
         type: 'raster',
         source: 'dynamic-source',
       });
+
+      setServiceStatus('active');
 
       // Add click handler for identify using IdentifyFeatures task
       const mapInstance = map.current as unknown as {
@@ -346,7 +371,7 @@ const DynamicMapServiceDemo: React.FC = () => {
         verticalAlignment: 'middle',
       },
       minScale: 0,
-      maxScale: layerId === 0 ? 10000000 : layerId === 1 ? 15000000 : 25000000, // Different scales for different layers
+      maxScale: layerId === 0 ? 10000000 : layerId === 1 ? 15000000 : 25000000,
       labelPlacement:
         layerId === 1
           ? 'esriServerLinePlacementAboveAlong'
@@ -641,48 +666,107 @@ const DynamicMapServiceDemo: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-        <div style={{ marginBottom: '10px' }}>
-          <strong>Dynamic Map Service Demo</strong> - USA MapServer with layer controls and identify
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <div>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Dynamic Map Service (ESM)</h2>
+          <p style={{ margin: 0, color: '#4b5563' }}>
+            USA MapServer with layer controls, identify, server-side styling, filters, labels, and
+            statistics using direct ESM imports.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {layerOptions.map(layer => (
-            <label key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="checkbox"
-                checked={selectedLayers.includes(layer.id)}
-                onChange={() => handleLayerToggle(layer.id)}
-              />
-              {layer.name}
-            </label>
-          ))}
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Service Status</h3>
+          {serviceStatus === 'loading' && (
+            <span style={createBadgeStyle('#fde68a', '#78350f')}>Loading service...</span>
+          )}
+          {serviceStatus === 'error' && (
+            <span style={createBadgeStyle('#fecaca', '#7f1d1d')}>Service error</span>
+          )}
+          {serviceStatus === 'active' && (
+            <span style={createBadgeStyle('#bbf7d0', '#064e3b')}>Dynamic service active</span>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-          <button onClick={applyStatesStyle} disabled={styleApplied}>
-            Apply "Orange States" Style (server)
-          </button>
-          <button onClick={resetServerStyle} disabled={!styleApplied && !filterApplied}>
-            Reset Server Style
-          </button>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Visible Sublayers</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {layerOptions.map(layer => (
+              <label key={layer.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedLayers.includes(layer.id)}
+                  onChange={() => handleLayerToggle(layer.id)}
+                />
+                {layer.name}
+              </label>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          <button onClick={applyPacificStatesFilter} disabled={filterApplied}>
-            Filter: Pacific States Only
-          </button>
-          <button onClick={applyPopulationFilter} disabled={filterApplied}>
-            Filter: Pop &gt; 5M States
-          </button>
-          <button onClick={clearFilter} disabled={!filterApplied}>
-            Clear Filter
-          </button>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Styling</h3>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={applyStatesStyle}
+              disabled={styleApplied}
+              style={styleApplied ? disabledButtonStyle : buttonStyle}
+            >
+              Highlight States
+            </button>
+            <button
+              onClick={resetServerStyle}
+              disabled={!styleApplied && !filterApplied}
+              style={!styleApplied && !filterApplied ? disabledButtonStyle : buttonStyle}
+            >
+              Reset Style
+            </button>
+          </div>
+          {styleApplied && (
+            <p style={{ margin: '8px 0 0', color: '#047857' }}>Custom renderer applied.</p>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Layer Labels:</label>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Filters</h3>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={applyPacificStatesFilter}
+              disabled={filterApplied}
+              style={filterApplied ? disabledButtonStyle : buttonStyle}
+            >
+              Pacific States
+            </button>
+            <button
+              onClick={applyPopulationFilter}
+              disabled={filterApplied}
+              style={filterApplied ? disabledButtonStyle : buttonStyle}
+            >
+              Pop {`>`} 5M
+            </button>
+            <button
+              onClick={clearFilter}
+              disabled={!filterApplied}
+              style={!filterApplied ? disabledButtonStyle : buttonStyle}
+            >
+              Clear Filter
+            </button>
+          </div>
+          {filterApplied && <p style={{ margin: '8px 0 0', color: '#7c3aed' }}>Filter active.</p>}
+        </div>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Labels</h3>
           <select
             value={selectedLabelType}
             onChange={e => applyLabels(e.target.value)}
-            style={{ padding: '4px 8px', fontSize: '14px', minWidth: '200px' }}
+            style={{
+              padding: '6px 8px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              width: '100%',
+            }}
           >
             {labelOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -692,31 +776,64 @@ const DynamicMapServiceDemo: React.FC = () => {
               </option>
             ))}
           </select>
-          <button
-            onClick={clearLabels}
-            disabled={!labelsApplied}
-            style={{ padding: '4px 12px', fontSize: '12px' }}
-          >
-            Clear All Labels
-          </button>
+          {labelsApplied && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+              <p style={{ margin: 0, color: '#1d4ed8' }}>Labels enabled.</p>
+              <button onClick={clearLabels} style={buttonStyle}>
+                Clear Labels
+              </button>
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          <button onClick={getLayerStatistics}>Get Statistics</button>
-          <button onClick={queryFeatures}>Query Features</button>
-          <button onClick={exportMapImage}>Export Map</button>
-          <button onClick={generateLegend}>Show Legend</button>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Statistics &amp; Queries</h3>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={getLayerStatistics} style={buttonStyle}>
+              Get Statistics
+            </button>
+            <button onClick={queryFeatures} style={buttonStyle}>
+              Query Features
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          <button onClick={batchUpdate}>Batch Update Demo</button>
-          <button onClick={() => testStateNames()}>Test State Names</button>
-          <button onClick={() => testStateAbbr()}>Test State Abbr</button>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Export &amp; Legend</h3>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={exportMapImage} style={buttonStyle}>
+              Export Map
+            </button>
+            <button onClick={generateLegend} style={buttonStyle}>
+              Show Legend
+            </button>
+          </div>
         </div>
-        <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
+
+        <div>
+          <h3 style={DEMO_SECTION_TITLE_STYLE}>Advanced</h3>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={batchUpdate} style={buttonStyle}>
+              Batch Update
+            </button>
+            <button onClick={testStateNames} style={buttonStyle}>
+              Test State Names
+            </button>
+            <button onClick={testStateAbbr} style={buttonStyle}>
+              Test State Abbr
+            </button>
+          </div>
+        </div>
+
+        <div style={DEMO_FOOTER_STYLE}>
           Click on the map to identify features. Styling and filtering is applied server-side via
           dynamicLayers.
         </div>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
       </div>
-      <div ref={mapContainer} style={{ flex: 1, width: '100%' }} />
     </div>
   );
 };

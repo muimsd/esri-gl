@@ -1,11 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { DynamicMapService, Find } from '@/index';
+import {
+  DEMO_CONTAINER_STYLE,
+  DEMO_SIDEBAR_STYLE,
+  DEMO_SECTION_TITLE_STYLE,
+  DEMO_FOOTER_STYLE,
+  DEMO_MAP_CONTAINER_STYLE,
+} from '../shared/styles';
 
 interface FindResults {
   features?: Array<GeoJSON.Feature>;
   error?: string;
 }
+
+const inputStyle: React.CSSProperties = {
+  padding: '8px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: '8px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  cursor: 'pointer',
+  width: '100%',
+};
 
 const FindDemo: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -172,120 +203,123 @@ const FindDemo: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '10px', background: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-        <h3 style={{ margin: '0 0 10px 0' }}>Find Task Demo</h3>
+    <div style={DEMO_CONTAINER_STYLE}>
+      <aside style={DEMO_SIDEBAR_STYLE}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Find Task (ESM)</h2>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Search Text:
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Search Parameters</h3>
+
+        <div>
+          <label
+            style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#374151' }}
+          >
+            Search Text
           </label>
           <input
             type="text"
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
-            style={{ width: '300px', padding: '5px' }}
-            placeholder="Try: CA, TX, NY (state codes work better)"
+            style={inputStyle}
+            placeholder="e.g. CA, TX, NY"
           />
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-            Tip: Try state abbreviations like "CA", "TX", "NY" instead of full names
-          </div>
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Search Fields (comma-separated):
+        <div>
+          <label
+            style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#374151' }}
+          >
+            Search Fields (comma-separated)
           </label>
           <input
             type="text"
             value={searchFields}
             onChange={e => setSearchFields(e.target.value)}
-            style={{ width: '300px', padding: '5px' }}
+            style={inputStyle}
             placeholder="STATE_ABBR,STATE_NAME"
           />
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-            Common fields: STATE_ABBR, STATE_NAME, CITY_NAME
-          </div>
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Layers:
+        <div>
+          <label
+            style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#374151' }}
+          >
+            Layers
           </label>
           <input
             type="text"
             value={layers}
             onChange={e => setLayers(e.target.value)}
-            style={{ width: '300px', padding: '5px' }}
+            style={inputStyle}
             placeholder="all or layer IDs (e.g., 0,1,2)"
           />
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Search Type:
+        <div>
+          <label
+            style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#374151' }}
+          >
+            Search Type
           </label>
           <select
             value={searchType}
             onChange={e => setSearchType(e.target.value)}
-            style={{ width: '200px', padding: '5px' }}
+            style={selectStyle}
           >
             <option value="startsWith">Starts With</option>
             <option value="contains">Contains</option>
           </select>
         </div>
 
-        <div>
-          <button
-            onClick={executeFind}
-            disabled={!isLoaded || isSearching || !searchText.trim()}
-            style={{
-              padding: '8px 16px',
-              marginRight: '10px',
-              backgroundColor: isSearching ? '#ccc' : '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isSearching || !searchText.trim() ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSearching ? 'Searching...' : 'Find Features'}
-          </button>
-          <button
-            onClick={clearResults}
-            disabled={!findResults}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: findResults ? 'pointer' : 'not-allowed',
-            }}
-          >
-            Clear Results
-          </button>
-        </div>
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Actions</h3>
 
-        {findResults && (
+        <button
+          onClick={executeFind}
+          disabled={!isLoaded || isSearching || !searchText.trim()}
+          style={{
+            ...buttonStyle,
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            border: '1px solid #2563eb',
+            cursor: !isLoaded || isSearching || !searchText.trim() ? 'not-allowed' : 'pointer',
+            opacity: !isLoaded || isSearching || !searchText.trim() ? 0.5 : 1,
+          }}
+        >
+          {isSearching ? 'Searching...' : 'Find Features'}
+        </button>
+
+        <button
+          onClick={clearResults}
+          disabled={!findResults}
+          style={{
+            ...buttonStyle,
+            cursor: findResults ? 'pointer' : 'not-allowed',
+            opacity: findResults ? 1 : 0.5,
+          }}
+        >
+          Clear Results
+        </button>
+
+        <h3 style={DEMO_SECTION_TITLE_STYLE}>Results</h3>
+
+        {findResults ? (
           <div
             style={{
-              marginTop: '10px',
-              padding: '10px',
-              background: 'white',
-              borderRadius: '4px',
-              maxHeight: '200px',
-              overflowY: 'auto',
+              padding: '12px',
+              backgroundColor: '#eff6ff',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe',
+              maxHeight: '220px',
+              overflowY: 'auto' as const,
             }}
           >
             {findResults.error ? (
-              <div style={{ color: '#dc3545' }}>
+              <div style={{ color: '#dc3545', fontSize: '13px' }}>
                 <strong>Error:</strong> {findResults.error}
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Results:</strong> {findResults.features?.length || 0} features found
+                <div style={{ marginBottom: '8px', fontSize: '13px' }}>
+                  <strong>{findResults.features?.length || 0}</strong> features found
                 </div>
                 {findResults.features
                   ?.slice(0, 5)
@@ -293,32 +327,41 @@ const FindDemo: React.FC = () => {
                     <div
                       key={index}
                       style={{
-                        marginBottom: '5px',
-                        padding: '5px',
-                        background: '#f8f9fa',
-                        borderRadius: '3px',
+                        marginBottom: '6px',
+                        padding: '6px',
+                        background: '#ffffff',
+                        borderRadius: '4px',
+                        fontSize: '12px',
                       }}
                     >
                       <strong>Feature {index + 1}:</strong>
                       {Object.entries(feature.properties || {}).map(([key, value]) => (
-                        <div key={key} style={{ marginLeft: '10px' }}>
+                        <div key={key} style={{ marginLeft: '8px' }}>
                           <strong>{key}:</strong> {String(value)}
                         </div>
                       ))}
                     </div>
                   ))}
                 {(findResults.features?.length || 0) > 5 && (
-                  <div style={{ fontStyle: 'italic', color: '#6c757d' }}>
+                  <div style={{ fontStyle: 'italic', color: '#6c757d', fontSize: '12px' }}>
                     ... and {(findResults.features?.length || 0) - 5} more features
                   </div>
                 )}
               </>
             )}
           </div>
+        ) : (
+          <div style={{ fontSize: '12px', color: '#a1a1aa' }}>
+            No results yet. Execute a find to see results.
+          </div>
         )}
-      </div>
 
-      <div ref={mapContainer} style={{ flex: 1 }} />
+        <div style={DEMO_FOOTER_STYLE}>Find task using USA MapServer</div>
+      </aside>
+
+      <div style={DEMO_MAP_CONTAINER_STYLE}>
+        <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+      </div>
     </div>
   );
 };

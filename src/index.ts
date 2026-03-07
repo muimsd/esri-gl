@@ -12,7 +12,7 @@ export { FeatureService } from '@/Services/FeatureService';
 export { Task } from '@/Tasks/Task';
 export { Query, query } from '@/Tasks/Query';
 export { Find, find } from '@/Tasks/Find';
-export { IdentifyFeatures } from '@/Tasks/IdentifyFeatures';
+export { IdentifyFeatures, type LayerScaleRange } from '@/Tasks/IdentifyFeatures';
 export { IdentifyImage, identifyImage } from '@/Tasks/IdentifyImage';
 
 // Utilities

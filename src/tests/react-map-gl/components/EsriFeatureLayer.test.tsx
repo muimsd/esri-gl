@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { EsriFeatureLayer } from '@/react-map-gl/components/EsriFeatureLayer';
 import { FeatureService } from '@/Services/FeatureService';
 import { useMap } from 'react-map-gl/mapbox';
@@ -48,12 +48,14 @@ describe('EsriFeatureLayer', () => {
     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/FeatureServer/0',
   };
 
-  it('should render without errors', () => {
-    render(<EsriFeatureLayer {...defaultProps} />);
+  it('should render without errors', async () => {
+    await act(async () => {
+      render(<EsriFeatureLayer {...defaultProps} />);
+    });
     expect(MockedFeatureService).toHaveBeenCalled();
   });
 
-  it('should create FeatureService with correct parameters', () => {
+  it('should create FeatureService with correct parameters', async () => {
     const props = {
       ...defaultProps,
       sourceId: 'custom-feature-source',
@@ -61,7 +63,9 @@ describe('EsriFeatureLayer', () => {
       outFields: ['*'],
     };
 
-    render(<EsriFeatureLayer {...props} />);
+    await act(async () => {
+      render(<EsriFeatureLayer {...props} />);
+    });
 
     expect(MockedFeatureService).toHaveBeenCalledWith('custom-feature-source', mockMapInstance, {
       url: props.url,
@@ -70,10 +74,12 @@ describe('EsriFeatureLayer', () => {
     });
   });
 
-  it('should add fill layer with default paint', () => {
+  it('should add fill layer with default paint', async () => {
     mockMapInstance.getLayer.mockReturnValue(null);
 
-    render(<EsriFeatureLayer {...defaultProps} />);
+    await act(async () => {
+      render(<EsriFeatureLayer {...defaultProps} />);
+    });
 
     expect(mockMapInstance.addLayer).toHaveBeenCalledWith({
       id: 'test-feature-layer',
@@ -89,13 +95,15 @@ describe('EsriFeatureLayer', () => {
     });
   });
 
-  it('should add layer with custom paint and layout', () => {
+  it('should add layer with custom paint and layout', async () => {
     mockMapInstance.getLayer.mockReturnValue(null);
 
     const customPaint = { 'fill-color': '#ff0000' };
     const customLayout = { 'fill-sort-key': 1 };
 
-    render(<EsriFeatureLayer {...defaultProps} paint={customPaint} layout={customLayout} />);
+    await act(async () => {
+      render(<EsriFeatureLayer {...defaultProps} paint={customPaint} layout={customLayout} />);
+    });
 
     expect(mockMapInstance.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -108,10 +116,12 @@ describe('EsriFeatureLayer', () => {
     );
   });
 
-  it('should handle visibility prop', () => {
+  it('should handle visibility prop', async () => {
     mockMapInstance.getLayer.mockReturnValue(null);
 
-    render(<EsriFeatureLayer {...defaultProps} visible={false} />);
+    await act(async () => {
+      render(<EsriFeatureLayer {...defaultProps} visible={false} />);
+    });
 
     expect(mockMapInstance.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -122,11 +132,18 @@ describe('EsriFeatureLayer', () => {
     );
   });
 
-  it('should cleanup on unmount', () => {
+  it('should cleanup on unmount', async () => {
     mockMapInstance.getLayer.mockReturnValue({ id: 'test-feature-layer' });
 
-    const { unmount } = render(<EsriFeatureLayer {...defaultProps} />);
-    unmount();
+    let unmount: () => void;
+    await act(async () => {
+      const result = render(<EsriFeatureLayer {...defaultProps} />);
+      unmount = result.unmount;
+    });
+
+    act(() => {
+      unmount!();
+    });
 
     expect(mockMapInstance.removeLayer).toHaveBeenCalledWith('test-feature-layer');
     expect(mockService.remove).toHaveBeenCalled();

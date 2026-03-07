@@ -990,4 +990,209 @@ describe('IdentifyFeatures', () => {
       expect((identify as any).params.layerDefs).toBe("0:STATE_NAME='New York' AND POP2000>500000");
     });
   });
+
+  describe('Scale-based Layer Filtering', () => {
+    // Scale at zoom 0 = 559082264.028
+    // Scale at zoom 4 ≈ 34942641.5
+    // Scale at zoom 8 ≈ 2183915.1
+    // Scale at zoom 12 ≈ 136494.7
+    // Scale at zoom 16 ≈ 8530.9
+
+    const createMockMapAtZoom = (zoom: number) =>
+      ({
+        getBounds: jest.fn(() => ({
+          toArray: jest.fn(() => [
+            [-180, -90],
+            [180, 90],
+          ]),
+        })),
+        getCanvas: jest.fn(() => ({ width: 800, height: 600 })),
+        getZoom: jest.fn(() => zoom),
+      }) as unknown as Map;
+
+    it('should set layer scale ranges with layerScales()', () => {
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+      const result = identify.layerScales({
+        0: { minScale: 1000000, maxScale: 0 },
+      });
+      expect(result).toBe(identify); // chainable
+    });
+
+    it('should skip request when all layers are out of scale range (too zoomed out)', async () => {
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // At zoom 4, scale ≈ 34,942,641 which is > 1,000,000 (minScale)
+      const result = await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(4))
+        .layers('visible:0')
+        .layerScales({
+          0: { minScale: 1000000, maxScale: 0 }, // Only visible below 1:1M
+        })
+        .run();
+
+      expect(result.type).toBe('FeatureCollection');
+      expect(result.features).toHaveLength(0);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should skip request when all layers are out of scale range (too zoomed in)', async () => {
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // At zoom 16, scale ≈ 8,530 which is < 500,000 (maxScale)
+      const result = await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(16))
+        .layers('visible:0')
+        .layerScales({
+          0: { minScale: 5000000, maxScale: 500000 }, // Only visible between 1:5M and 1:500K
+        })
+        .run();
+
+      expect(result.type).toBe('FeatureCollection');
+      expect(result.features).toHaveLength(0);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should proceed with request when layers are within scale range', async () => {
+      const mockResponse = {
+        results: [
+          {
+            layerId: 0,
+            layerName: 'Cities',
+            value: 'Test',
+            displayFieldName: 'NAME',
+            attributes: { NAME: 'Test' },
+          },
+        ],
+      };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // At zoom 12, scale ≈ 136,494 which is < 1,000,000 (minScale) and > 0 (maxScale)
+      const result = await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(12))
+        .layers('visible:0')
+        .layerScales({
+          0: { minScale: 1000000, maxScale: 0 },
+        })
+        .run();
+
+      expect(result.features).toHaveLength(1);
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should filter layers param to only include visible layers', async () => {
+      const mockResponse = { results: [] };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // At zoom 12, scale ≈ 136,494
+      // Layer 0: minScale 1M, maxScale 0 → visible (136K < 1M)
+      // Layer 1: minScale 50000, maxScale 0 → NOT visible (136K > 50K minScale)
+      // Layer 2: minScale 0, maxScale 0 → visible (no limit)
+      await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(12))
+        .layers('visible:0,1,2')
+        .layerScales({
+          0: { minScale: 1000000, maxScale: 0 },
+          1: { minScale: 50000, maxScale: 0 },
+          2: { minScale: 0, maxScale: 0 },
+        })
+        .run();
+
+      expect(mockFetch).toHaveBeenCalled();
+      const requestBody = (mockFetch.mock.calls[0][1] as RequestInit).body as string;
+      // Should contain layers=visible:0,2 (layer 1 filtered out)
+      expect(requestBody).toContain('layers=visible%3A0%2C2');
+    });
+
+    it('should proceed without filtering when no scale ranges are set', async () => {
+      const mockResponse = { results: [] };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(4))
+        .layers('visible:0,1,2')
+        .run();
+
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should proceed without filtering when no map is set', async () => {
+      const mockResponse = { results: [] };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      await identify
+        .at({ lng: -95, lat: 37 })
+        .layers('visible:0')
+        .layerScales({ 0: { minScale: 1000, maxScale: 0 } })
+        .run();
+
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should handle layers with no scale ranges as always visible', async () => {
+      const mockResponse = { results: [] };
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // Only layer 0 has a scale range; layer 1 has no range → always visible
+      await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(4))
+        .layers('visible:0,1')
+        .layerScales({
+          0: { minScale: 1000, maxScale: 0 }, // Not visible at zoom 4 (scale too large)
+        })
+        .run();
+
+      expect(mockFetch).toHaveBeenCalled();
+      const requestBody = (mockFetch.mock.calls[0][1] as RequestInit).body as string;
+      expect(requestBody).toContain('layers=visible%3A1');
+    });
+
+    it('should handle "all" layers prefix with scale filtering', async () => {
+      const identify = new IdentifyFeatures('https://example.com/MapServer');
+
+      // At zoom 4, scale ≈ 34,942,641. All known layers have minScale < this.
+      const result = await identify
+        .at({ lng: -95, lat: 37 })
+        .on(createMockMapAtZoom(4))
+        .layers('all')
+        .layerScales({
+          0: { minScale: 1000000, maxScale: 0 },
+          1: { minScale: 500000, maxScale: 0 },
+        })
+        .run();
+
+      expect(result.features).toHaveLength(0);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
 });
