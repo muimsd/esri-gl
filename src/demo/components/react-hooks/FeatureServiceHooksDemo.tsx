@@ -129,8 +129,7 @@ const FeatureServiceHooksDemo: React.FC = () => {
       cancelled = true;
       window.clearInterval(interval);
       eventedMap.off('sourcedata', handleSourceData);
-      //@ts-ignore
-      if (map.getStyle() && map.getLayer(LAYER_ID)) {
+      if (map.getStyle?.() && map.getLayer(LAYER_ID)) {
         map.removeLayer(LAYER_ID);
       }
     };

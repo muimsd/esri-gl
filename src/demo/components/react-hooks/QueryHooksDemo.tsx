@@ -193,6 +193,7 @@ const QueryHooksDemo: React.FC = () => {
     }
 
     return () => {
+      if (!map.getStyle?.()) return;
       if (map.getLayer(RESULTS_LAYER_ID)) {
         map.removeLayer(RESULTS_LAYER_ID);
       }

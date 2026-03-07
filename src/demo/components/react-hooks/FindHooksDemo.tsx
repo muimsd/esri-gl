@@ -95,7 +95,7 @@ const FindHooksDemo: React.FC = () => {
 
     return () => {
       eventedMap.off('load', onLoad);
-      if (map.getLayer(LAYER_ID)) {
+      if (map.getStyle?.() && map.getLayer(LAYER_ID)) {
         map.removeLayer(LAYER_ID);
       }
     };
@@ -227,6 +227,7 @@ const FindHooksDemo: React.FC = () => {
     }
 
     return () => {
+      if (!map.getStyle?.()) return;
       if (map.getLayer(RESULTS_POLYGON_LAYER_ID)) {
         map.removeLayer(RESULTS_POLYGON_LAYER_ID);
       }

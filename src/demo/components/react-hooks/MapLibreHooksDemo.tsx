@@ -173,7 +173,7 @@ const MapLibreHooksDemo: React.FC = () => {
     }
 
     return () => {
-      if (mapInstance.getLayer(LAYER_ID)) {
+      if (mapInstance.getStyle?.() && mapInstance.getLayer(LAYER_ID)) {
         mapInstance.removeLayer(LAYER_ID);
       }
     };
