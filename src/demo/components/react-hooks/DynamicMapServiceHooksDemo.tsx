@@ -319,7 +319,7 @@ const DynamicMapServiceHooksDemo: React.FC = () => {
       try {
         const results = await identify(
           { lng: event.lngLat.lng, lat: event.lngLat.lat },
-          { layers: layersParam, tolerance: 5 }
+          { layers: layersParam, tolerance: 5, map: esriMap as unknown as import('@/types').Map }
         );
 
         const feature = results?.features?.[0];

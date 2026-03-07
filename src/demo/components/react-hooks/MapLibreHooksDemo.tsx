@@ -205,7 +205,11 @@ const MapLibreHooksDemo: React.FC = () => {
       try {
         const result = await identify(
           { lng: e.lngLat.lng, lat: e.lngLat.lat },
-          { layers: 'visible:2', returnGeometry: false }
+          {
+            layers: 'visible:2',
+            returnGeometry: false,
+            map: mapRef.current as unknown as import('@/types').Map,
+          }
         );
         const feature = result?.features?.[0];
         const html = popupContentFromFeature(feature);

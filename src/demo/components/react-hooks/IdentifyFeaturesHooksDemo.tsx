@@ -208,6 +208,7 @@ const IdentifyFeaturesHooksDemo: React.FC = () => {
           },
           {
             layers: layerParam,
+            map: esriMap as unknown as import('@/types').Map,
           }
         );
 
