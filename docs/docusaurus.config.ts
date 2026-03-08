@@ -71,6 +71,11 @@ const config: Config = {
           label: 'Documentation',
         },
         {
+          href: 'https://esri-gl-demo.netlify.app/',
+          label: 'Live Demo',
+          position: 'left',
+        },
+        {
           type: 'html',
           position: 'right',
           value: '<span style="background:#25c2a0;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:bold;margin-right:8px">v1.0.0</span>',
@@ -98,8 +103,16 @@ const config: Config = {
           title: 'More',
           items: [
             {
+              label: 'Live Demo',
+              href: 'https://esri-gl-demo.netlify.app/',
+            },
+            {
               label: 'GitHub',
               href: 'https://github.com/muimsd/esri-gl',
+            },
+            {
+              label: 'npm',
+              href: 'https://www.npmjs.com/package/esri-gl',
             },
           ],
         },
