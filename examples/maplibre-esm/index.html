@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>esri-gl ESM Services Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; font-family: system-ui, sans-serif; }
+      #app { display: flex; height: 100%; }
+      #sidebar { width: 320px; padding: 16px; overflow-y: auto; background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px; }
+      #sidebar h1 { font-size: 18px; margin: 0; }
+      #sidebar h2 { font-size: 14px; margin: 0; color: #475569; }
+      #sidebar p { font-size: 13px; color: #64748b; margin: 0; }
+      #map { flex: 1; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+      .badge-ok { background: #bbf7d0; color: #064e3b; }
+      .badge-loading { background: #fde68a; color: #78350f; }
+      .badge-error { background: #fecaca; color: #7f1d1d; }
+      .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 13px; }
+      .btn:hover { background: #f1f5f9; }
+      .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+      .btn-primary:hover { background: #1d4ed8; }
+      .section { display: flex; flex-direction: column; gap: 6px; }
+      .log { font-size: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; max-height: 180px; overflow-y: auto; }
+      label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="sidebar">
+        <h1>esri-gl ESM Services</h1>
+        <p>All core services and tasks running with MapLibre GL via direct ESM imports.</p>
+        <div id="status" class="section"></div>
+        <div id="controls" class="section"></div>
+        <div id="log-container" class="section">
+          <h2>Event Log</h2>
+          <div id="log" class="log"></div>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

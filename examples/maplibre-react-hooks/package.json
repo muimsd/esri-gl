@@ -1,0 +1,25 @@
+{
+  "name": "esri-gl-maplibre-react-hooks-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "MapLibre GL JS + React + TypeScript example demonstrating all esri-gl/react hooks",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "esri-gl": "^0.10.0",
+    "maplibre-gl": "^4.7.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}

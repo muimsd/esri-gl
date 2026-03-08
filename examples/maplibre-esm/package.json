@@ -1,0 +1,19 @@
+{
+  "name": "esri-gl-maplibre-esm-example",
+  "version": "1.0.0",
+  "description": "ESM services example with MapLibre GL and esri-gl",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "esri-gl": "^0.10.0",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}

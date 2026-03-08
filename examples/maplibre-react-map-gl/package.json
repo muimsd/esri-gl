@@ -1,0 +1,26 @@
+{
+  "name": "esri-gl-maplibre-react-map-gl-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "MapLibre GL JS + react-map-gl + TypeScript example using all esri-gl/react-map-gl components",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "esri-gl": "^0.10.0",
+    "maplibre-gl": "^4.7.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-map-gl": "^7.1.9"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.5.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
