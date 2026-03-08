@@ -2,10 +2,6 @@
 
 A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. It replicates Esri Leaflet's architecture patterns while being compatible with modern WebGL mapping libraries.
 
-> **🚧 Development Notice**
-> 
-> This project is currently under active development. APIs may change between releases and some features may not be fully stable. Please use with caution in production environments and check the [changelog](CHANGES.md) for breaking changes between versions.
-
 [![npm version](https://badge.fury.io/js/esri-gl.svg)](https://badge.fury.io/js/esri-gl)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
