@@ -11,32 +11,35 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy Integration',
+    title: 'Three Entry Points',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        esri-gl bridges ArcGIS REST services with MapLibre GL JS and Mapbox GL JS
-        using familiar patterns from Esri Leaflet. Get started with just a few lines of code.
+        Import from <code>esri-gl</code> for vanilla JS, <code>esri-gl/react</code> for
+        12 React hooks, or <code>esri-gl/react-map-gl</code> for 6 ready-made components.
+        Get started with just a few lines of code.
       </>
     ),
   },
   {
-    title: 'Modern WebGL Performance',
+    title: 'Comprehensive Service Coverage',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Built for high-performance mapping with vector tiles, dynamic layers,
-        and <code>Service-Source</code> architecture optimized for modern web applications.
+        6 services and 4 tasks covering Dynamic Maps, Feature Services, Image Services,
+        Tiled Maps, Vector Tiles, and Vector Basemap Styles with a
+        high-performance <code>Service-Source</code> architecture.
       </>
     ),
   },
   {
-    title: 'TypeScript First',
+    title: 'TypeScript First, Fully Tested',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Fully typed API with comprehensive support for ArcGIS services including
-        Dynamic Maps, Image Services, Vector Tiles, and Feature Services.
+        Fully typed API verified by 727 tests across 31 suites. Production-ready
+        with comprehensive support for ArcGIS REST services on MapLibre GL JS
+        and Mapbox GL JS.
       </>
     ),
   },

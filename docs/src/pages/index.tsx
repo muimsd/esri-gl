@@ -17,9 +17,12 @@ function HomepageHeader() {
           {siteConfig.title}
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <p style={{fontSize: '1.1rem', opacity: 0.9}}>
+          v1.0.0 — 6 services, 4 tasks, 12 React hooks, 6 react-map-gl components
+        </p>
         <div className={styles.buttons}>
           <Link className="button button--secondary button--lg" to="/docs/intro">
-            Documentation
+            Get Started
           </Link>
         </div>
       </div>
@@ -31,8 +34,8 @@ export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title={`${siteConfig.title} — Esri ArcGIS for MapLibre & Mapbox`}
+      description="esri-gl v1.0.0 — A TypeScript library bridging Esri ArcGIS REST services with MapLibre GL JS and Mapbox GL JS. Three entry points: esri-gl, esri-gl/react, esri-gl/react-map-gl."
     >
       <HomepageHeader />
       <main>

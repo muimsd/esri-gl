@@ -45,7 +45,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/muimsd/esri-gl/tree/master/docs/',
+            'https://github.com/muimsd/esri-gl/tree/main/docs/',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -69,6 +69,11 @@ const config: Config = {
           sidebarId: 'tutorialSidebar',
           position: 'left',
           label: 'Documentation',
+        },
+        {
+          type: 'html',
+          position: 'right',
+          value: '<span style="background:#25c2a0;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:bold;margin-right:8px">v1.0.0</span>',
         },
         {
           href: 'https://github.com/muimsd/esri-gl',

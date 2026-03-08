@@ -1,6 +1,29 @@
 Change Log
 ==========
 
+### v1.0.0
+**Stable Release**
+
+#### Highlights
+- **First stable release** — APIs are now considered production-ready
+- **Three entry points**: `esri-gl` (core), `esri-gl/react` (hooks), `esri-gl/react-map-gl` (components)
+- **727 tests** across 31 test suites, all passing
+
+#### New in v0.10.0 → v1.0.0
+- **EsriVectorTileLayer fix**: react-map-gl component now properly fetches and applies the full vector tile style document including all layers, paint, layout, filters, and zoom constraints
+- **EsriFeatureLayer enhancements**: Added `type` prop (`circle`, `fill`, `line`, `symbol`, `heatmap`) and `paint`/`layout` props for react-map-gl component
+- **Query & Find demos**: Added react-map-gl demo components for Query and Find tasks
+- **Service cleanup guards**: All service `remove()` methods now safely handle destroyed map styles
+- **Example projects**: Three new standalone examples under `examples/` using esri-gl from npm:
+  - `maplibre-esm` — vanilla MapLibre GL JS with all services and tasks
+  - `maplibre-react-hooks` — React hooks with all service and task hooks
+  - `maplibre-react-map-gl` — react-map-gl with all layer components and tasks
+
+#### Bug Fixes
+- Fixed spurious console warning when source not yet in style caches
+- Fixed `useIdentifyFeatures` not passing map reference for mapExtent
+- Guarded `map.getLayer` cleanup calls against destroyed map style
+
 ### v0.9.0
 **ArcGIS Online (AGOL) Support & Feature Editing**
 

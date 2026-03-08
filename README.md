@@ -48,7 +48,15 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 npm install esri-gl
 ```
 
+### Entry Points
 
+esri-gl provides three entry points for different use cases:
+
+| Entry Point | Import | Use Case |
+|-------------|--------|----------|
+| `esri-gl` | `import { DynamicMapService, Query, ... } from 'esri-gl'` | Core services and tasks (vanilla JS/TS) |
+| `esri-gl/react` | `import { useDynamicMapService, useQuery, ... } from 'esri-gl/react'` | React hooks for service lifecycle management |
+| `esri-gl/react-map-gl` | `import { EsriDynamicLayer, ... } from 'esri-gl/react-map-gl'` | Declarative react-map-gl components |
 
 ## Quick Start
 
@@ -278,32 +286,29 @@ Query vector features at specific locations.
 ```typescript
 import { IdentifyFeatures } from 'esri-gl';
 
-const identifyService = new IdentifyFeatures({
-  url: 'https://example.com/arcgis/rest/services/MyService/MapServer'
-});
-
-// Identify features at a point
-const results = await identifyService
+// Identify features at a point using the fluent API
+const results = await new IdentifyFeatures('https://example.com/arcgis/rest/services/MyService/MapServer')
   .at({ lng: -95, lat: 37 })
-  .tolerance(5)
+  .on(map)
   .layers('all')
+  .tolerance(5)
   .returnGeometry(true)
-  .run(map);
+  .run();
 
-console.log('Identified features:', results);
+console.log('Identified features:', results.features);
 ```
 
 ### IdentifyImage
 Query raster values from image services.
 
 ```typescript
-import { identifyImage } from 'esri-gl';
+import { IdentifyImage } from 'esri-gl';
 
-const results = await identifyImage({
-  url: 'https://example.com/arcgis/rest/services/Elevation/ImageServer'
-}).at({ lng: -120, lat: 40 });
+const results = await new IdentifyImage('https://example.com/arcgis/rest/services/Elevation/ImageServer')
+  .at({ lng: -120, lat: 40 })
+  .run();
 
-console.log('Elevation value:', results.value);
+console.log('Pixel value:', results.results[0]?.value);
 ```
 
 ### Query
@@ -638,6 +643,24 @@ const featureService = new FeatureService('api-key-source', map, {
 });
 ```
 
+## Examples
+
+Working examples are available in the [`examples/`](examples/) directory:
+
+| Example | Entry Point | Description |
+|---------|-------------|-------------|
+| [maplibre-esm](examples/maplibre-esm/) | `esri-gl` | All services and tasks with vanilla MapLibre GL JS |
+| [maplibre-react-hooks](examples/maplibre-react-hooks/) | `esri-gl/react` | All React hooks with MapLibre GL JS |
+| [maplibre-react-map-gl](examples/maplibre-react-map-gl/) | `esri-gl/react-map-gl` | All react-map-gl components and tasks |
+
+To run an example:
+
+```bash
+cd examples/maplibre-esm  # or maplibre-react-hooks, maplibre-react-map-gl
+npm install
+npm run dev
+```
+
 ## Development
 
 ### Build System
@@ -645,7 +668,7 @@ const featureService = new FeatureService('api-key-source', map, {
 - **Type Declarations**: Generated with rollup-plugin-dts in `dist/` directory
 - **Demo Development**: Vite dev server with React and TypeScript
 - **Documentation**: Docusaurus build system
-- **Test Coverage**: 717 comprehensive test cases across 31 test suites
+- **Test Coverage**: 727 tests across 31 test suites
 
 ### Development Commands
 
@@ -697,14 +720,14 @@ src/
 └── types.ts           # TypeScript interfaces
 
 dist/
-├── index.d.ts         # Main TypeScript declarations
-├── react.d.ts         # React integration declarations
-├── react-map-gl.d.ts  # React Map GL declarations
-├── index.js           # ESM build
-├── index.umd.js       # UMD build
-├── esri-gl.esm.js     # ESM build (legacy)
-├── esri-gl.js         # UMD build (legacy)
-└── esri-gl.min.js     # Minified UMD build
+├── index.d.ts          # Main TypeScript declarations
+├── react.d.ts          # React hooks declarations
+├── react-map-gl.d.ts   # React Map GL declarations
+├── index.js            # ESM build
+├── index.umd.js        # UMD build
+├── react.js            # React hooks ESM build
+├── react-map-gl.js     # React Map GL ESM build
+└── package.json        # Package metadata with exports map
 ```
 
 ## Browser Support

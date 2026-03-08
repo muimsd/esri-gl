@@ -1,6 +1,6 @@
 {
-  "name": "docs-new",
-  "version": "0.0.0",
+  "name": "esri-gl-docs",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
