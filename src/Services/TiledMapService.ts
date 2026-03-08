@@ -120,6 +120,9 @@ export class TiledMapService {
     }
 
     try {
+      // Guard against map whose style has already been destroyed
+      if (!(this._map as unknown as { style?: unknown }).style) return;
+
       // First, remove any layers that are using this source
       const mapWithStyle = this._map as unknown as {
         getStyle?: () => { layers?: Array<{ id: string; source?: string }> };

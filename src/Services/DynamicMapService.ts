@@ -977,6 +977,9 @@ export class DynamicMapService {
     }
 
     try {
+      // Guard against map whose style has already been destroyed
+      if (!(map as unknown as { style?: unknown }).style) return;
+
       const mapWithStyle = map as unknown as {
         getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
       };

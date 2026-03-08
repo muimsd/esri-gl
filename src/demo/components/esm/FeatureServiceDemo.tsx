@@ -9,6 +9,7 @@ import {
   DEMO_MAP_CONTAINER_STYLE,
   createBadgeStyle,
 } from '../shared/styles';
+import { MapLoader } from '../shared/MapLoader';
 
 type PopupLike = {
   setLngLat(lngLat: { lng: number; lat: number }): PopupLike;
@@ -223,6 +224,7 @@ const FeatureServiceDemo: React.FC = () => {
 
       <div style={DEMO_MAP_CONTAINER_STYLE}>
         <div ref={mapContainer} style={{ position: 'absolute', inset: 0 }} />
+        {isLoading && <MapLoader message={loadingMessage} />}
       </div>
     </div>
   );

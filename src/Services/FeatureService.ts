@@ -260,10 +260,14 @@ export class FeatureService {
     this.disableRequests();
     if (this._map && typeof this._map.removeSource === 'function') {
       try {
-        // First, remove any layers that are using this source
+        // Guard against map whose style has already been destroyed
         const mapWithStyle = this._map as unknown as {
+          style?: unknown;
           getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
         };
+        if (!mapWithStyle.style) return;
+
+        // First, remove any layers that are using this source
         if (mapWithStyle.getStyle) {
           const style = mapWithStyle.getStyle();
           const layers = style?.layers || [];

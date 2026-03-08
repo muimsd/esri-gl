@@ -13,6 +13,12 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const serviceRef = useRef<FeatureService | null>(null);
 
+  // Keep stable refs for object props to avoid effect re-runs on every render
+  const paintRef = useRef(props.paint);
+  paintRef.current = props.paint;
+  const layoutRef = useRef(props.layout);
+  layoutRef.current = props.layout;
+
   // Wait for map to be loaded before creating service
   useEffect(() => {
     if (!map) return;
@@ -63,16 +69,18 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
       typeof mi.addLayer === 'function' &&
       !mi.getLayer(props.id)
     ) {
+      const layerType = props.type || 'fill';
+      const defaultPaint =
+        layerType === 'circle'
+          ? { 'circle-radius': 4, 'circle-color': '#888888' }
+          : { 'fill-color': '#888888', 'fill-opacity': 0.5 };
       const layerConfig = {
         id: props.id,
-        type: 'fill' as const,
+        type: layerType,
         source: sourceId,
-        paint: props.paint || {
-          'fill-color': '#888888',
-          'fill-opacity': 0.5,
-        },
+        paint: paintRef.current || defaultPaint,
         layout: {
-          ...props.layout,
+          ...layoutRef.current,
           visibility: (props.visible !== false ? 'visible' : 'none') as 'visible' | 'none',
         },
       };
@@ -101,8 +109,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
     props.id,
     props.beforeId,
     props.visible,
-    props.paint,
-    props.layout,
+    props.type,
   ]);
 
   return null;

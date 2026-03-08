@@ -39,6 +39,7 @@ export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
   url: string;
   where?: string;
   outFields?: string | string[];
+  type?: 'fill' | 'circle' | 'line' | 'symbol' | 'heatmap';
   paint?: Record<string, unknown>;
   layout?: Record<string, unknown>;
 }

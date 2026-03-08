@@ -9,6 +9,7 @@ import {
   DEMO_MAP_CONTAINER_STYLE,
   createBadgeStyle,
 } from '../shared/styles';
+import { MapLoader } from '../shared/MapLoader';
 import { useMapLibreDemo } from './useMapLibreDemo';
 
 const SOURCE_ID = 'hooks-feature-source';
@@ -218,6 +219,7 @@ const FeatureServiceHooksDemo: React.FC = () => {
 
       <div style={DEMO_MAP_CONTAINER_STYLE}>
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+        {loading && <MapLoader message="Loading feature data..." />}
       </div>
     </div>
   );
