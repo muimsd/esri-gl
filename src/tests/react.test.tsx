@@ -58,6 +58,7 @@ const mockMap = {
   on: jest.fn(),
   off: jest.fn(),
   isStyleLoaded: jest.fn(() => true), // Mock map is always ready
+  style: {},
   getZoom: jest.fn().mockReturnValue(10),
   getCanvas: jest.fn().mockReturnValue({ width: 800 }),
   getBounds: jest.fn().mockReturnValue({

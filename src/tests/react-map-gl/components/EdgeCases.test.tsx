@@ -54,6 +54,7 @@ describe('React-Map-GL Component Edge Cases', () => {
       () =>
         ({
           remove: jest.fn(),
+          getStyle: jest.fn().mockResolvedValue({ type: 'fill', 'source-layer': 'test' }),
         }) as any
     );
   });
@@ -217,7 +218,10 @@ describe('React-Map-GL Component Edge Cases', () => {
       };
       mockUseMap.mockReturnValue({ current: mockMap as any });
 
-      const mockService = { remove: jest.fn() };
+      const mockService = {
+        remove: jest.fn(),
+        getStyle: jest.fn().mockResolvedValue({ type: 'fill', 'source-layer': 'test' }),
+      };
       MockedVectorTileService.mockImplementation(() => mockService as any);
 
       const { unmount } = render(<EsriVectorTileLayer id="test-layer" url="http://test.com" />);

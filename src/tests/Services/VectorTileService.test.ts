@@ -31,6 +31,10 @@ describe('VectorTileService', () => {
         return mockMap;
       }),
       getSource: jest.fn((id: string) => sources[id]),
+      getLayer: jest.fn(),
+      removeLayer: jest.fn(),
+      getStyle: jest.fn(() => ({ layers: [] })),
+      style: {},
     } as unknown as jest.Mocked<Map>;
 
     // Default mock implementations

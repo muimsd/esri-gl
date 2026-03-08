@@ -11,18 +11,16 @@ const mockUseMap = useMap as jest.MockedFunction<typeof useMap>;
 jest.mock('@/Services/VectorTileService');
 const MockedVectorTileService = VectorTileService as jest.MockedClass<typeof VectorTileService>;
 
-const mockMap = {
-  getMap: jest.fn(() => ({
-    addLayer: jest.fn(),
-    removeLayer: jest.fn(),
-    getLayer: jest.fn(),
-  })),
-};
-
 const mockMapInstance = {
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
   getLayer: jest.fn(),
+  isStyleLoaded: jest.fn(() => true),
+  getStyle: jest.fn(() => ({ layers: [] })),
+};
+
+const mockMap = {
+  getMap: jest.fn(() => mockMapInstance),
 };
 
 describe('EsriVectorTileLayer', () => {
@@ -33,6 +31,7 @@ describe('EsriVectorTileLayer', () => {
 
     mockService = {
       remove: jest.fn(),
+      getStyle: jest.fn().mockResolvedValue({ type: 'fill', 'source-layer': 'test' }),
     } as any;
 
     MockedVectorTileService.mockImplementation(() => mockService);

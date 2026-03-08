@@ -21,6 +21,7 @@ import VectorBasemapStyleHooksDemo from './components/react-hooks/VectorBasemapS
 import IdentifyFeaturesHooksDemo from './components/react-hooks/IdentifyFeaturesHooksDemo';
 import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
 import FindHooksDemo from './components/react-hooks/FindHooksDemo';
+import IdentifyImageHooksDemo from './components/react-hooks/IdentifyImageHooksDemo';
 
 // import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
 import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
@@ -30,6 +31,8 @@ import ImageServiceReactMapGLDemo from './components/react-map-gl/ImageServiceRe
 import VectorTileServiceReactMapGLDemo from './components/react-map-gl/VectorTileServiceReactMapGLDemo';
 import VectorBasemapStyleReactMapGLDemo from './components/react-map-gl/VectorBasemapStyleReactMapGLDemo';
 import IdentifyFeaturesReactMapGLDemo from './components/react-map-gl/IdentifyFeaturesReactMapGLDemo';
+import QueryReactMapGLDemo from './components/react-map-gl/QueryReactMapGLDemo';
+import FindReactMapGLDemo from './components/react-map-gl/FindReactMapGLDemo';
 import IdentifyImageReactMapGLDemo from './components/react-map-gl/IdentifyImageReactMapGLDemo';
 
 type CategoryId = 'esm' | 'react-hooks' | 'react-map-gl';
@@ -108,6 +111,11 @@ const HOOK_TABS: DemoTab[] = [
     label: 'Find Task',
     component: FindHooksDemo,
   },
+  {
+    id: 'hooks-identify-image',
+    label: 'Identify Image',
+    component: IdentifyImageHooksDemo,
+  },
 ];
 
 const REACT_MAP_GL_TABS: DemoTab[] = [
@@ -145,6 +153,16 @@ const REACT_MAP_GL_TABS: DemoTab[] = [
     id: 'react-map-gl-identify-features',
     label: 'Identify Features',
     component: IdentifyFeaturesReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-query',
+    label: 'Query Task',
+    component: QueryReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-find',
+    label: 'Find Task',
+    component: FindReactMapGLDemo,
   },
   {
     id: 'react-map-gl-identify-image',

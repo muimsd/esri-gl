@@ -83,6 +83,7 @@ describe('FeatureService', () => {
       }),
       getCanvas: jest.fn().mockReturnValue({ width: 800 }),
       getStyle: jest.fn().mockReturnValue({ layers: [] }),
+      style: {},
     };
 
     // Default mock for service metadata

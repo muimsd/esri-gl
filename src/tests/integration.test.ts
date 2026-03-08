@@ -33,8 +33,11 @@ const createMockMap = (): Partial<Map> => {
       getSouthWest: () => ({ lat: 35, lng: -100 }),
     }),
     getZoom: jest.fn().mockReturnValue(10),
+    getLayer: jest.fn(),
+    getStyle: jest.fn(() => ({ layers: [] })),
     project: jest.fn().mockReturnValue({ x: 400, y: 300 }),
     unproject: jest.fn().mockReturnValue({ lng: -95, lat: 40 }),
+    style: {},
   };
   return mockMap;
 };

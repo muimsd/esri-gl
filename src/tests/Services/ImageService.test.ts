@@ -36,6 +36,10 @@ describe('ImageService', () => {
       getSource: jest.fn((id: string) => sources[id]),
       getCanvas: jest.fn(),
       getBounds: jest.fn(),
+      getLayer: jest.fn(),
+      removeLayer: jest.fn(),
+      getStyle: jest.fn(() => ({ layers: [] })),
+      style: {},
     } as unknown as jest.Mocked<Map>;
 
     // Default mock implementations

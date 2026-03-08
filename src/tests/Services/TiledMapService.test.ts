@@ -18,6 +18,9 @@ const createMockMap = (): Partial<Map> => {
     removeLayer: jest.fn(),
     on: jest.fn(),
     off: jest.fn(),
+    getLayer: jest.fn(),
+    getStyle: jest.fn(() => ({ layers: [] })),
+    style: {},
   };
   return mockMap;
 };
