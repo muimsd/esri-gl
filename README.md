@@ -6,8 +6,6 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 [![CI](https://github.com/muimsd/esri-gl/actions/workflows/ci.yml/badge.svg)](https://github.com/muimsd/esri-gl/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=muimsd&button_colour=00ff04&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/muimsd)
-
 **[Documentation](https://esri-gl.pages.dev/)** · **[Live Demos](https://esri-gl-demo.pages.dev/)** · **[npm](https://www.npmjs.com/package/esri-gl)**
 
 ## Features
@@ -205,6 +203,10 @@ npm run build:demo   # Build demo site
 4. Submit a pull request
 
 Pre-commit hooks automatically run formatting, linting, and tests via [Husky](https://typicode.github.io/husky/).
+
+## Support
+
+<a href="https://www.buymeacoffee.com/muimsd"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=muimsd&button_colour=00ff04&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" alt="Buy Me A Coffee" width="150" /></a>
 
 ## License
 
