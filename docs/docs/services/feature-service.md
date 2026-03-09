@@ -1,12 +1,12 @@
 # FeatureService
 
-Integrates ArcGIS Feature Services with MapLibre GL JS and Mapbox GL JS, providing vector data with smart vector tile detection, GeoJSON fallback, and advanced querying capabilities.
+Integrates ArcGIS Feature Services with MapLibre GL JS and Mapbox GL JS. Provides vector data with smart vector tile detection, GeoJSON fallback, server-side filtering, feature editing, and attachments.
 
 ## Live Demo
 
-<iframe 
+<iframe
     src="/examples/feature-service-basic.html"
-    width="100%" 
+    width="100%"
     height="500px"
     frameBorder="0"
     title="Basic FeatureService Demo">
@@ -14,27 +14,15 @@ Integrates ArcGIS Feature Services with MapLibre GL JS and Mapbox GL JS, providi
 
 *Interactive example showing FeatureService with various ArcGIS Feature Services*
 
-## Overview
-
-FeatureService provides intelligent integration with ArcGIS Feature Services by automatically detecting the best data format:
-
-- **Smart Vector Tile Detection** - Automatically detects and uses vector tile endpoints when available
-- **GeoJSON Fallback** - Falls back to GeoJSON queries for services without vector tiles
-- **Dynamic Querying** - Server-side filtering with SQL-like where clauses
-- **Bounding Box Optimization** - Loads only data within the current viewport
-- **Real-time Updates** - Supports live data refresh and dynamic styling
-
-## Basic Usage
+## Quick Start
 
 ```typescript
 import { FeatureService } from 'esri-gl';
 
-// Create FeatureService
 const featureService = new FeatureService('features-source', map, {
   url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0'
 });
 
-// Add as vector layer
 map.addLayer({
   id: 'features-layer',
   type: 'circle',
@@ -48,235 +36,88 @@ map.addLayer({
 });
 ```
 
-## Configuration Options
+## Constructor
 
-### Core Options
+| Argument | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | An id to assign to the MapLibre GL source |
+| `map` | `Map` | A MapLibre GL or Mapbox GL map instance |
+| `esriServiceOptions` | `object` | Options for the Feature Service (see below) |
+| `geoJsonSourceOptions` | `object` | Optional MapLibre GL GeoJSON source options |
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `url` | `string` | **required** | ArcGIS Feature Service URL |
-| `where` | `string` | `'1=1'` | SQL WHERE clause for server-side filtering |
-| `outFields` | `string` | `'*'` | Comma-separated list of fields to return |
-| `maxRecordCount` | `number` | `1000` | Maximum features per request |
-
-### Advanced Options
+## Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `bbox` | `boolean` | `true` | Enable bounding box filtering |
-| `useVectorTiles` | `boolean` | `auto` | Force vector tiles (auto-detected by default) |
-| `refreshInterval` | `number` | `0` | Auto-refresh interval in milliseconds |
-| `simplificationFactor` | `number` | `0.5` | Geometry simplification (0-1) |
+| `url` | `string` | | **Required.** URL of the FeatureService layer |
+| `where` | `string` | `'1=1'` | SQL WHERE clause to filter features |
+| `outFields` | `Array<string> \| string` | `'*'` | Fields to include in response |
+| `geometry` | `object` | | Geometry to spatially filter features |
+| `geometryType` | `string` | | Type of geometry filter |
+| `spatialRel` | `string` | `'esriSpatialRelIntersects'` | Spatial relationship |
+| `outSR` | `number` | `4326` | Output spatial reference |
+| `returnGeometry` | `boolean` | `true` | Include geometry in response |
+| `maxRecordCount` | `number` | | Maximum features to return |
+| `resultOffset` | `number` | | Starting record for pagination |
+| `orderByFields` | `string` | | Fields to sort results by |
+| `token` | `string` | | Authentication token (URL parameter) |
+| `apiKey` | `string` | | API key for `X-Esri-Authorization` header auth |
+| `fetchOptions` | `object` | | Fetch request options |
+| `useVectorTiles` | `boolean` | `false` | Enable smart vector tile detection with GeoJSON fallback |
+| `useBoundingBox` | `boolean` | `true` | Enable viewport-based data loading for performance |
 
-## Smart Vector Tile Detection
+## Methods
 
-FeatureService automatically detects vector tile capabilities:
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `query(options?)` | `Promise<GeoJSON.FeatureCollection>` | Query features with custom parameters |
+| `updateQuery(options)` | `void` | Update query parameters and refresh |
+| `refresh()` | `void` | Refresh data from service |
+| `setBoundingBox(enabled)` | `void` | Enable/disable bounding box filtering |
+| `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResult[]>` | Identify features at a point |
+| `remove()` | `void` | Remove service and clean up resources |
 
-```typescript
-// Automatically uses vector tiles if available
-const smartService = new FeatureService('smart-source', map, {
-  url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0'
-  // Vector tiles will be used automatically if supported
-});
+## Editing Methods
 
-// Force GeoJSON mode
-const geoJsonService = new FeatureService('geojson-source', map, {
-  url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0',
-  useVectorTiles: false
-});
-```
+Methods for creating, updating, and deleting features on editable Feature Services.
 
-## Server-Side Filtering
+### `addFeatures(features, options?)`
 
-Apply SQL-like filters to reduce data transfer:
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `features` | `GeoJSON.Feature[]` | Features to add |
+| `options` | `{ gdbVersion?: string }` | Optional geodatabase version |
 
-```typescript
-// Filter by attribute
-const filteredService = new FeatureService('filtered-source', map, {
-  url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0',
-  where: "SPECIES = 'Oak' AND HEIGHT > 20",
-  outFields: 'SPECIES,HEIGHT,DIAMETER'
-});
+**Returns:** `Promise<EditResult[]>`
 
-// Date-based filtering
-const recentService = new FeatureService('recent-source', map, {
-  url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Incidents/FeatureServer/0',
-  where: "DATE_CREATED > date '2023-01-01'"
-});
-```
+### `updateFeatures(features, options?)`
 
-## Dynamic Updates
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `features` | `GeoJSON.Feature[]` | Features to update (must include OBJECTID) |
+| `options` | `{ gdbVersion?: string }` | Optional geodatabase version |
 
-```typescript
-const dynamicService = new FeatureService('dynamic-source', map, {
-  url: 'https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/LiveData/FeatureServer/0',
-  refreshInterval: 30000, // Refresh every 30 seconds
-  where: 'STATUS = \'ACTIVE\''
-});
+**Returns:** `Promise<EditResult[]>`
 
-// Update filter dynamically
-dynamicService.setWhere('STATUS = \'PENDING\'');
+### `deleteFeatures(params)`
 
-// Update fields
-dynamicService.setOutFields('STATUS,PRIORITY,TIMESTAMP');
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `params.objectIds` | `number[]` | Object IDs to delete |
+| `params.where` | `string` | SQL WHERE clause to select features for deletion |
 
-## Automatic Styling with getStyle()
+**Returns:** `Promise<EditResult[]>`
 
-FeatureService provides a `getStyle()` method that automatically returns appropriate styling based on the service's geometry type:
+### `applyEdits(edits, options?)`
 
-```typescript
-const featureService = new FeatureService('census-source', map, {
-  url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0'
-});
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `edits.adds` | `GeoJSON.Feature[]` | Features to add |
+| `edits.updates` | `GeoJSON.Feature[]` | Features to update |
+| `edits.deletes` | `number[]` | Object IDs to delete |
+| `options` | `{ gdbVersion?: string }` | Optional geodatabase version |
 
-// Wait for source to be ready
-await new Promise((resolve) => {
-  const checkSource = () => {
-    if (map.getSource('census-source')) {
-      resolve();
-    } else {
-      setTimeout(checkSource, 100);
-    }
-  };
-  checkSource();
-});
-
-// Get appropriate style for the geometry type
-const layerStyle = await featureService.getStyle();
-
-// Add layer with auto-generated styling
-map.addLayer({
-  id: 'census-layer',
-  ...layerStyle
-});
-```
-
-**Auto-Generated Styles by Geometry Type:**
-- **Points** → `circle` layer with radius and stroke
-- **Lines** → `line` layer with color and width  
-- **Polygons** → `fill` layer with color and outline
-- **Vector Tiles** → Includes appropriate `source-layer` configuration
-
-## Custom Styling Vector Data
-
-FeatureService works seamlessly with MapLibre/Mapbox styling:
-
-```typescript
-// Point features
-map.addLayer({
-  id: 'points-layer',
-  type: 'circle',
-  source: 'features-source',
-  paint: {
-    'circle-radius': ['interpolate', ['linear'], ['zoom'], 
-      10, 3,
-      15, 8
-    ],
-    'circle-color': [
-      'case',
-      ['==', ['get', 'STATUS'], 'HIGH'], '#ff0000',
-      ['==', ['get', 'STATUS'], 'MEDIUM'], '#ffaa00', 
-      '#00ff00'
-    ]
-  }
-});
-
-// Line features
-map.addLayer({
-  id: 'lines-layer',
-  type: 'line',
-  source: 'features-source',
-  paint: {
-    'line-width': 3,
-    'line-color': '#007cbf'
-  }
-});
-
-// Polygon features
-map.addLayer({
-  id: 'polygons-layer',
-  type: 'fill',
-  source: 'features-source',
-  paint: {
-    'fill-color': 'rgba(0, 124, 191, 0.3)',
-    'fill-outline-color': '#007cbf'
-  }
-});
-```
-
-## Querying Features
-
-Use built-in identify and query capabilities:
-
-```typescript
-// Click to identify
-map.on('click', 'features-layer', async (e) => {
-  const features = await featureService.identify(e.lngLat);
-  if (features.length > 0) {
-    // Show popup with feature properties
-    new maplibregl.Popup()
-      .setLngLat(e.lngLat)
-      .setHTML(`<strong>${features[0].properties.NAME}</strong>`)
-      .addTo(map);
-  }
-});
-
-// Programmatic querying
-const results = await featureService.query({
-  where: 'POPULATION > 100000',
-  geometry: boundingBox,
-  spatialRel: 'esriSpatialRelIntersects'
-});
-```
-
-## Performance Considerations
-
-### Vector Tiles vs GeoJSON
-
-- **Vector Tiles**: Better for large datasets, client-side styling
-- **GeoJSON**: Better for small datasets, complex server-side queries
-
-### Optimization Tips
-
-```typescript
-// Limit fields for better performance
-const optimizedService = new FeatureService('optimized-source', map, {
-  url: 'https://services.arcgis.com/example/FeatureServer/0',
-  outFields: 'NAME,STATUS', // Only needed fields
-  maxRecordCount: 500,      // Reasonable limit
-  simplificationFactor: 0.8 // Simplify geometry
-});
-
-// Use bounding box filtering
-const bboxService = new FeatureService('bbox-source', map, {
-  url: 'https://services.arcgis.com/example/FeatureServer/0',
-  bbox: true // Only load features in viewport
-});
-```
-
-## Error Handling
-
-```typescript
-try {
-  const featureService = new FeatureService('features-source', map, {
-    url: 'https://services.arcgis.com/example/FeatureServer/0'
-  });
-  
-  map.addLayer({
-    id: 'features-layer',
-    type: 'circle',
-    source: 'features-source'
-  });
-} catch (error) {
-  console.error('FeatureService error:', error);
-  // Fallback handling
-}
-```
-
-## Feature Editing
-
-FeatureService supports creating, updating, and deleting features on editable ArcGIS Feature Services:
+**Returns:** `Promise<ApplyEditsResult>`
 
 ```typescript
 const service = new FeatureService('editable-source', map, {
@@ -284,102 +125,109 @@ const service = new FeatureService('editable-source', map, {
   token: 'your-agol-token'
 });
 
-// Add new features
-const addResults = await service.addFeatures([
-  {
+// Batch edits in a single request
+const results = await service.applyEdits({
+  adds: [{
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [-118.24, 34.05] },
-    properties: { name: 'Los Angeles', population: 3979576 }
-  }
-]);
-
-// Update existing features (must include OBJECTID)
-const updateResults = await service.updateFeatures([
-  {
+    properties: { name: 'Los Angeles' }
+  }],
+  updates: [{
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [-118.24, 34.05] },
     properties: { OBJECTID: 1, population: 4000000 }
-  }
-]);
-
-// Delete features by ID
-const deleteResults = await service.deleteFeatures({ objectIds: [1, 2, 3] });
-
-// Or delete by WHERE clause
-const deleteByQuery = await service.deleteFeatures({ where: "STATUS = 'INACTIVE'" });
-
-// Batch edits in a single request
-const batchResults = await service.applyEdits({
-  adds: [newFeature1, newFeature2],
-  updates: [updatedFeature],
+  }],
   deletes: [10, 11, 12]
 });
 ```
 
-## Attachments
+## Attachment Methods
 
-Query, add, and delete file attachments on features:
+### `queryAttachments(objectId, options?)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `objectId` | `number` | Object ID of the feature |
+
+**Returns:** `Promise<AttachmentInfo[]>`
+
+### `addAttachment(objectId, file, fileName?)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `objectId` | `number` | Object ID of the feature |
+| `file` | `Blob \| File` | The file to attach |
+| `fileName` | `string` | Optional file name |
+
+**Returns:** `Promise<EditResult>`
+
+### `deleteAttachments(objectId, attachmentIds)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `objectId` | `number` | Object ID of the feature |
+| `attachmentIds` | `number[]` | IDs of attachments to delete |
+
+**Returns:** `Promise<EditResult[]>`
+
+## Events
+
+| Event | Description |
+|-------|-------------|
+| `authenticationrequired` | Fired when the service receives a 498/499 auth error. ArcGIS Online returns these as HTTP 200 with a JSON error body; the service detects and surfaces them automatically. |
 
 ```typescript
-// Query attachments for a feature
-const attachments = await service.queryAttachments(objectId);
-console.log(attachments); // [{ id: 1, name: 'photo.jpg', contentType: 'image/jpeg', size: 12345 }]
-
-// Add an attachment
-const file = new File(['content'], 'document.pdf', { type: 'application/pdf' });
-const result = await service.addAttachment(objectId, file);
-
-// Delete attachments
-await service.deleteAttachments(objectId, [1, 2]);
+service.on('authenticationrequired', async (error) => {
+  const newToken = await refreshToken();
+  service.setToken(newToken);
+});
 ```
 
-## Authentication
+## Examples
 
-FeatureService supports multiple authentication methods:
+### Smart Vector Tile Detection
 
 ```typescript
-// Token-based authentication (URL parameter)
-const tokenService = new FeatureService('source', map, {
+const service = new FeatureService('smart-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  useVectorTiles: true // Detects vector tile support, falls back to GeoJSON
+});
+```
+
+### Server-Side Filtering
+
+```typescript
+const filtered = new FeatureService('filtered-source', map, {
+  url: 'https://services.arcgis.com/.../FeatureServer/0',
+  where: "SPECIES = 'Oak' AND HEIGHT > 20",
+  outFields: 'SPECIES,HEIGHT,DIAMETER'
+});
+```
+
+### Automatic Styling with getStyle()
+
+Returns a layer style matching the service geometry type (circle for points, line for lines, fill for polygons). For vector tile sources, includes the appropriate `source-layer`.
+
+```typescript
+const layerStyle = await featureService.getStyle();
+map.addLayer({ id: 'auto-styled-layer', ...layerStyle });
+```
+
+### Authentication
+
+```typescript
+// Token auth (URL parameter)
+const service = new FeatureService('source', map, {
   url: 'https://services.arcgis.com/.../FeatureServer/0',
   token: 'your-auth-token'
 });
 
-// Update token dynamically
-tokenService.setToken('refreshed-token');
-
-// API Key authentication (X-Esri-Authorization header)
-const apiKeyService = new FeatureService('source', map, {
+// API key auth (X-Esri-Authorization header)
+const service2 = new FeatureService('source', map, {
   url: 'https://services.arcgis.com/.../FeatureServer/0',
   apiKey: 'your-api-key'
 });
 
-// Listen for authentication errors
-apiKeyService.on('authenticationrequired', async (error) => {
-  console.log('Auth required, refreshing token...');
-  const newToken = await refreshToken();
-  apiKeyService.setToken(newToken);
-});
+// Update token dynamically
+service.setToken('refreshed-token');
 ```
-
-## AGOL Error Handling
-
-The service automatically detects ArcGIS Online error responses (HTTP 200 with JSON error body) and surfaces them as proper errors:
-
-```typescript
-try {
-  const results = await service.addFeatures([feature]);
-} catch (error) {
-  if (error.code === 498 || error.code === 499) {
-    // Token expired or invalid - refresh and retry
-    service.setToken(await refreshToken());
-  } else {
-    console.error('Service error:', error.message, error.details);
-  }
-}
-```
-
-## Next Steps
-
-- 📚 [API Reference](../api/feature-service) - Complete FeatureService API
-- 🎯 [Query Task](../tasks/query) - Advanced querying capabilities  
-- 🔍 [Find Task](../tasks/find) - Text-based search functionality

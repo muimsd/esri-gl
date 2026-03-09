@@ -304,7 +304,7 @@ The `operation` field determines the type of change:
 
 ## Filter Types
 
-These types are also documented in the main [Dynamic Layers](./dynamic-layers.md) documentation:
+These types are used by [DynamicMapService](/docs/services/dynamic-map-service):
 
 ```typescript
 type LayerFilter = 

@@ -1,13 +1,13 @@
 # VectorTileService
 
-Provides access to ArcGIS Vector Tile Services, which deliver high-performance, scalable vector data as compressed tiles. Vector tiles are ideal for detailed datasets like parcels, roads, and administrative boundaries that maintain crisp rendering at all zoom levels.
+High-performance vector tiles from ArcGIS Vector Tile Services. Crisp rendering at all zoom levels, client-side styling, and queryable features.
 
 ## Live Demo
 
-<iframe 
-  src="/examples/vector-tile-service.html" 
-  width="100%" 
-  height="500px" 
+<iframe
+  src="/examples/vector-tile-service.html"
+  width="100%"
+  height="500px"
   style={{border: '1px solid #ddd', borderRadius: '8px'}}
   title="VectorTileService Demo">
 </iframe>
@@ -16,23 +16,17 @@ Provides access to ArcGIS Vector Tile Services, which deliver high-performance, 
 
 ## Quick Start
 
-### Installation
-
 ```bash
 npm install esri-gl maplibre-gl
 ```
 
-### Basic Usage
-
 ```typescript
 import { VectorTileService } from 'esri-gl';
 
-// Create the service
 const service = new VectorTileService('parcels-source', map, {
   url: 'https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer'
 });
 
-// Get the style and add layer
 const style = await service.getStyle();
 map.addLayer({
   id: 'parcels-layer',
@@ -43,35 +37,39 @@ map.addLayer({
 });
 ```
 
-## Key Features
+## Constructor
 
-- **Scalable Performance** - Optimized vector tile delivery for large datasets
-- **Crisp Rendering** - Vector graphics scale perfectly at any zoom level
-- **Style Flexibility** - Supports server-defined styles and custom styling
-- **Efficient Bandwidth** - Compressed vector data reduces transfer size
-- **Interactive Features** - Queryable vector features with properties
-
-## Common Operations
-
-### Dynamic Layer Management
 ```typescript
-// Add vector tile layer
-const style = await service.getStyle();
-map.addLayer({
-  id: 'vector-layer',
-  type: style.type,
-  source: 'parcels-source',
-  'source-layer': style['source-layer'],
-  paint: style.paint
-});
-
-// Remove layer
-map.removeLayer('vector-layer');
+new VectorTileService(id, map, esriServiceOptions, vectorSourceOptions?)
 ```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` | Unique source ID for MapLibre |
+| `map` | `Map` | MapLibre map instance |
+| `esriServiceOptions` | `object` | Service configuration (see below) |
+| `vectorSourceOptions` | `object` | Optional MapLibre vector source overrides (see below) |
+
+## Service Options (`esriServiceOptions`)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `url` | `string` | *required* | ArcGIS VectorTileServer URL |
+| `token` | `string` | — | ArcGIS authentication token |
+| `fetchOptions` | `object` | — | Custom fetch options (headers, etc.) |
+
+## Vector Source Options (`vectorSourceOptions`)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minzoom` | `number` | `0` | Minimum zoom level |
+| `maxzoom` | `number` | `22` | Maximum zoom level |
+| `attribution` | `string` | — | Custom attribution text |
+
+## Examples
 
 ### Custom Styling
 ```typescript
-// Override default style
 map.addLayer({
   id: 'custom-parcels',
   type: 'fill',
@@ -87,12 +85,11 @@ map.addLayer({
 
 ### Feature Queries
 ```typescript
-// Query features at a point
-map.on('click', 'vector-layer', (e) => {
+map.on('click', 'parcels-layer', (e) => {
   const features = map.queryRenderedFeatures(e.point, {
-    layers: ['vector-layer']
+    layers: ['parcels-layer']
   });
-  
+
   if (features.length > 0) {
     console.log('Feature properties:', features[0].properties);
   }
@@ -101,17 +98,6 @@ map.on('click', 'vector-layer', (e) => {
 
 ### Style Updates
 ```typescript
-// Update paint properties
-map.setPaintProperty('vector-layer', 'fill-color', '#4CAF50');
-map.setPaintProperty('vector-layer', 'fill-opacity', 0.8);
+map.setPaintProperty('parcels-layer', 'fill-color', '#4CAF50');
+map.setPaintProperty('parcels-layer', 'fill-opacity', 0.8);
 ```
-
-## Use Cases
-
-- **Property Management** - Parcel boundaries, land ownership, and zoning
-- **Transportation** - Road networks, transit routes, and traffic analysis
-- **Urban Planning** - Building footprints, infrastructure, and development
-- **Environmental** - Land cover, watersheds, and conservation areas
-- **Administrative** - Political boundaries, districts, and jurisdictions
-
-For detailed API documentation, see [VectorTileService API Reference](../api/vector-tile-service).

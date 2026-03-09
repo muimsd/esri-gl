@@ -33,7 +33,7 @@ const { service, loading, error } = useEsriService(
 
 ### useDynamicMapService
 
-Hook for [DynamicMapService](/docs/api/dynamic-map-service). Automatically updates `layers` and `layerDefs` when options change without recreating the service.
+Hook for [DynamicMapService](/docs/services/dynamic-map-service). Automatically updates `layers` and `layerDefs` when options change without recreating the service.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -54,7 +54,7 @@ const { service, loading } = useDynamicMapService({
 
 ### useTiledMapService
 
-Hook for [TiledMapService](/docs/api/tiled-map-service).
+Hook for [TiledMapService](/docs/services/tiled-map-service).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -75,7 +75,7 @@ const { service } = useTiledMapService({
 
 ### useImageService
 
-Hook for [ImageService](/docs/api/image-service).
+Hook for [ImageService](/docs/services/image-service).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -96,7 +96,7 @@ const { service } = useImageService({
 
 ### useFeatureService
 
-Hook for [FeatureService](/docs/api/feature-service).
+Hook for [FeatureService](/docs/services/feature-service).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -120,7 +120,7 @@ const { service } = useFeatureService({
 
 ### useVectorTileService
 
-Hook for [VectorTileService](/docs/api/vector-tile-service).
+Hook for [VectorTileService](/docs/services/vector-tile-service).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -141,7 +141,7 @@ const { service } = useVectorTileService({
 
 ### useVectorBasemapStyle
 
-Hook for [VectorBasemapStyle](/docs/api/vector-basemap-style). Uses a different constructor signature — no `sourceId` or `map` required.
+Hook for [VectorBasemapStyle](/docs/services/vector-basemap-style). Uses a different constructor signature — no `sourceId` or `map` required.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -165,7 +165,7 @@ These hooks wrap spatial tasks with loading/error state management.
 
 ### useIdentifyFeatures
 
-Hook for running [IdentifyFeatures](/docs/api/identify-features) tasks.
+Hook for running [IdentifyFeatures](/docs/tasks/identify-features) tasks.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -195,7 +195,7 @@ const results = await identify({ lng: -118.24, lat: 34.05 }, { map });
 
 ### useIdentifyImage
 
-Hook for running [IdentifyImage](/docs/api/identify-image) tasks on image services.
+Hook for running [IdentifyImage](/docs/tasks/identify-image) tasks on image services.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -221,7 +221,7 @@ const result = await identifyImage({ lng: -118.24, lat: 34.05 });
 
 ### useQuery
 
-Hook for running [Query](/docs/api/query) tasks with pagination support.
+Hook for running [Query](/docs/tasks/query) tasks with pagination support.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -253,7 +253,7 @@ const all = await queryAll({ maxPages: 5 });
 
 ### useFind
 
-Hook for running [Find](/docs/api/find) tasks to search across multiple layers.
+Hook for running [Find](/docs/tasks/find) tasks to search across multiple layers.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -283,7 +283,7 @@ const results = await find();
 
 ### useFeatureEditing
 
-Hook for editing features on a [FeatureService](/docs/api/feature-service).
+Hook for editing features on a [FeatureService](/docs/services/feature-service).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|

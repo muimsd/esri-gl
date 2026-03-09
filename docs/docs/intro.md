@@ -61,6 +61,6 @@ map.addLayer({
 
 ## What's Next?
 
-- 📚 [Learn about Services](./services/overview) - Core service classes
-- 🎯 [Explore Examples](./examples/basic) - Interactive demos
-- 🔧 [API Reference](./api/dynamic-map-service) - Detailed documentation
+- [Services](./services/overview) — Core service classes and API reference
+- [Tasks](./tasks/overview) — Identify, Query, and Find operations
+- [Examples](./examples/html-viewer) — Interactive demos and code samples
