@@ -22,6 +22,14 @@ function HomepageHeader() {
             Get Started
           </Link>
         </div>
+        <div style={{ marginTop: '1rem' }}>
+          <a href="https://www.buymeacoffee.com/muimsd" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=muimsd&button_colour=00ff04&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00"
+              alt="Buy Me A Coffee"
+            />
+          </a>
+        </div>
       </div>
     </header>
   );

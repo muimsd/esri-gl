@@ -282,6 +282,19 @@ const App: React.FC = () => {
           ))}
         </nav>
         <a
+          className="shell-bmc"
+          href="https://www.buymeacoffee.com/muimsd"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Buy me a coffee"
+        >
+          <img
+            src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=muimsd&button_colour=00ff04&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00"
+            alt="Buy Me A Coffee"
+            style={{ height: 28 }}
+          />
+        </a>
+        <a
           className="shell-github"
           href="https://github.com/esri-gl/esri-gl"
           target="_blank"
