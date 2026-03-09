@@ -18,6 +18,7 @@ export interface IdentifyFeaturesOptions {
   dynamicLayers?: unknown[];
   mapExtent?: [number, number, number, number];
   imageDisplay?: [number, number, number];
+  dpi?: number;
   sr?: string | number;
   layerTimeOptions?: Record<string, unknown>;
   time?: number[] | Date[];
@@ -158,7 +159,8 @@ export class IdentifyFeatures extends Task {
       this.params.mapExtent = [bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1]].join(',');
 
       const canvas = map.getCanvas();
-      this.params.imageDisplay = [canvas.width, canvas.height, 96].join(',');
+      const dpi = (this.options as IdentifyFeaturesOptions)?.dpi ?? 96;
+      this.params.imageDisplay = [canvas.width, canvas.height, dpi].join(',');
     } catch (error) {
       console.warn('Could not extract map extent and display info:', error);
     }

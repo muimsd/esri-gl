@@ -175,7 +175,7 @@ describe('ImageService', () => {
       const expectedSource = {
         type: 'raster',
         tiles: [
-          'https://example.com/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&format=jpgpng&size=256%2C256&f=image',
+          'https://example.com/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&format=jpgpng&dpi=96&size=256%2C256&f=image',
         ],
         tileSize: 256,
       };

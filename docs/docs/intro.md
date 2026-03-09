@@ -44,11 +44,11 @@ map.addLayer({
 Load the package via CDN:
 
 ```html
-<script src="https://unpkg.com/esri-gl/dist/esri-gl.js"></script>
+<script src="https://unpkg.com/esri-gl/dist/index.umd.js"></script>
 ```
 
 ```javascript
-new DynamicMapService('usa-source', map, {
+new esrigl.DynamicMapService('usa-source', map, {
   url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
 });
 

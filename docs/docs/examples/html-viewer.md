@@ -159,7 +159,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     
     <!-- esri-gl Library -->
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
     <script>
         // Initialize MapLibre GL map
@@ -585,7 +585,7 @@ A complete HTML page using esri-gl with Mapbox GL JS:
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     
     <!-- esri-gl Library -->
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
     <script>
         // Set your Mapbox access token (required for Mapbox GL JS)
@@ -664,7 +664,7 @@ A minimal HTML example for quick testing:
     <div id="map"></div>
     
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
     
     <script>
         const map = new maplibregl.Map({
@@ -846,7 +846,7 @@ A more advanced dashboard-style HTML example:
     </div>
 
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/esri-gl@latest/dist/esri-gl.js"></script>
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
     
     <script>
         const map = new maplibregl.Map({
@@ -1049,7 +1049,7 @@ A more advanced dashboard-style HTML example:
 All examples use CDN links for easy setup:
 - **MapLibre GL**: `https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js`
 - **Mapbox GL**: `https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js`
-- **esri-gl**: `https://unpkg.com/esri-gl@latest/dist/esri-gl.js`
+- **esri-gl**: `https://unpkg.com/esri-gl@latest/dist/index.umd.js`
 
 ### Local Development
 For local development, you can:

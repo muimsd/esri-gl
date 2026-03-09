@@ -84,6 +84,7 @@ export class ImageService {
       bboxSR: '3857',
       imageSR: '3857',
       format: this.options.format,
+      dpi: this.options.dpi.toString(),
       size: `${tileSize},${tileSize}`,
       f: 'image',
     });
@@ -207,7 +208,7 @@ export class ImageService {
       }),
       tolerance: '3',
       returnGeometry: returnGeometry.toString(),
-      imageDisplay: `${canvas.width},${canvas.height},96`,
+      imageDisplay: `${canvas.width},${canvas.height},${this.options.dpi}`,
       mapExtent: `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`,
       f: 'json',
     });

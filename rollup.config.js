@@ -1,4 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 import typescript from '@rollup/plugin-typescript'
 import alias from '@rollup/plugin-alias'
 import babel from '@rollup/plugin-babel'
@@ -42,6 +43,9 @@ const basePlugins = [
 
 const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre', '@mapbox/tilebelt', 'arcgis-pbf-parser']
 
+// UMD build should bundle runtime dependencies so they work via CDN without extra script tags
+const umdExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre']
+
 // ES modules build configuration with multiple entry points
 const esConfig = {
   input: {
@@ -69,7 +73,7 @@ const esConfig = {
 // UMD build for main entry only (for CDN usage)
 const umdConfig = {
   input: 'src/index.ts',
-  external: commonExternal,
+  external: umdExternal,
   output: {
     file: 'dist/index.umd.js',
     format: 'umd',
@@ -83,11 +87,9 @@ const umdConfig = {
       'react-dom': 'ReactDOM',
       'react-map-gl/mapbox': 'ReactMapGL',
       'react-map-gl/maplibre': 'ReactMapGL',
-      '@mapbox/tilebelt': 'tilebelt',
-      'arcgis-pbf-parser': 'arcgisPbfParser'
     }
   },
-  plugins: basePlugins,
+  plugins: [...basePlugins, commonjs()],
   onwarn(warning, warn) {
     if (warning.code === 'THIS_IS_UNDEFINED') return;
     if (warning.code === 'EMPTY_BUNDLE') return;
