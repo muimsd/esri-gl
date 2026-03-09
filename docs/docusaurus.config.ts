@@ -19,7 +19,7 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://esri-gl.netlify.app',
+  url: 'https://esri-gl.pages.dev',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -75,7 +75,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://esri-gl-demo.netlify.app/',
+          href: 'https://esri-gl-demo.pages.dev/',
           label: 'Live Demo',
           position: 'left',
         },
@@ -108,7 +108,7 @@ const config: Config = {
           items: [
             {
               label: 'Live Demo',
-              href: 'https://esri-gl-demo.netlify.app/',
+              href: 'https://esri-gl-demo.pages.dev/',
             },
             {
               label: 'GitHub',

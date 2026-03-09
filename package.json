@@ -1,6 +1,6 @@
 {
   "name": "esri-gl",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "A module for making it easier to use Esri services in mapbox-gl or maplibre-gl.",
   "main": "dist/index.js",
@@ -124,8 +124,8 @@
   "bugs": {
     "url": "https://github.com/muimsd/esri-gl/issues"
   },
-  "homepage": "https://esri-gl.netlify.app",
-  "demo": "https://esri-gl-demo.netlify.app",
+  "homepage": "https://esri-gl.pages.dev",
+  "demo": "https://esri-gl-demo.pages.dev",
   "author": "Muhammad Imran Siddique 2025, Rowan Winsemius 2020-2025",
   "license": "MIT",
   "keywords": [

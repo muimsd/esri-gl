@@ -135,7 +135,7 @@ To use your own ArcGIS services:
 
 ## Learn More
 
-- [esri-gl Documentation](https://esri-gl.netlify.app/)
+- [esri-gl Documentation](https://esri-gl.pages.dev/)
 - [MapLibre GL JS Documentation](https://maplibre.org/maplibre-gl-js-docs/)
 - [React Documentation](https://react.dev/)
 - [Vite Documentation](https://vitejs.dev/)
