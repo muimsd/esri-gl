@@ -1,6 +1,6 @@
 [build]
   publish = "docs/build"
-  command = "npm run build:docs"
+  command = "cd docs && npm install && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
