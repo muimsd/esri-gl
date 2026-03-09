@@ -3,7 +3,7 @@
   command = "cd docs && npm install && npm run build"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "22"
 
 # Cache static assets
 [[headers]]
