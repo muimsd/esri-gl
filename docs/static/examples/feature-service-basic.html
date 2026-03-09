@@ -46,10 +46,9 @@
 
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
-    <script type="module">
-        import { FeatureService } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
-        
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         // Create map
         const map = new maplibregl.Map({
             container: 'map',
@@ -61,7 +60,7 @@
         map.on('load', async () => {
             try {
                 // Create FeatureService
-                const featureService = new FeatureService('census-source', map, {
+                const featureService = new esrigl.FeatureService('census-source', map, {
                     url: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0'
                 });
                 

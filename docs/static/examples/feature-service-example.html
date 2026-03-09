@@ -162,10 +162,9 @@
 
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
-    <script type="module">
-        import { FeatureService } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
-        
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://demotiles.maplibre.org/style.json',
@@ -277,7 +276,7 @@
                 const layerId = `feature-layer-${serviceKey}`;
                 
                 // Create FeatureService
-                currentService = new FeatureService(sourceId, map, {
+                currentService = new esrigl.FeatureService(sourceId, map, {
                     url: config.url,
                     maxRecordCount: 1000
                 });

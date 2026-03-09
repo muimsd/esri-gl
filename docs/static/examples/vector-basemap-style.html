@@ -149,8 +149,9 @@
         </div>
     </div>
 
-    <script type="module">
-        import { VectorBasemapStyle } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         let map;
         let currentStyle = 'ArcGIS:Streets';
         let apiKey = '';
@@ -243,7 +244,7 @@
                 controls.classList.add('loading');
                 errorDiv.style.display = 'none';
 
-                const vectorStyle = new VectorBasemapStyle(styleId, apiKey);
+                const vectorStyle = new esrigl.VectorBasemapStyle(styleId, apiKey);
                 const response = await fetch(vectorStyle.styleUrl);
                 
                 if (!response.ok) {

@@ -116,9 +116,9 @@
 
     <!-- MapLibre GL JavaScript -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
-    <script type="module">
-        import { DynamicMapService, FeatureService, TiledMapService, VectorTileService } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         // Initialize MapLibre GL map
         const map = new maplibregl.Map({
             container: 'map',
@@ -174,7 +174,7 @@
                 
                 switch (serviceType) {
                     case 'dynamic':
-                        currentService = new DynamicMapService(sourceId, map, {
+                        currentService = new esrigl.DynamicMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -189,7 +189,7 @@
                         break;
 
                     case 'feature':
-                        currentService = new FeatureService(sourceId, map, {
+                        currentService = new esrigl.FeatureService(sourceId, map, {
                             url: serviceUrl,
                             useVectorTiles: true,
                             useBoundingBox: true
@@ -204,7 +204,7 @@
                         break;
 
                     case 'tiled':
-                        currentService = new TiledMapService(sourceId, map, {
+                        currentService = new esrigl.TiledMapService(sourceId, map, {
                             url: serviceUrl
                         });
                         
@@ -219,7 +219,7 @@
                         break;
 
                     case 'vector':
-                        currentService = new VectorTileService(sourceId, map, {
+                        currentService = new esrigl.VectorTileService(sourceId, map, {
                             url: serviceUrl
                         });
                         

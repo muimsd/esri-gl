@@ -99,9 +99,9 @@
         </div>
     </div>
 
-    <script type="module">
-        import { DynamicMapService, IdentifyFeatures } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
+    <script>
         // Initialize the map
         const map = new maplibregl.Map({
             container: 'map',
@@ -117,7 +117,7 @@
         map.on('load', async () => {
             try {
                 // Initialize Dynamic Map Service
-                dynamicService = new DynamicMapService(
+                dynamicService = new esrigl.DynamicMapService(
                     'usa-dynamic',
                     map,
                     {
@@ -133,7 +133,7 @@
                 });
 
                 // Initialize IdentifyFeatures service
-                identifyService = new IdentifyFeatures({
+                identifyService = new esrigl.IdentifyFeatures({
                     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
                 });
 
@@ -212,7 +212,7 @@
                     statusText.textContent = 'Identifying features...';
                     
                     // Create IdentifyFeatures task using the service URL
-                    const identify = new IdentifyFeatures(dynamicService.esriServiceOptions.url);
+                    const identify = new esrigl.IdentifyFeatures(dynamicService.esriServiceOptions.url);
                     
                     // Get visible layers for identify
                     const visibleLayers = [];

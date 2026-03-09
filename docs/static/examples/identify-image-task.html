@@ -89,12 +89,9 @@
       </div>
     </div>
 
-    <script type="module">
-      import {
-        ImageService,
-        IdentifyImage,
-      } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
+    <script>
       // Image service configurations
       const services = {
         elevation: {
@@ -143,7 +140,7 @@
 
         try {
           // Initialize Image Service
-          currentImageService = new ImageService('image-source', map, {
+          currentImageService = new esrigl.ImageService('image-source', map, {
             url: serviceConfig.url,
           });
 
@@ -156,7 +153,7 @@
           });
 
           // Initialize IdentifyImage task
-          currentIdentifyTask = new IdentifyImage({
+          currentIdentifyTask = new esrigl.IdentifyImage({
             url: serviceConfig.url,
           });
 

@@ -44,12 +44,9 @@
 
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
 
-    <script type="module">
-      import {
-        DynamicMapService,
-        IdentifyFeatures,
-      } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
+    <script>
       const map = new maplibregl.Map({
         container: 'map',
         style: 'https://demotiles.maplibre.org/style.json',
@@ -63,7 +60,7 @@
 
       map.on('load', () => {
         // Add ArcGIS Dynamic Map Service
-        service = new DynamicMapService('esri-service', map, {
+        service = new esrigl.DynamicMapService('esri-service', map, {
           url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
           layers: [0, 1, 2], // Show specific layers
           format: 'png32',
@@ -89,7 +86,7 @@
           map.getContainer().style.cursor = 'wait';
 
           // Create IdentifyFeatures task with the service URL
-          const identify = new IdentifyFeatures(service.esriServiceOptions.url);
+          const identify = new esrigl.IdentifyFeatures(service.esriServiceOptions.url);
 
           // Use the task pattern with chaining
           const featureCollection = await identify

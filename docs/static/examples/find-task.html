@@ -188,12 +188,9 @@
       <div id="resultsPanel" class="results-panel" style="display: none"></div>
     </div>
 
-    <script type="module">
-      import {
-        DynamicMapService,
-        Find,
-      } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
 
+    <script>
       // Initialize map
       const map = new maplibregl.Map({
         container: 'map',
@@ -216,7 +213,7 @@
 
       map.on('load', () => {
         // Add sample dynamic map service
-        new DynamicMapService('usa-service', map, {
+        new esrigl.DynamicMapService('usa-service', map, {
           url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
         });
 
@@ -256,7 +253,7 @@
           // The ArcGIS Find API accepts "all" or comma-separated layer IDs
           const layersParam = layers === 'all' ? 'all' : layers;
 
-          const findTask = new Find({
+          const findTask = new esrigl.Find({
             url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer',
             searchText: searchText,
             searchFields: searchFields || undefined, // Only set if provided

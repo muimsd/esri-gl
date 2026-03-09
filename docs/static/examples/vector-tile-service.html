@@ -137,9 +137,9 @@
 
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
-    <script type="module">
-        import { VectorTileService } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -167,7 +167,7 @@
         map.on('load', async () => {
             try {
                 // Create VectorTileService
-                service = new VectorTileService('vector-tiles-demo', map, {
+                service = new esrigl.VectorTileService('vector-tiles-demo', map, {
                     url: 'https://vectortileservices3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Santa_Monica_Mountains_Parcels_VTL/VectorTileServer'
                 });
 

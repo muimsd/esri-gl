@@ -101,9 +101,9 @@
 
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    
-    <script type="module">
-        import { TiledMapService } from 'https://unpkg.com/esri-gl@latest/dist/index.js';
+    <script src="https://unpkg.com/esri-gl@latest/dist/index.umd.js"></script>
+
+    <script>
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -130,7 +130,7 @@
         map.on('load', () => {
             try {
                 // Create TiledMapService
-                service = new TiledMapService('tiled-source', map, {
+                service = new esrigl.TiledMapService('tiled-source', map, {
                     url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'
                 });
 
