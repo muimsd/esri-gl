@@ -72,9 +72,3 @@ Set the map instance for the identify operation.
 Execute the identify operation with current parameters.
 
 **Returns:** `Promise<FeatureCollection>`
-
-  console.log('Identified features:', results.features);
-});
-```
-
-## Advanced Usage Examples
