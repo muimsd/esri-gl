@@ -1,6 +1,10 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import {createRequire} from 'module';
+
+const require = createRequire(import.meta.url);
+const {version} = require('../package.json');
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -78,7 +82,7 @@ const config: Config = {
         {
           type: 'html',
           position: 'right',
-          value: '<span style="background:#25c2a0;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:bold;margin-right:8px">v1.0.0</span>',
+          value: `<span style="background:#25c2a0;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:bold;margin-right:8px">v${version}</span>`,
         },
         {
           href: 'https://github.com/muimsd/esri-gl',
