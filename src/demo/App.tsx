@@ -268,7 +268,7 @@ const App: React.FC = () => {
     <div className="shell">
       <header className="shell-header">
         <span className="shell-logo">esri-gl</span>
-        <span className="shell-version">v1.0.0</span>
+        <span className="shell-version">v{__APP_VERSION__}</span>
         <nav className="shell-categories">
           {CATEGORY_DEFINITIONS.map(category => (
             <button
