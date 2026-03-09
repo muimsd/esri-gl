@@ -71,7 +71,7 @@ jobs:
           fi
 
       - name: Build demo
-        run: npm run build:example
+        run: npm run build:demo
 
   build-docs:
     runs-on: ubuntu-latest
@@ -107,4 +107,4 @@ jobs:
           fi
 
       - name: Build documentation
-        run: npm run build-docs
+        run: npm run build:docs
