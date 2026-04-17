@@ -160,6 +160,7 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
     url="https://.../Census/MapServer"
     layers={[0, 1]}
     opacity={0.8}
+    token="YOUR_TOKEN"
   />
   <EsriFeatureLayer
     id="states"
@@ -168,6 +169,8 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
   />
 </Map>
 ```
+
+All layer components accept `token`, `apiKey`, `proxy`, `getAttributionFromService`, `requestParams`, and `fetchOptions` for authenticated services and custom request behavior.
 
 ## Examples
 
