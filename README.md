@@ -6,6 +6,7 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 [![CI](https://github.com/muimsd/esri-gl/actions/workflows/ci.yml/badge.svg)](https://github.com/muimsd/esri-gl/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **[Documentation](https://esri-gl.pages.dev/)** · **[Live Demos](https://esri-gl-demo.pages.dev/)** · **[npm](https://www.npmjs.com/package/esri-gl)**
 
 ## Features
@@ -160,6 +161,7 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
     url="https://.../Census/MapServer"
     layers={[0, 1]}
     opacity={0.8}
+    token="YOUR_TOKEN"
   />
   <EsriFeatureLayer
     id="states"
@@ -168,6 +170,8 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
   />
 </Map>
 ```
+
+All layer components accept `token`, `apiKey`, `proxy`, `getAttributionFromService`, `requestParams`, and `fetchOptions` for authenticated services and custom request behavior.
 
 ## Examples
 

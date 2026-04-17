@@ -227,6 +227,24 @@ import { EsriFeatureLayer } from 'esri-gl/react-map-gl';
 />
 ```
 
+### Authenticated Services
+
+Every react-map-gl layer component accepts `token`, `apiKey`, `proxy`, `getAttributionFromService`, `requestParams`, and `fetchOptions`. Defined values are forwarded to the underlying service, so you can access secured ArcGIS endpoints directly from the declarative API:
+
+```tsx
+<EsriDynamicLayer
+  id="secured-layer"
+  url="https://your-server/arcgis/rest/services/Secure/MapServer"
+  token="YOUR_TOKEN"
+/>
+
+<EsriFeatureLayer
+  id="secured-features"
+  url="https://services.arcgis.com/.../FeatureServer/0"
+  apiKey="YOUR_API_KEY"
+/>
+```
+
 ## Available Hooks
 
 ### Service Hooks

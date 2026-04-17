@@ -57,6 +57,19 @@ describe('EsriVectorTileLayer', () => {
     });
   });
 
+  it('should forward token and apiKey to VectorTileService', () => {
+    render(<EsriVectorTileLayer {...defaultProps} token="my-token" apiKey="my-api-key" />);
+
+    expect(MockedVectorTileService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        token: 'my-token',
+        apiKey: 'my-api-key',
+      })
+    );
+  });
+
   it('should create service and handle cleanup', () => {
     const { unmount } = render(<EsriVectorTileLayer {...defaultProps} />);
 

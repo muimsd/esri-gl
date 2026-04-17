@@ -3,6 +3,7 @@ import { useReactMapGL } from '../utils/useReactMapGL';
 import { ImageService } from '@/Services/ImageService';
 import type { ImageServiceOptions } from '@/types';
 import type { EsriImageLayerProps } from '../types';
+import { applyAuthOptions } from '../utils/buildServiceOptions';
 
 /**
  * React Map GL component for Esri Image Service
@@ -46,9 +47,24 @@ export function EsriImageLayer(props: EsriImageLayerProps) {
     if (props.renderingRule !== undefined) options.renderingRule = props.renderingRule;
     if (props.mosaicRule !== undefined) options.mosaicRule = props.mosaicRule;
     if (props.format !== undefined) options.format = props.format as ImageServiceOptions['format'];
+    applyAuthOptions(options, props);
 
     return new ImageService(sourceId, mapInstance as unknown as import('@/types').Map, options);
-  }, [map, isMapLoaded, sourceId, props.url, props.renderingRule, props.mosaicRule, props.format]);
+  }, [
+    map,
+    isMapLoaded,
+    sourceId,
+    props.url,
+    props.renderingRule,
+    props.mosaicRule,
+    props.format,
+    props.token,
+    props.apiKey,
+    props.proxy,
+    props.getAttributionFromService,
+    props.requestParams,
+    props.fetchOptions,
+  ]);
 
   useEffect(() => {
     if (!map || !service) return;

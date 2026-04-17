@@ -3,6 +3,7 @@ import { DynamicMapService } from '@/Services/DynamicMapService';
 import type { EsriServiceOptions } from '@/types';
 import type { EsriDynamicLayerProps } from '../types';
 import { useReactMapGL } from '../utils/useReactMapGL';
+import { applyAuthOptions } from '../utils/buildServiceOptions';
 
 /**
  * React Map GL component for Esri Dynamic Map Service
@@ -48,6 +49,7 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
     if (props.format !== undefined) options.format = props.format;
     if (props.dpi !== undefined) options.dpi = props.dpi;
     if (props.transparent !== undefined) options.transparent = props.transparent;
+    applyAuthOptions(options, props);
 
     return new DynamicMapService(
       sourceId,
@@ -64,6 +66,12 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
     props.format,
     props.dpi,
     props.transparent,
+    props.token,
+    props.apiKey,
+    props.proxy,
+    props.getAttributionFromService,
+    props.requestParams,
+    props.fetchOptions,
   ]);
 
   useEffect(() => {

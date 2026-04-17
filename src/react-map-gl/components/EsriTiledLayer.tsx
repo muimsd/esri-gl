@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TiledMapService } from '@/Services/TiledMapService';
+import type { EsriServiceOptions } from '@/types';
 import type { EsriTiledLayerProps } from '../types';
 import { useReactMapGL } from '../utils/useReactMapGL';
+import { applyAuthOptions } from '../utils/buildServiceOptions';
 
 /**
  * React Map GL component for Esri Tiled Map Service
@@ -40,10 +42,22 @@ export function EsriTiledLayer(props: EsriTiledLayerProps) {
     const mapInstance = map.getMap?.();
     if (!mapInstance) return null;
 
-    return new TiledMapService(sourceId, mapInstance as unknown as import('@/types').Map, {
-      url: props.url,
-    });
-  }, [map, isMapLoaded, sourceId, props.url]);
+    const options: EsriServiceOptions & { url: string } = { url: props.url };
+    applyAuthOptions(options, props);
+
+    return new TiledMapService(sourceId, mapInstance as unknown as import('@/types').Map, options);
+  }, [
+    map,
+    isMapLoaded,
+    sourceId,
+    props.url,
+    props.token,
+    props.apiKey,
+    props.proxy,
+    props.getAttributionFromService,
+    props.requestParams,
+    props.fetchOptions,
+  ]);
 
   useEffect(() => {
     if (!map || !service) return;

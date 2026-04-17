@@ -12,6 +12,26 @@ All components share these common props:
 | sourceId | `string` | Custom source ID (defaults to `id`) |
 | beforeId | `string` | Insert layer before this layer ID |
 | visible | `boolean` | Layer visibility |
+| token | `string` | ArcGIS token sent as `token` query param with every request |
+| apiKey | `string` | ArcGIS API key sent via `X-Esri-Authorization: Bearer` header |
+| proxy | `string \| boolean` | Proxy URL or flag forwarded to the service |
+| getAttributionFromService | `boolean` | Whether to fetch attribution from the service (default `true`) |
+| requestParams | `Record<string, unknown>` | Extra params merged into every service request |
+| fetchOptions | `RequestInit` | Extra fetch options used by the service |
+
+:::tip Authenticated services
+Use `token` (or `apiKey`) on any layer component to access secured services:
+
+```tsx
+<EsriDynamicLayer
+  id="secured"
+  url="https://your-server/arcgis/rest/services/Secure/MapServer"
+  token="YOUR_TOKEN"
+/>
+```
+
+`EsriVectorBasemapLayer` still takes a required `token` prop (see below).
+:::
 
 ### EsriDynamicLayer
 
