@@ -74,6 +74,21 @@ describe('EsriFeatureLayer', () => {
     });
   });
 
+  it('should forward token and apiKey to FeatureService', async () => {
+    await act(async () => {
+      render(<EsriFeatureLayer {...defaultProps} token="my-token" apiKey="my-api-key" />);
+    });
+
+    expect(MockedFeatureService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        token: 'my-token',
+        apiKey: 'my-api-key',
+      })
+    );
+  });
+
   it('should add fill layer with default paint', async () => {
     mockMapInstance.getLayer.mockReturnValue(null);
 

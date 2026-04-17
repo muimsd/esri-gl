@@ -179,6 +179,41 @@ describe('EsriDynamicLayer', () => {
     expect(MockedDynamicMapService).toHaveBeenCalledTimes(2);
   });
 
+  it('should forward token and apiKey to DynamicMapService', () => {
+    render(<EsriDynamicLayer {...defaultProps} token="my-token" apiKey="my-api-key" />);
+
+    expect(MockedDynamicMapService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        token: 'my-token',
+        apiKey: 'my-api-key',
+      })
+    );
+  });
+
+  it('should forward proxy, requestParams and getAttributionFromService', () => {
+    const requestParams = { customParam: 'value' };
+    render(
+      <EsriDynamicLayer
+        {...defaultProps}
+        proxy="http://proxy.example.com"
+        requestParams={requestParams}
+        getAttributionFromService={false}
+      />
+    );
+
+    expect(MockedDynamicMapService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        proxy: 'http://proxy.example.com',
+        requestParams,
+        getAttributionFromService: false,
+      })
+    );
+  });
+
   it('should handle complex layer definitions', () => {
     const props = {
       ...defaultProps,

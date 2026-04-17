@@ -3,6 +3,7 @@ import { FeatureService } from '@/Services/FeatureService';
 import type { FeatureServiceOptions } from '@/types';
 import type { EsriFeatureLayerProps } from '../types';
 import { useReactMapGL } from '../utils/useReactMapGL';
+import { applyAuthOptions } from '../utils/buildServiceOptions';
 
 /**
  * React Map GL component for Esri Feature Service
@@ -55,6 +56,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
     const options: Partial<FeatureServiceOptions> & { url: string } = { url: props.url };
     if (props.where !== undefined) options.where = props.where;
     if (props.outFields !== undefined) options.outFields = props.outFields;
+    applyAuthOptions(options, props);
 
     const service = new FeatureService(
       sourceId,
@@ -110,6 +112,12 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
     props.beforeId,
     props.visible,
     props.type,
+    props.token,
+    props.apiKey,
+    props.proxy,
+    props.getAttributionFromService,
+    props.requestParams,
+    props.fetchOptions,
   ]);
 
   return null;

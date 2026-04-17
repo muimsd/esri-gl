@@ -60,6 +60,19 @@ describe('EsriTiledLayer', () => {
     });
   });
 
+  it('should forward token and apiKey to TiledMapService', () => {
+    render(<EsriTiledLayer {...defaultProps} token="my-token" apiKey="my-api-key" />);
+
+    expect(MockedTiledMapService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        token: 'my-token',
+        apiKey: 'my-api-key',
+      })
+    );
+  });
+
   it('should add raster layer to map', () => {
     render(<EsriTiledLayer id="test-layer" url="http://test.com" />);
 

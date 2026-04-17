@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { VectorTileService } from '@/Services/VectorTileService';
 import type { EsriVectorTileLayerProps } from '../types';
 import { useReactMapGL } from '../utils/useReactMapGL';
-import type { Map } from '@/types';
+import type { Map, VectorTileServiceOptions } from '@/types';
+import { applyAuthOptions } from '../utils/buildServiceOptions';
 
 /**
  * React Map GL component for Esri Vector Tile Service
@@ -45,9 +46,10 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
     const mi = mapInstance as any;
     let cancelled = false;
 
-    const service = new VectorTileService(sourceId, mapInstance as unknown as Map, {
-      url: props.url,
-    });
+    const options: VectorTileServiceOptions & { url: string } = { url: props.url };
+    applyAuthOptions(options, props);
+
+    const service = new VectorTileService(sourceId, mapInstance as unknown as Map, options);
     serviceRef.current = service;
 
     // Fetch the full style and add all layers from it
@@ -57,8 +59,18 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
         if (cancelled) return;
 
         // Fetch the full style document to get all layers
-        const styleUrl = `${props.url}/resources/styles/root.json`;
-        return fetch(styleUrl);
+        let styleUrl = `${props.url}/resources/styles/root.json`;
+        if (props.token) {
+          styleUrl += `?token=${encodeURIComponent(props.token)}`;
+        }
+        const fetchInit: RequestInit = { ...(props.fetchOptions || {}) };
+        if (props.apiKey) {
+          fetchInit.headers = {
+            ...(fetchInit.headers || {}),
+            'X-Esri-Authorization': `Bearer ${props.apiKey}`,
+          };
+        }
+        return fetch(styleUrl, fetchInit);
       })
       .then(response => {
         if (cancelled || !response) return;
@@ -121,7 +133,21 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
       service.remove();
       serviceRef.current = null;
     };
-  }, [map, isMapLoaded, sourceId, props.url, props.id, props.beforeId, props.visible]);
+  }, [
+    map,
+    isMapLoaded,
+    sourceId,
+    props.url,
+    props.id,
+    props.beforeId,
+    props.visible,
+    props.token,
+    props.apiKey,
+    props.proxy,
+    props.getAttributionFromService,
+    props.requestParams,
+    props.fetchOptions,
+  ]);
 
   return null;
 }

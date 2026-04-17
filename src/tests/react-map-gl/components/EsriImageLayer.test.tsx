@@ -70,6 +70,19 @@ describe('EsriImageLayer', () => {
     });
   });
 
+  it('should forward token and apiKey to ImageService', () => {
+    render(<EsriImageLayer {...defaultProps} token="my-token" apiKey="my-api-key" />);
+
+    expect(MockedImageService).toHaveBeenCalledWith(
+      expect.any(String),
+      mockMapInstance,
+      expect.objectContaining({
+        token: 'my-token',
+        apiKey: 'my-api-key',
+      })
+    );
+  });
+
   it('should add raster layer to map', () => {
     render(<EsriImageLayer id="test-layer" url="http://test.com" />);
 
