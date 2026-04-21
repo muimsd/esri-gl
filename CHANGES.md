@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+### Unreleased
+
+#### Internal Refactor — no public API changes
+- **react-map-gl layer components**: Extracted the "wait for map style load" effect into a shared `useMapLoaded` hook used by all five layer components. `EsriDynamicLayer`, `EsriTiledLayer`, and `EsriImageLayer` now share a `useRasterLayer` hook for service creation + raster-layer lifecycle.
+- **react-map-gl hooks**: `useEsriMapboxLayer` and `useEsriMaplibreLayer` now delegate to a shared `createEsriLayerHooks` factory — they differed only by which `useMap` implementation they imported.
+- **Services**: Added `removeMapSource` and `appendTokenIfExists` helpers in `utils.ts`; `DynamicMapService`, `TiledMapService`, `ImageService`, `VectorTileService`, and `FeatureService` `remove()` methods now share one implementation instead of five near-duplicates.
+- **Task hooks**: `useFind`, `useQuery`, `useIdentifyFeatures`, `useIdentifyImage`, and `useFeatureEditing` now share a `useAsyncOperation` hook that owns the loading/error state machine instead of each hook re-implementing the same `try/catch/finally` dance.
+- Net diff: **–430 lines** across layer components, services, and task hooks; 733/733 tests still pass; lint errors 1 → 0.
+
 ### v1.0.0
 **Stable Release**
 
