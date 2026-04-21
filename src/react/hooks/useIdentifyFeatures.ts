@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { IdentifyFeatures } from '@/Tasks/IdentifyFeatures';
 import type { Map } from '@/types';
 import type { UseIdentifyFeaturesOptions } from '../types';
+import { useAsyncOperation } from './useAsyncOperation';
 
 /**
  * Hook for using IdentifyFeatures task
@@ -11,18 +12,14 @@ export function useIdentifyFeatures({
   tolerance,
   returnGeometry,
 }: UseIdentifyFeaturesOptions) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const { loading, error, run } = useAsyncOperation();
 
   const identify = useCallback(
-    async (
+    (
       point: { lng: number; lat: number },
       additionalOptions?: Record<string, unknown> & { map?: Map }
-    ) => {
-      setLoading(true);
-      setError(null);
-
-      try {
+    ) =>
+      run(async () => {
         const { map, ...rest } = additionalOptions ?? {};
 
         const identifyTask = new IdentifyFeatures({
@@ -35,17 +32,9 @@ export function useIdentifyFeatures({
         identifyTask.at(point);
         if (map) identifyTask.on(map);
 
-        const results = await identifyTask.run();
-        return results;
-      } catch (err) {
-        const errorObj = err instanceof Error ? err : new Error('Identify failed');
-        setError(errorObj);
-        throw errorObj;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [url, tolerance, returnGeometry]
+        return identifyTask.run();
+      }, 'Identify failed'),
+    [url, tolerance, returnGeometry, run]
   );
 
   return {
