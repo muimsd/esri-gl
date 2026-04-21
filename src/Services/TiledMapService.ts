@@ -1,4 +1,4 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
+import { cleanTrailingSlash, getServiceDetails, removeMapSource, updateAttribution } from '@/utils';
 import type { Map, EsriServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface TiledMapServiceOptions extends EsriServiceOptions {
@@ -114,47 +114,6 @@ export class TiledMapService {
   }
 
   remove(): void {
-    // Guard against disposed or invalid map
-    if (!this._map || typeof this._map.removeSource !== 'function') {
-      return;
-    }
-
-    try {
-      // Guard against map whose style has already been destroyed
-      if (!(this._map as unknown as { style?: unknown }).style) return;
-
-      // First, remove any layers that are using this source
-      const mapWithStyle = this._map as unknown as {
-        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        getLayer?: (id: string) => unknown;
-      };
-
-      if (mapWithStyle.getStyle && typeof mapWithStyle.getLayer === 'function') {
-        const style = mapWithStyle.getStyle();
-        const layers = style?.layers || [];
-        const getLayer = mapWithStyle.getLayer;
-        layers.forEach(layer => {
-          if (layer.source === this._sourceId) {
-            try {
-              if (getLayer(layer.id)) {
-                this._map.removeLayer(layer.id);
-              }
-            } catch {
-              // Layer may already be removed
-            }
-          }
-        });
-      }
-
-      // Then check if source exists before trying to remove it
-      if (typeof this._map.getSource === 'function') {
-        const source = this._map.getSource(this._sourceId);
-        if (source) {
-          this._map.removeSource(this._sourceId);
-        }
-      }
-    } catch (error) {
-      console.warn(`Failed to remove source ${this._sourceId}:`, error);
-    }
+    removeMapSource(this._map, this._sourceId);
   }
 }

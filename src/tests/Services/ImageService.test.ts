@@ -7,6 +7,32 @@ jest.mock('@/utils', () => ({
   cleanTrailingSlash: jest.fn(),
   getServiceDetails: jest.fn(),
   updateAttribution: jest.fn(),
+  appendTokenIfExists: jest.fn((params: URLSearchParams, token?: string) => {
+    if (token) params.append('token', token);
+  }),
+  removeMapSource: jest.fn(
+    (
+      map: {
+        removeSource?: (id: string) => void;
+        getSource?: (id: string) => unknown;
+        getLayer?: (id: string) => unknown;
+        removeLayer?: (id: string) => void;
+        getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+      } | null,
+      sourceId: string
+    ) => {
+      if (!map || typeof map.removeSource !== 'function') return;
+      const style = map.getStyle?.();
+      (style?.layers || []).forEach(layer => {
+        if (layer.source === sourceId && map.getLayer?.(layer.id)) {
+          map.removeLayer?.(layer.id);
+        }
+      });
+      if (map.getSource?.(sourceId)) {
+        map.removeSource(sourceId);
+      }
+    }
+  ),
 }));
 
 // Mock fetch globally

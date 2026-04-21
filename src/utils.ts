@@ -5,6 +5,80 @@ export function cleanTrailingSlash(url: string): string {
 }
 
 /**
+ * Append a `token` query parameter if a non-empty token is supplied.
+ * Centralizes the duplicated token-injection logic used by every service.
+ */
+export function appendTokenIfExists(params: URLSearchParams, token?: string | null): void {
+  if (token) {
+    params.append('token', token);
+  }
+}
+
+/**
+ * Remove every layer that references the given source, then remove the
+ * source itself. Safe against disposed maps, missing style methods, and
+ * layers that were already removed elsewhere.
+ */
+export function removeMapSource(map: Map | null | undefined, sourceId: string): void {
+  if (!map || typeof map.removeSource !== 'function') return;
+
+  try {
+    if (!(map as unknown as { style?: unknown }).style) return;
+
+    const mapWithStyle = map as unknown as {
+      getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
+      getLayer?: (id: string) => unknown;
+      removeLayer?: (id: string) => void;
+      getSource?: (id: string) => unknown;
+    };
+
+    if (typeof mapWithStyle.getStyle === 'function') {
+      const style = mapWithStyle.getStyle();
+      const layers = style?.layers || [];
+      layers.forEach(layer => {
+        if (layer.source !== sourceId) return;
+        if (
+          typeof mapWithStyle.getLayer !== 'function' ||
+          typeof mapWithStyle.removeLayer !== 'function'
+        ) {
+          return;
+        }
+        let hasLayer = false;
+        try {
+          hasLayer = Boolean(mapWithStyle.getLayer(layer.id));
+        } catch {
+          hasLayer = false;
+        }
+        if (!hasLayer) return;
+        try {
+          mapWithStyle.removeLayer(layer.id);
+        } catch (error) {
+          console.warn(`Failed to remove layer ${layer.id} for source ${sourceId}:`, error);
+        }
+      });
+    }
+
+    if (typeof mapWithStyle.getSource === 'function') {
+      let hasSource = false;
+      try {
+        hasSource = Boolean(mapWithStyle.getSource(sourceId));
+      } catch {
+        hasSource = false;
+      }
+      if (hasSource) {
+        try {
+          map.removeSource(sourceId);
+        } catch (error) {
+          console.warn(`Failed to remove source ${sourceId}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`Failed to remove source ${sourceId}:`, error);
+  }
+}
+
+/**
  * Check if an error represents an AbortError (request was cancelled)
  * Handles various error shapes from different browsers and environments
  */
