@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { IdentifyImage } from '@/Tasks/IdentifyImage';
 import type { UseIdentifyImageOptions } from '../types';
+import { useAsyncOperation } from './useAsyncOperation';
 
 export interface UseIdentifyImageResult {
   identifyImage: (
@@ -15,17 +16,12 @@ export interface UseIdentifyImageResult {
  * Hook for using IdentifyImage task
  */
 export function useIdentifyImage(options: UseIdentifyImageOptions): UseIdentifyImageResult {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
+  const { loading, error, run } = useAsyncOperation();
   const { url, token, returnGeometry } = options;
 
   const identifyImage = useCallback<UseIdentifyImageResult['identifyImage']>(
-    async (point, additionalOptions) => {
-      setLoading(true);
-      setError(null);
-
-      try {
+    (point, additionalOptions) =>
+      run(async () => {
         const identifyTask = new IdentifyImage({
           ...options,
           ...additionalOptions,
@@ -33,17 +29,9 @@ export function useIdentifyImage(options: UseIdentifyImageOptions): UseIdentifyI
 
         identifyTask.at(point);
 
-        const results = await identifyTask.run();
-        return results;
-      } catch (err) {
-        const errorObj = err instanceof Error ? err : new Error('Identify image failed');
-        setError(errorObj);
-        throw errorObj;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [url, token, returnGeometry]
+        return identifyTask.run();
+      }, 'Identify image failed'),
+    [url, token, returnGeometry, run]
   );
 
   return {

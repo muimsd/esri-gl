@@ -1,4 +1,10 @@
-import { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
+import {
+  appendTokenIfExists,
+  cleanTrailingSlash,
+  getServiceDetails,
+  removeMapSource,
+  updateAttribution,
+} from '@/utils';
 import type { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface ImageServiceExtendedOptions extends ImageServiceOptions {
@@ -95,9 +101,7 @@ export class ImageService {
       params.append('mosaicRule', JSON.stringify(this.options.mosaicRule));
     if (this.options.renderingRule)
       params.append('renderingRule', JSON.stringify(this.options.renderingRule));
-    if ((this.esriServiceOptions as any).token) {
-      params.append('token', (this.esriServiceOptions as any).token);
-    }
+    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
 
     return {
       type: 'raster',
@@ -214,9 +218,7 @@ export class ImageService {
     });
 
     if (this._time) params.append('time', this._time);
-    if ((this.esriServiceOptions as any).token) {
-      params.append('token', (this.esriServiceOptions as any).token);
-    }
+    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
 
     const response = await fetch(
       `${this.esriServiceOptions.url}/identify?${params.toString()}`,
@@ -241,33 +243,6 @@ export class ImageService {
   }
 
   remove(): void {
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // Guard against map whose style has already been destroyed
-        const mapWithStyle = this._map as unknown as {
-          style?: unknown;
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (!mapWithStyle.style) return;
-
-        // First, remove any layers that are using this source
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (layer.source === this._sourceId && this._map.getLayer(layer.id)) {
-              this._map.removeLayer(layer.id);
-            }
-          });
-        }
-
-        // Then check if source exists before trying to remove it
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
-          this._map.removeSource(this._sourceId);
-        }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
-      }
-    }
+    removeMapSource(this._map, this._sourceId);
   }
 }

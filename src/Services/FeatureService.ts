@@ -14,7 +14,12 @@
 
 import * as tilebelt from '@mapbox/tilebelt';
 import tileDecode from 'arcgis-pbf-parser';
-import { cleanTrailingSlash, updateAttribution } from '@/utils';
+import {
+  appendTokenIfExists,
+  cleanTrailingSlash,
+  removeMapSource,
+  updateAttribution,
+} from '@/utils';
 import type {
   Map,
   FeatureServiceOptions,
@@ -258,37 +263,7 @@ export class FeatureService {
    */
   remove(): void {
     this.disableRequests();
-    if (this._map && typeof this._map.removeSource === 'function') {
-      try {
-        // Guard against map whose style has already been destroyed
-        const mapWithStyle = this._map as unknown as {
-          style?: unknown;
-          getStyle?: () => { layers?: Array<{ id: string; source?: string }> };
-        };
-        if (!mapWithStyle.style) return;
-
-        // First, remove any layers that are using this source
-        if (mapWithStyle.getStyle) {
-          const style = mapWithStyle.getStyle();
-          const layers = style?.layers || [];
-          layers.forEach(layer => {
-            if (
-              layer.source === this._sourceId &&
-              this._map.getLayer &&
-              this._map.getLayer(layer.id)
-            ) {
-              this._map.removeLayer(layer.id);
-            }
-          });
-        }
-
-        if (this._map.getSource && this._map.getSource(this._sourceId)) {
-          this._map.removeSource(this._sourceId);
-        }
-      } catch (error) {
-        console.warn(`Failed to remove source ${this._sourceId}:`, error);
-      }
-    }
+    removeMapSource(this._map, this._sourceId);
   }
 
   /** Alias for remove() for API compatibility */
@@ -933,10 +908,7 @@ export class FeatureService {
   }
 
   private _appendTokenIfExists(params: URLSearchParams): void {
-    const token = this._esriServiceOptions.token;
-    if (token) {
-      params.append('token', token);
-    }
+    appendTokenIfExists(params, this._esriServiceOptions.token);
   }
 
   private _getFetchHeaders(): HeadersInit | undefined {
