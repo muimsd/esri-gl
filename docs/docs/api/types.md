@@ -2,6 +2,108 @@
 
 This page documents all the TypeScript interfaces and types for the advanced DynamicMapService features.
 
+See the [Authentication guide](../guides/authentication) and the [Portal Items guide](../guides/portal-items) for how the authentication and portal types below are used in practice.
+
+## Authentication Types
+
+These types describe how esri-gl accepts authentication. They are defined in `src/request.ts` and built on [`@esri/arcgis-rest-request`](https://github.com/Esri/arcgis-rest-js).
+
+### EsriAuthentication
+
+Authentication accepted throughout esri-gl — either an ArcGIS REST JS authentication manager (`ApiKeyManager`, `ArcGISIdentityManager`, …) or a raw token / API-key string:
+
+```typescript
+type EsriAuthentication = IAuthenticationManager | string;
+```
+
+### EsriAuthOptions
+
+Options every service and task accepts for authenticating ArcGIS REST requests. Precedence is `authentication` → `apiKey` → `token`:
+
+```typescript
+interface EsriAuthOptions {
+  authentication?: EsriAuthentication;         // An ArcGIS REST JS authentication manager
+  apiKey?: string;                             // A static API key (ArcGIS Location Platform)
+  token?: string;                              // A static, pre-generated token
+}
+```
+
+### EsriRequestOptions
+
+Options for the low-level `esriRequest` helper. Extends `EsriAuthOptions`:
+
+```typescript
+interface EsriRequestOptions extends EsriAuthOptions {
+  params?: Record<string, unknown>;            // Query/body parameters (`f: 'json'` by default)
+  httpMethod?: 'GET' | 'POST';                 // HTTP method (ArcGIS REST JS defaults to POST)
+  rawResponse?: boolean;                       // Return the raw `Response` instead of parsed body
+  signal?: AbortSignal;                        // Abort signal for cancellation/timeout
+  headers?: Record<string, string>;            // Additional request headers
+}
+```
+
+## Portal Types
+
+These types describe portal item and Web Map resolution. They are defined in `src/Portal/index.ts` and built on [`@esri/arcgis-rest-portal`](https://github.com/Esri/arcgis-rest-js).
+
+### PortalServiceKind
+
+The esri-gl service kinds a portal item can resolve to:
+
+```typescript
+type PortalServiceKind = 'dynamic' | 'tiled' | 'image' | 'vector-tile' | 'feature';
+```
+
+### PortalServiceResult
+
+The result of resolving a portal item or Web Map layer to an esri-gl service:
+
+```typescript
+interface PortalServiceResult {
+  service: PortalResolvedService;              // The instantiated esri-gl service
+  kind: PortalServiceKind;                     // Which kind of service was created
+  sourceId: string;                            // The source id registered on the map
+  url: string;                                 // The service URL the item resolved to
+  item?: IItem;                                // The portal item (single-item resolution only)
+  title?: string;                              // Human-readable title (item or web map layer title)
+}
+```
+
+### PortalRequestOptions
+
+Auth options plus an optional portal URL. Extends `EsriAuthOptions`:
+
+```typescript
+interface PortalRequestOptions extends EsriAuthOptions {
+  portal?: string;                             // Portal sharing REST URL (defaults to ArcGIS Online)
+}
+```
+
+### PortalItemServiceOptions
+
+Options for resolving a single portal item. Extends `PortalRequestOptions`:
+
+```typescript
+interface PortalItemServiceOptions extends PortalRequestOptions {
+  layerId?: number;                            // For multi-layer Feature Services, which sublayer to load (default 0)
+  serviceOptions?: Record<string, unknown>;    // Extra options merged into the constructed service's options
+  rasterSrcOptions?: Record<string, unknown>;  // Raster source options (Dynamic / Tiled / Image services)
+  vectorSrcOptions?: Record<string, unknown>;  // Vector source options (Vector Tile service)
+  geojsonSourceOptions?: Record<string, unknown>; // GeoJSON source options (Feature service)
+}
+```
+
+### WebMapOptions
+
+Options for resolving a Web Map. Extends `PortalItemServiceOptions`:
+
+```typescript
+interface WebMapOptions extends PortalItemServiceOptions {
+  includeBasemap?: boolean;                    // Also instantiate the Web Map's basemap layers (default false)
+  sourceIdPrefix?: string;                     // Prefix for generated source ids (default the Web Map item id)
+}
+```
+
 ## Labeling Types
 
 ### LayerLabelingInfo

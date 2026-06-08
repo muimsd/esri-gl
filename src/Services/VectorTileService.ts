@@ -1,4 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails, removeMapSource } from '@/utils';
+import { esriRequest, type EsriAuthentication } from '@/request';
 import type { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
@@ -126,18 +127,24 @@ export class VectorTileService {
   }
 
   private _retrieveStyle(): Promise<void> {
+    const { token, apiKey, authentication } = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
     return new Promise((resolve, reject) => {
-      fetch(`${this.options.url}/${this._styleUrl}`, this.esriServiceOptions.fetchOptions)
-        .then(response => {
-          if (!response.ok) throw new Error(`Failed to fetch style: ${response.status}`);
-          return response.json();
-        })
+      esriRequest<{ layers?: unknown[] }>(`${this.options.url}/${this._styleUrl}`, {
+        httpMethod: 'GET',
+        token,
+        apiKey,
+        authentication,
+      })
         .then(data => {
           if (!data || !Array.isArray(data.layers) || data.layers.length === 0) {
             throw new Error('VectorTile style document is missing layers.');
           }
           // Use the first layer as a simple default style for the demo
-          this._defaultStyleData = data.layers[0];
+          this._defaultStyleData = data.layers[0] as StyleData;
           resolve();
         })
         .catch(error => reject(error));
@@ -146,8 +153,13 @@ export class VectorTileService {
 
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
+    const { token, apiKey, authentication } = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
     return new Promise((resolve, reject) => {
-      getServiceDetails(this.esriServiceOptions.url, this.esriServiceOptions.fetchOptions)
+      getServiceDetails(this.esriServiceOptions.url, { token, apiKey, authentication })
         .then(data => {
           this._serviceMetadata = data;
           resolve(this._serviceMetadata);

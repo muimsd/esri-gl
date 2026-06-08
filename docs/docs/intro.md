@@ -39,6 +39,36 @@ map.addLayer({
 });
 ```
 
+### Authentication
+
+esri-gl runs every ArcGIS request through the official
+[ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js) client. Pass a `token`, an
+`apiKey`, or an `authentication` manager to any service or task:
+
+```typescript
+import { DynamicMapService, ArcGISIdentityManager } from 'esri-gl';
+
+new DynamicMapService('source', map, { url, apiKey: 'AAPK…' });
+
+const session = await ArcGISIdentityManager.signIn({ username, password });
+new DynamicMapService('source', map, { url, authentication: session });
+```
+
+See the [Authentication guide](./guides/authentication) for details.
+
+### Resolve from a Portal item
+
+You can also resolve an ArcGIS portal item id — or a whole Web Map — directly to services:
+
+```typescript
+import { serviceFromPortalItem } from 'esri-gl';
+
+await serviceFromPortalItem('usa-source', map, 'PORTAL_ITEM_ID', { apiKey: 'AAPK…' });
+map.addLayer({ id: 'usa-layer', type: 'raster', source: 'usa-source' });
+```
+
+See the [Portal Items guide](./guides/portal-items).
+
 ### CDN Usage
 
 Load the package via CDN:
@@ -61,6 +91,8 @@ map.addLayer({
 
 ## What's Next?
 
+- [Authentication](./guides/authentication) — Tokens, API keys, and auth managers
+- [Portal Items](./guides/portal-items) — Resolve item ids and Web Maps to services
 - [Services](./services/overview) — Core service classes and API reference
 - [Tasks](./tasks/overview) — Identify, Query, and Find operations
 - [Examples](./examples/html-viewer) — Interactive demos and code samples

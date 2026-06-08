@@ -5,6 +5,14 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
+      label: 'Guides',
+      items: [
+        'guides/authentication',
+        'guides/portal-items',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Services',
       items: [
         'services/overview',

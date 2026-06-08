@@ -41,7 +41,7 @@ const basePlugins = [
   })
 ]
 
-const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre', '@mapbox/tilebelt', 'arcgis-pbf-parser']
+const commonExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre', '@mapbox/tilebelt', 'arcgis-pbf-parser', /^@esri\//]
 
 // UMD build should bundle runtime dependencies so they work via CDN without extra script tags
 const umdExternal = ['mapbox-gl', 'maplibre-gl', 'react', 'react-dom', 'react-map-gl/mapbox', 'react-map-gl/maplibre']

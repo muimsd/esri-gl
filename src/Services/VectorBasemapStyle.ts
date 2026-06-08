@@ -6,6 +6,9 @@
  * These warnings are expected and do not affect map rendering functionality.
  */
 
+import { BasemapStyleSession, type StyleFamily } from '@esri/arcgis-rest-basemap-sessions';
+import { resolveAuthentication } from '@/request';
+
 // Available Esri basemap style names
 export type EsriBasemapStyleName =
   | 'arcgis/streets'
@@ -40,6 +43,8 @@ export interface VectorBasemapStyleAuthOptions {
   language?: string; // Optional locale
   worldview?: string; // Optional worldview parameter
   itemId?: string; // Custom style via portal item ID
+  useSession?: boolean; // Opt-in: back style requests with an official basemap style session
+  sessionDuration?: number; // Optional session duration in seconds (matches the sessions API unit)
 }
 
 export class VectorBasemapStyle {
@@ -53,6 +58,9 @@ export class VectorBasemapStyle {
   private _language?: string;
   private _worldview?: string;
   private _itemId?: string;
+  private _useSession: boolean;
+  private _sessionDuration?: number;
+  private _session?: BasemapStyleSession;
 
   // Mapping from legacy colon form to canonical slash form
   private static readonly COLON_TO_SLASH: Record<string, string> = {
@@ -85,6 +93,8 @@ export class VectorBasemapStyle {
     this._language = opts.language;
     this._worldview = opts.worldview;
     this._itemId = opts.itemId;
+    this._useSession = opts.useSession ?? false;
+    this._sessionDuration = opts.sessionDuration;
 
     // Infer version: token => v2, else apiKey => v1
     this._version = opts.version || (this._token ? 'v2' : 'v1');
@@ -163,6 +173,72 @@ export class VectorBasemapStyle {
   ): void {
     const vectorStyle = new VectorBasemapStyle(styleName, auth);
     map.setStyle(vectorStyle.styleUrl);
+  }
+
+  /**
+   * The style family for the official basemap sessions API, derived from the
+   * canonical style id. esri-gl styles are all in the `arcgis` family.
+   */
+  private get _styleFamily(): StyleFamily {
+    return this._canonical.startsWith('open/') ? 'open' : 'arcgis';
+  }
+
+  /**
+   * The token from the active session, if a session has been started. Useful
+   * for inspection / debugging. Returns `undefined` until `startSession()` runs.
+   */
+  get sessionToken(): string | undefined {
+    return this._session?.token;
+  }
+
+  /**
+   * Start (or reuse) an official basemap style session via
+   * `@esri/arcgis-rest-basemap-sessions`. Requires an apiKey or token. The
+   * resulting session is cached so repeated calls return the same instance.
+   */
+  async startSession(): Promise<BasemapStyleSession> {
+    if (this._session) return this._session;
+    const authentication = resolveAuthentication({ apiKey: this._apiKey, token: this._token });
+    if (!authentication) {
+      throw new Error('An Esri API Key or token must be supplied to start a basemap style session');
+    }
+    this._session = await BasemapStyleSession.start({
+      authentication,
+      styleFamily: this._styleFamily,
+      ...(this._sessionDuration !== undefined ? { duration: this._sessionDuration } : {}),
+    });
+    return this._session;
+  }
+
+  /**
+   * Resolve the style URL to apply. When `useSession` is enabled this starts a
+   * session and returns a v2 style URL backed by the session token; otherwise it
+   * returns the synchronous `styleUrl`.
+   */
+  async getStyleUrl(): Promise<string> {
+    if (!this._useSession) return this.styleUrl;
+    const session = await this.startSession();
+    const token = await session.getToken();
+    const params = new URLSearchParams();
+    params.set('f', this._format);
+    params.set('token', token);
+    if (this._language) params.set('language', this._language);
+    if (this._worldview) params.set('worldview', this._worldview);
+    return `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/${this._canonical}?${params.toString()}`;
+  }
+
+  /**
+   * Apply a basemap style to a MapLibre/Mapbox map using a session-backed style
+   * URL. Mirrors {@link applyStyle} but starts a basemap style session first.
+   */
+  static async applyStyleWithSession(
+    map: { setStyle: (style: string) => void },
+    styleName: EsriBasemapStyleName,
+    auth: VectorBasemapStyleAuthOptions
+  ): Promise<void> {
+    const vectorStyle = new VectorBasemapStyle(styleName, { ...auth, useSession: true });
+    const url = await vectorStyle.getStyleUrl();
+    map.setStyle(url);
   }
 
   private static _toCanonical(name: string): string {

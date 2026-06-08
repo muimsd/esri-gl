@@ -361,13 +361,16 @@ describe('IdentifyImage', () => {
         .returnGeometry(true)
         .run();
 
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/ImageServer/identify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: expect.stringContaining('f=json'),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/ImageServer/identify',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }),
+          body: expect.stringContaining('f=json'),
+        })
+      );
 
       const callBody = mockFetch.mock.calls[0][1]?.body as string;
       expect(callBody).toContain('f=json');

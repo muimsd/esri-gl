@@ -1,5 +1,7 @@
 // Type definitions for esri-gl
 export type { Map } from 'maplibre-gl';
+import type { EsriAuthentication } from '@/request';
+export type { EsriAuthentication, EsriAuthOptions } from '@/request';
 export interface ServiceMetadata {
   attribution?: string;
   copyrightText?: string;
@@ -24,6 +26,12 @@ export interface EsriServiceOptions {
   transparent?: boolean;
   getAttributionFromService?: boolean;
   time?: number[] | false;
+  /** Static token sent as the `token` parameter. */
+  token?: string;
+  /** ArcGIS Location Platform API key. */
+  apiKey?: string;
+  /** An ArcGIS REST JS authentication manager (takes precedence over token/apiKey). */
+  authentication?: EsriAuthentication;
 }
 
 export interface RasterSourceOptions {
@@ -90,7 +98,8 @@ export interface FeatureServiceOptions {
   useBoundingBox?: boolean; // Enable screen bounding box filtering for better performance
   useVectorTiles?: boolean; // Use vector tiles instead of GeoJSON
   token?: string;
-  apiKey?: string; // API key sent via X-Esri-Authorization header
+  apiKey?: string; // ArcGIS Location Platform API key
+  authentication?: EsriAuthentication; // ArcGIS REST JS authentication manager
   // Not standard query params but kept for API symmetry; ignored for query URL
   layers?: number[] | number;
 }
@@ -98,6 +107,9 @@ export interface FeatureServiceOptions {
 export interface VectorTileServiceOptions {
   url: string;
   getAttributionFromService?: boolean;
+  token?: string;
+  apiKey?: string;
+  authentication?: EsriAuthentication;
 }
 
 export interface VectorBasemapStyleOptions {

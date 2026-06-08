@@ -131,31 +131,30 @@ describe('Service', () => {
       it('should make GET request with no parameters', async () => {
         await service.get('/layers');
 
+        // arcgis-rest always appends f=json; assert the endpoint rather than exact query order.
         expect(mockFetch).toHaveBeenCalledWith(
-          'https://example.com/test/layers?',
-          expect.objectContaining({ signal: expect.any(AbortSignal) })
+          expect.stringContaining('https://example.com/test/layers?'),
+          expect.objectContaining({ method: 'GET', signal: expect.any(AbortSignal) })
         );
+        expect(mockFetch.mock.calls[0][0]).toContain('f=json');
       });
 
       it('should make GET request with parameters', async () => {
         await service.get('/layers', { f: 'json', where: "STATE_NAME='California'" });
 
-        const expectedUrl =
-          'https://example.com/test/layers?f=json&where=STATE_NAME%3D%27California%27';
-        expect(mockFetch).toHaveBeenCalledWith(
-          expectedUrl,
-          expect.objectContaining({ signal: expect.any(AbortSignal) })
-        );
+        const calledUrl = mockFetch.mock.calls[0][0] as string;
+        expect(calledUrl).toContain('https://example.com/test/layers?');
+        expect(calledUrl).toContain('f=json');
+        expect(calledUrl).toContain("where=STATE_NAME%3D'California'");
       });
 
       it('should handle array parameters', async () => {
         await service.get('/query', { outFields: ['NAME', 'POP'], f: 'json' });
 
-        const expectedUrl = 'https://example.com/test/query?outFields=NAME%2CPOP&f=json';
-        expect(mockFetch).toHaveBeenCalledWith(
-          expectedUrl,
-          expect.objectContaining({ signal: expect.any(AbortSignal) })
-        );
+        const calledUrl = mockFetch.mock.calls[0][0] as string;
+        expect(calledUrl).toContain('https://example.com/test/query?');
+        expect(calledUrl).toContain('outFields=NAME%2CPOP');
+        expect(calledUrl).toContain('f=json');
       });
 
       it('should handle object parameters', async () => {
@@ -194,35 +193,37 @@ describe('Service', () => {
     });
 
     describe('post()', () => {
-      it('should make POST request with FormData', async () => {
+      it('should make POST request with URL-encoded body', async () => {
         await service.post('/query', { where: '1=1', f: 'json' });
 
+        // arcgis-rest sends a URL-encoded string body (not FormData).
         expect(mockFetch).toHaveBeenCalledWith(
           'https://example.com/test/query',
           expect.objectContaining({
             method: 'POST',
-            body: expect.any(FormData),
+            body: expect.stringContaining('where='),
             signal: expect.any(AbortSignal),
           })
         );
+        const body = mockFetch.mock.calls[0][1]?.body as string;
+        expect(body).toContain('f=json');
+        expect(body).toContain('where=1%3D1');
       });
 
       it('should handle object parameters in POST body', async () => {
         const geometry = { xmin: -180, ymin: -90, xmax: 180, ymax: 90 };
         await service.post('/query', { geometry, f: 'json' });
 
-        const call = mockFetch.mock.calls[0];
-        const formData = call[1]?.body as FormData;
-        expect(formData.get('geometry')).toBe(JSON.stringify(geometry));
+        const body = mockFetch.mock.calls[0][1]?.body as string;
+        expect(body).toContain(`geometry=${encodeURIComponent(JSON.stringify(geometry))}`);
       });
 
       it('should include token in POST body', async () => {
         service.testOptions.token = 'test-token';
         await service.post('/query', { f: 'json' });
 
-        const call = mockFetch.mock.calls[0];
-        const formData = call[1]?.body as FormData;
-        expect(formData.get('token')).toBe('test-token');
+        const body = mockFetch.mock.calls[0][1]?.body as string;
+        expect(body).toContain('token=test-token');
       });
     });
 
@@ -273,12 +274,16 @@ describe('Service', () => {
     });
 
     it('should handle HTTP error responses', async () => {
+      // arcgis-rest reads the error body, so the mock must provide json().
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
+        statusText: 'Not Found',
+        json: async () => ({}),
       } as Response);
 
-      await expect(service.get('/nonexistent')).rejects.toThrow('HTTP error! status: 404');
+      // Thrown as an ArcGISRequestError whose code reflects the HTTP status.
+      await expect(service.get('/nonexistent')).rejects.toMatchObject({ code: 'HTTP 404' });
     });
 
     it('should handle network errors', async () => {
@@ -810,10 +815,12 @@ describe('Service', () => {
         }),
       } as Response);
 
+      // arcgis-rest throws ArcGISRequestError: message is prefixed with the code,
+      // numeric code is preserved, and details live under response.error.details.
       await expect(service.get('/query', { f: 'json' })).rejects.toMatchObject({
-        message: 'Invalid query',
+        message: '400: Invalid query',
         code: 400,
-        details: expect.arrayContaining(['Bad field']),
+        response: { error: { details: expect.arrayContaining(['Bad field']) } },
       });
     });
 
@@ -843,7 +850,7 @@ describe('Service', () => {
       expect(result).toEqual({ result: 'ok' });
     });
 
-    it('should send apiKey as X-Esri-Authorization header', async () => {
+    it('should send apiKey as token param', async () => {
       service = new TestableService({
         url: 'https://example.com/test',
         apiKey: 'my-api-key',
@@ -856,12 +863,9 @@ describe('Service', () => {
 
       await service.get('/test');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: { 'X-Esri-Authorization': 'Bearer my-api-key' },
-        })
-      );
+      // ApiKeyManager appends the key as a token query parameter rather than a Bearer header.
+      const calledUrl = mockFetch.mock.calls[0][0] as string;
+      expect(calledUrl).toContain('token=my-api-key');
     });
   });
 });

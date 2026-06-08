@@ -4,21 +4,19 @@ Complex use cases and integration patterns for esri-gl services.
 
 ## Authentication & Security
 
-### Token-based Authentication
+esri-gl runs every request through [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js).
+Pass a `token`, an `apiKey`, or an `authentication` manager — see the
+[Authentication guide](../guides/authentication).
+
+### Token / API key
 
 ```typescript
-import { DynamicMapService, FeatureService } from 'esri-gl'
+import { DynamicMapService } from 'esri-gl'
 
-// Service requiring authentication
+// Static token or API key
 const secureService = new DynamicMapService('secure-source', map, {
     url: 'https://myserver.com/arcgis/rest/services/Private/MapServer',
-    token: 'your-auth-token',
-    fetchOptions: {
-        headers: {
-            'Authorization': 'Bearer your-jwt-token',
-            'X-API-Key': 'your-api-key'
-        }
-    }
+    token: 'your-auth-token', // or: apiKey: 'AAPK…'
 })
 
 map.addLayer({
@@ -30,32 +28,28 @@ map.addLayer({
 
 ### OAuth Integration
 
+Use ArcGIS REST JS's `ArcGISIdentityManager` for the OAuth 2.0 flow — it manages the token
+(including refresh) and is passed directly as `authentication`:
+
 ```typescript
-// OAuth token management
-class EsriAuthManager {
-    private token: string | null = null
-    private refreshToken: string | null = null
-    
-    async authenticate(clientId: string, redirectUri: string) {
-        // Implement OAuth flow
-        const authUrl = `https://www.arcgis.com/sharing/rest/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`
-        
-        // Handle OAuth callback and get token
-        this.token = await this.exchangeCodeForToken(/* code */)
-    }
-    
-    getAuthenticatedService(sourceId: string, map: any, options: any) {
-        return new DynamicMapService(sourceId, map, {
-            ...options,
-            token: this.token,
-            fetchOptions: {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            }
-        })
-    }
-}
+import { DynamicMapService, ArcGISIdentityManager } from 'esri-gl'
+
+// Browser OAuth 2.0 flow (redirect + callback)
+ArcGISIdentityManager.beginOAuth2({
+    clientId: 'YOUR_CLIENT_ID',
+    redirectUri: 'https://app.example.com/auth',
+})
+
+// On the redirect page, complete sign-in to get a session
+const session = await ArcGISIdentityManager.completeOAuth2({
+    clientId: 'YOUR_CLIENT_ID',
+    redirectUri: 'https://app.example.com/auth',
+})
+
+const service = new DynamicMapService('secure-source', map, {
+    url: 'https://myserver.com/arcgis/rest/services/Private/MapServer',
+    authentication: session, // auto-refreshing token
+})
 ```
 
 ## Multi-Service Dashboards

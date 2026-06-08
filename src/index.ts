@@ -15,6 +15,30 @@ export { Find, find } from '@/Tasks/Find';
 export { IdentifyFeatures, type LayerScaleRange } from '@/Tasks/IdentifyFeatures';
 export { IdentifyImage, identifyImage } from '@/Tasks/IdentifyImage';
 
+// Portal item resolution (resolve item ids / web maps to services)
+export {
+  serviceFromPortalItem,
+  servicesFromWebMap,
+  type PortalResolvedService,
+  type PortalServiceKind,
+  type PortalServiceResult,
+  type PortalRequestOptions,
+  type PortalItemServiceOptions,
+  type WebMapOptions,
+} from '@/Portal';
+
+// Request / authentication helpers (ArcGIS REST JS)
+export {
+  esriRequest,
+  resolveAuthentication,
+  ApiKeyManager,
+  ArcGISIdentityManager,
+  type EsriAuthentication,
+  type EsriAuthOptions,
+  type EsriRequestOptions,
+  type IAuthenticationManager,
+} from '@/request';
+
 // Utilities
 export { cleanTrailingSlash, getServiceDetails, updateAttribution } from '@/utils';
 export * from '@/types';

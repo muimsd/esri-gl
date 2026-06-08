@@ -157,6 +157,10 @@
     }
   },
   "dependencies": {
+    "@esri/arcgis-rest-basemap-sessions": "^4.10.2",
+    "@esri/arcgis-rest-feature-service": "^4.10.2",
+    "@esri/arcgis-rest-portal": "^4.10.2",
+    "@esri/arcgis-rest-request": "^4.10.2",
     "@mapbox/tilebelt": "^2.0.3",
     "arcgis-pbf-parser": "^0.0.4"
   }

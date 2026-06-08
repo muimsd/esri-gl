@@ -154,7 +154,10 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await service.sourceReady;
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('?f=json'), undefined);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('?f=json'),
+        expect.objectContaining({ method: 'GET' })
+      );
     });
 
     it('should detect PBF support', async () => {
@@ -391,13 +394,17 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await service.sourceReady;
 
-      // Now mock a failed query
+      // Now mock a failed query. The request layer (arcgis-rest) reads the
+      // response body, so a JSON method must be present; the rejection is an
+      // ArcGISRequestError rather than the old "HTTP error" message.
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => ({}),
       } as Response);
 
-      await expect(service.queryFeatures()).rejects.toThrow('HTTP error');
+      await expect(service.queryFeatures()).rejects.toThrow();
     });
   });
 
@@ -788,7 +795,8 @@ describe('FeatureService', () => {
       expect(callUrl).toContain('having=SUM_POPULATION');
       expect(callUrl).toContain('resultOffset=10');
       expect(callUrl).toContain('resultRecordCount=50');
-      expect(callUrl).toContain('token=test-token');
+      // The `token` option is no longer manually appended to the query string;
+      // authentication is carried by the arcgis-rest auth manager instead.
     });
 
     it('should handle query with geometry filter', async () => {

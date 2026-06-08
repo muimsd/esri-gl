@@ -20,6 +20,10 @@ export default {
     }]
   },
   moduleNameMapper: {
+    // `pbf` ships as ESM (`type: module`) and is pulled in transitively by
+    // @esri/arcgis-rest-feature-service; jest can't transform it from
+    // node_modules. esri-gl never uses that decode path, so stub it.
+    '^pbf$': '<rootDir>/src/tests/__mocks__/pbf.js',
     '^@/types$': '<rootDir>/src/types.ts',
     '^@/(.*)$': '<rootDir>/src/$1'
   },

@@ -46,6 +46,8 @@ new IdentifyFeatures(options: IdentifyOptions)
 | returnFieldName | `boolean` | `false` | Return field names with values |
 | returnUnformattedValues | `boolean` | `false` | Return raw field values |
 | token | `string` | | Authentication token |
+| apiKey | `string` | | ArcGIS Location Platform API key |
+| authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager ([guide](../guides/authentication)) |
 
 ## Chainable Methods
 

@@ -53,6 +53,8 @@ new Query(options: QueryOptions)
 | resultOffset | `number` | `0` | Starting record index |
 | resultRecordCount | `number` | | Maximum records to return |
 | token | `string` | | Authentication token |
+| apiKey | `string` | | ArcGIS Location Platform API key |
+| authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager ([guide](../guides/authentication)) |
 
 ## Chainable Methods
 

@@ -29,6 +29,14 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 - **react-map-gl** — Declarative `<EsriDynamicLayer>`, `<EsriFeatureLayer>`, etc.
 - **TypeScript** — Full type safety with comprehensive interfaces
 
+### Built on ArcGIS REST JS
+- **Official client** — requests, authentication, and feature editing run on
+  [`@esri/arcgis-rest-js`](https://github.com/Esri/arcgis-rest-js)
+  (`-request`, `-feature-service`, `-portal`, `-basemap-sessions`)
+- **Flexible auth** — `token`, `apiKey`, or any `IAuthenticationManager`
+  (`ApiKeyManager`, `ArcGISIdentityManager`, …) on every service and task
+- **Portal item resolution** — turn a portal item id or Web Map into ready-to-render services
+
 ## Installation
 
 ```bash
@@ -133,6 +141,47 @@ const all = await query({ url: 'https://.../FeatureServer/0' })
   .runAll();
 ```
 
+## Authentication
+
+Every service and task accepts `token`, `apiKey`, or an `authentication` manager
+(precedence: `authentication` → `apiKey` → `token`). esri-gl uses ArcGIS REST JS's
+authentication managers under the hood.
+
+```typescript
+import { DynamicMapService, ArcGISIdentityManager, ApiKeyManager } from 'esri-gl';
+
+// API key or static token
+new DynamicMapService('source', map, { url, apiKey: 'AAPK…' });
+new DynamicMapService('source', map, { url, token: 'eyJ…' });
+
+// Named-user session with auto-refreshing token
+const session = await ArcGISIdentityManager.signIn({ username, password });
+new FeatureService('source', map, { url, authentication: session });
+```
+
+See the [Authentication guide](https://esri-gl.pages.dev/docs/guides/authentication) for
+the `authenticationrequired` event, the `esriRequest`/`resolveAuthentication` helpers, and
+migration notes.
+
+## Portal Items & Web Maps
+
+Resolve an ArcGIS portal item id — or a whole Web Map — straight to esri-gl services
+(powered by `@esri/arcgis-rest-portal`):
+
+```typescript
+import { serviceFromPortalItem, servicesFromWebMap } from 'esri-gl';
+
+// Single item → the matching service (Feature/Map/Image/Vector Tile)
+const { service, kind } = await serviceFromPortalItem('my-source', map, itemId, { apiKey });
+map.addLayer({ id: 'my-layer', type: 'raster', source: 'my-source' });
+
+// Web Map → a service per operational layer
+const layers = await servicesFromWebMap(map, webMapItemId, { token });
+```
+
+See the [Portal Items guide](https://esri-gl.pages.dev/docs/guides/portal-items) for the
+item-type/layer-type mappings and options.
+
 ## React Integration
 
 ### Hooks
@@ -171,7 +220,7 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
 </Map>
 ```
 
-All layer components accept `token`, `apiKey`, `proxy`, `getAttributionFromService`, `requestParams`, and `fetchOptions` for authenticated services and custom request behavior.
+All layer components accept `token`, `apiKey`, `authentication`, `getAttributionFromService`, and `requestParams` for authenticated services and custom request behavior.
 
 ## Examples
 
@@ -192,7 +241,7 @@ cd examples/maplibre-esm && npm install && npm run dev
 ```bash
 npm run dev          # Start demo dev server
 npm run build        # Build library (ESM + UMD)
-npm run test         # Run tests (727 tests, 31 suites)
+npm run test         # Run tests (733 tests, 31 suites)
 npm run type-check   # TypeScript check
 npm run lint         # ESLint
 npm run build:docs   # Build documentation site
@@ -218,6 +267,7 @@ MIT — see [LICENSE](LICENSE)
 
 ## Acknowledgements
 
+- **[ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js)** — official client powering requests, auth, feature editing, and portal access
 - **[Esri Leaflet](https://esri.github.io/esri-leaflet/)** — API design inspiration
 - **[mapbox-gl-esri-sources](https://github.com/frontiersi/mapbox-gl-esri-sources/)** — Foundational integration patterns (this project originated as a fork)
 - **[mapbox-gl-arcgis-featureserver](https://github.com/rowanwins/mapbox-gl-arcgis-featureserver)** by Rowan Winsemius — FeatureService PBF implementation

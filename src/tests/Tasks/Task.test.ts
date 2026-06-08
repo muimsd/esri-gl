@@ -445,9 +445,8 @@ describe('Task', () => {
       }, 0);
     });
 
-    it('should handle HTTP error in run method', () => {
+    it('should handle HTTP error in run method', done => {
       const task = new TestableTask('https://example.com/service');
-      const callback = jest.fn();
 
       mockFetch.mockResolvedValue({
         ok: false,
@@ -455,15 +454,11 @@ describe('Task', () => {
         json: () => Promise.resolve({ error: 'Not found' }),
       } as Response);
 
-      task.run(callback);
-
-      setTimeout(() => {
-        expect(callback).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: 'HTTP error! status: 404',
-          })
-        );
-      }, 0);
+      task.run((error?: Error) => {
+        // arcgis-rest-request surfaces HTTP failures as an ArcGISRequestError
+        expect(error).toBeDefined();
+        done();
+      });
     });
   });
 
@@ -546,9 +541,12 @@ describe('Task', () => {
 
       task.testRequest('POST', 'query', {}, (error?: Error) => {
         expect(error).toBeDefined();
-        expect(error!.message).toBe('Layer not found');
+        expect(error!.message).toContain('Layer not found');
         expect((error as Error & { code?: number }).code).toBe(400);
-        expect((error as Error & { details?: string[] }).details).toEqual(['Layer 99']);
+        expect(
+          (error as Error & { response?: { error?: { details?: string[] } } }).response?.error
+            ?.details
+        ).toEqual(['Layer 99']);
         done();
       });
     });

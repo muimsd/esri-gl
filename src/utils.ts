@@ -1,4 +1,5 @@
 import type { Map, ServiceMetadata } from '@/types';
+import { esriRequest, type EsriRequestOptions } from '@/request';
 
 export function cleanTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
@@ -106,28 +107,18 @@ export function isAbortError(error: unknown): boolean {
   return stringified.includes('abort');
 }
 
+/**
+ * Fetch the `?f=json` metadata document for an ArcGIS service endpoint.
+ *
+ * Delegates to `@esri/arcgis-rest-request` via {@link esriRequest}, which
+ * handles authentication and ArcGIS error responses. Accepts an
+ * {@link EsriRequestOptions} object (`token` / `apiKey` / `authentication`).
+ */
 export async function getServiceDetails(
   url: string,
-  fetchOptions: RequestInit = {},
-  token?: string
+  options: EsriRequestOptions = {}
 ): Promise<ServiceMetadata> {
-  const params = new URLSearchParams({ f: 'json' });
-  if (token) {
-    params.append('token', token);
-  }
-  const response = await fetch(`${url}?${params.toString()}`, fetchOptions);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch service details: HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (data.error) {
-    throw new Error(data.error.message || 'Service returned an error');
-  }
-
-  return data;
+  return esriRequest<ServiceMetadata>(url, { httpMethod: 'GET', ...options });
 }
 
 const POWERED_BY_ESRI_ATTRIBUTION_STRING = 'Powered by <a href="https://www.esri.com">Esri</a>';

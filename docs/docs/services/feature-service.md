@@ -61,10 +61,13 @@ map.addLayer({
 | `resultOffset` | `number` | | Starting record for pagination |
 | `orderByFields` | `string` | | Fields to sort results by |
 | `token` | `string` | | Authentication token (URL parameter) |
-| `apiKey` | `string` | | API key for `X-Esri-Authorization` header auth |
-| `fetchOptions` | `object` | | Fetch request options |
+| `apiKey` | `string` | | ArcGIS Location Platform API key (sent as the `token` parameter) |
+| `authentication` | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
+| `fetchOptions` | `object` | | Deprecated — no longer forwarded to requests; use `authentication` instead. |
 | `useVectorTiles` | `boolean` | `false` | Enable smart vector tile detection with GeoJSON fallback |
 | `useBoundingBox` | `boolean` | `true` | Enable viewport-based data loading for performance |
+
+> Authentication runs on [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js). See the [Authentication guide](../guides/authentication) for tokens, API keys, and auth managers.
 
 ## Methods
 
@@ -222,7 +225,7 @@ const service = new FeatureService('source', map, {
   token: 'your-auth-token'
 });
 
-// API key auth (X-Esri-Authorization header)
+// API key auth (sent as the token parameter)
 const service2 = new FeatureService('source', map, {
   url: 'https://services.arcgis.com/.../FeatureServer/0',
   apiKey: 'your-api-key'
