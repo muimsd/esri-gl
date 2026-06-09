@@ -29,6 +29,8 @@ entry points:
   query/edit/layer, basemap-session) so consumers get them from `esri-gl`. Add new
   consumer-facing arcgis-rest types here, not ad-hoc.
 - `src/react/`, `src/react-map-gl/` — framework integrations. `src/types.ts` — shared types.
+  Where a type has a `@esri/arcgis-rest-*` equivalent, alias the package type
+  (e.g. `Extent = IExtent`, `EditResult = IEditFeatureResult`) instead of redeclaring it.
 - Path alias: `@/*` → `src/*` (configured in tsconfig, jest, and rollup).
 
 ## Conventions
