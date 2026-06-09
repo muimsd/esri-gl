@@ -74,6 +74,10 @@ The Husky pre-commit hook runs the full validate gate.
   is pulled in transitively by `@esri/arcgis-rest-feature-service` and would otherwise break the
   loader. Tests mock `global.fetch`; `@esri/arcgis-rest-request` parses by `params.f`, so
   `{ ok, json }` mocks work, but error-path mocks must provide a `json()` method.
+- `npm run test:portal` (`scripts/portal-live-test.mjs`) is a **network** smoke test that resolves
+  real public ArcGIS Online items through `serviceFromPortalItem` / `servicesFromWebMap` /
+  `searchPortalItems`. It is not part of the jest suite (requires connectivity); run it manually
+  when touching `src/Portal`.
 
 ## Docs
 
