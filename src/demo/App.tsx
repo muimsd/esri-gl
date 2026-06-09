@@ -10,6 +10,7 @@ import IdentifyFeaturesDemo from './components/esm/IdentifyFeaturesDemo';
 import QueryDemo from './components/esm/QueryDemo';
 import FindDemo from './components/esm/FindDemo';
 import IdentifyImageDemo from './components/esm/IdentifyImageDemo';
+import PortalDemo from './components/esm/PortalDemo';
 
 import DynamicMapServiceHooksDemo from './components/react-hooks/DynamicMapServiceHooksDemo';
 import TiledMapServiceHooksDemo from './components/react-hooks/TiledMapServiceHooksDemo';
@@ -54,6 +55,7 @@ const ESM_TABS: DemoTab[] = [
   { id: 'dynamic', label: 'Dynamic Map Service', component: DynamicMapServiceDemo },
   { id: 'tiled', label: 'Tiled Map Service', component: TiledMapServiceDemo },
   { id: 'features', label: 'Feature Service', component: FeatureServiceDemo },
+  { id: 'portal', label: 'Portal Item', component: PortalDemo },
   { id: 'image', label: 'Image Service', component: ImageServiceDemo },
   { id: 'vector', label: 'Vector Tile Service', component: VectorTileServiceDemo },
   { id: 'basemap', label: 'Vector Basemap Style', component: VectorBasemapStyleDemo },
