@@ -34,8 +34,11 @@ entry points:
   `@esri/arcgis-rest-request`'s `request()`) — do **not** hand-roll `fetch` for REST endpoints.
   The exception is raster/vector **tile and image-export URL builders**
   (`/export`, `/exportImage`, `/tile/{z}/{y}/{x}`), which stay URL templates consumed by the GL
-  renderer. FeatureService CRUD uses `@esri/arcgis-rest-feature-service`; portal access uses
-  `@esri/arcgis-rest-portal`.
+  renderer. Prefer a **typed helper** when one exists over a generic `esriRequest`:
+  `@esri/arcgis-rest-feature-service` (`getLayer`, `getAllLayersAndTables`, `queryFeatures`,
+  `queryRelated`, `decodeValues`, feature CRUD) and `@esri/arcgis-rest-portal` (`getItem`,
+  `getItemData`, `searchItems`). Fall back to `esriRequest` only for endpoints without a helper
+  (`/identify`, `/find`, `/legend`, vector-tile style docs).
 - **Authentication** is uniform: every service/task accepts `token`, `apiKey`, or `authentication`
   (an `IAuthenticationManager`), precedence `authentication` → `apiKey` → `token`. Normalize with
   `resolveAuthentication()`; never inject tokens as raw query params. `apiKey` is sent as the
