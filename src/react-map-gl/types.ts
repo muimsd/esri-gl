@@ -1,21 +1,24 @@
 // React Map GL specific types
+import type { EsriAuthentication } from '@/request';
 
 /**
  * Common authentication and request options forwarded to the underlying
  * Esri service when any defined value is passed on a layer component.
  */
 export interface EsriAuthProps {
-  /** ArcGIS token sent with every request as `token` query param */
+  /** ArcGIS token (sent as the `token` request parameter) */
   token?: string;
-  /** ArcGIS API key sent via `X-Esri-Authorization` header */
+  /** ArcGIS Location Platform API key (sent as the `token` parameter) */
   apiKey?: string;
-  /** Proxy URL or flag forwarded to the service */
+  /** ArcGIS REST JS authentication manager (preferred for OAuth/user sign-in) */
+  authentication?: EsriAuthentication;
+  /** @deprecated No longer applied. */
   proxy?: string | boolean;
   /** Whether to fetch and apply service attribution (default true in services) */
   getAttributionFromService?: boolean;
   /** Extra request params merged into every service request */
   requestParams?: Record<string, unknown>;
-  /** Extra fetch options used by the service */
+  /** @deprecated No longer forwarded to requests; use `authentication`. */
   fetchOptions?: RequestInit;
 }
 

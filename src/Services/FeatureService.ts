@@ -56,7 +56,7 @@ export interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   useServiceBounds?: boolean;
   /** Custom projection endpoint URL */
   projectionEndpoint?: string;
-  /** API key sent via X-Esri-Authorization header */
+  /** ArcGIS Location Platform API key (sent as the `token` parameter) */
   apiKey?: string;
 }
 

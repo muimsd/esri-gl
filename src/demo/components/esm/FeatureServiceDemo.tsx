@@ -71,6 +71,10 @@ const FeatureServiceDemo: React.FC = () => {
       // Create a Feature Service with PBF support (tile-based loading)
       const sourceId = 'tn-bridges-source';
       const layerId = 'tn-bridges-layer';
+      // Synchronous guard: getStyle() is async, so the sourcedata handler and
+      // the polling interval can otherwise both pass the getLayer() check and
+      // race to addLayer(), throwing "Layer already exists".
+      let layerInProgress = false;
       const featureService = new FeatureService(sourceId, map.current, {
         // Tennessee Bridges - demonstrates PBF format when supported
         url: 'https://services6.arcgis.com/drBkxhK7nF7o7hKT/arcgis/rest/services/TN_Bridges/FeatureServer/0',
@@ -84,8 +88,9 @@ const FeatureServiceDemo: React.FC = () => {
       // Helper to add layer safely using getStyle() for proper layer configuration
       const addLayerIfNeeded = async () => {
         if (!map.current) return;
-        if (mapInstance.getLayer(layerId)) return; // already added
+        if (layerInProgress || mapInstance.getLayer(layerId)) return; // added or in progress
         if (!mapInstance.getSource(sourceId)) return; // source not yet registered
+        layerInProgress = true;
 
         setLoadingMessage('Loading layer style...');
 
@@ -96,6 +101,7 @@ const FeatureServiceDemo: React.FC = () => {
 
           setLoadingMessage('Adding layer to map...');
 
+          if (mapInstance.getLayer(layerId)) return; // re-check after await
           // Add layer using the style configuration
           mapInstance.addLayer({
             id: layerId,

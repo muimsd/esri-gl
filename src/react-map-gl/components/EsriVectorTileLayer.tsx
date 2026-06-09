@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { VectorTileService } from '@/Services/VectorTileService';
+import { esriRequest } from '@/request';
 import type { EsriVectorTileLayerProps } from '../types';
 import { useReactMapGL } from '../utils/useReactMapGL';
 import type { Map, VectorTileServiceOptions } from '@/types';
@@ -52,25 +53,19 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
     service
       .getStyle()
       .then(() => {
-        if (cancelled) return;
+        if (cancelled) return undefined;
 
-        let styleUrl = `${props.url}/resources/styles/root.json`;
-        if (props.token) {
-          styleUrl += `?token=${encodeURIComponent(props.token)}`;
-        }
-        const fetchInit: RequestInit = { ...(props.fetchOptions || {}) };
-        if (props.apiKey) {
-          fetchInit.headers = {
-            ...(fetchInit.headers || {}),
-            'X-Esri-Authorization': `Bearer ${props.apiKey}`,
-          };
-        }
-        return fetch(styleUrl, fetchInit);
-      })
-      .then(response => {
-        if (cancelled || !response) return;
-        if (!response.ok) throw new Error(`Failed to fetch style: ${response.status}`);
-        return response.json();
+        // Fetch the full style document through the shared request layer so
+        // auth (token / apiKey / authentication) is handled consistently.
+        return esriRequest<{ layers?: VectorStyleLayer[] }>(
+          `${props.url}/resources/styles/root.json`,
+          {
+            httpMethod: 'GET',
+            token: props.token,
+            apiKey: props.apiKey,
+            authentication: props.authentication,
+          }
+        );
       })
       .then(data => {
         if (cancelled || !data?.layers) return;
@@ -139,6 +134,7 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
     props.visible,
     props.token,
     props.apiKey,
+    props.authentication,
     props.proxy,
     props.getAttributionFromService,
     props.requestParams,
