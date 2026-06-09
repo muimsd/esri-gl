@@ -25,6 +25,9 @@ entry points:
 - `src/Portal/` — `serviceFromPortalItem()` / `servicesFromWebMap()` resolve a portal item id or
   Web Map to services.
 - `src/request.ts` — the request + auth layer (see below).
+- `src/esri-rest.ts` — curated re-exports of `@esri/arcgis-rest-*` types (geometry, feature,
+  query/edit/layer, basemap-session) so consumers get them from `esri-gl`. Add new
+  consumer-facing arcgis-rest types here, not ad-hoc.
 - `src/react/`, `src/react-map-gl/` — framework integrations. `src/types.ts` — shared types.
 - Path alias: `@/*` → `src/*` (configured in tsconfig, jest, and rollup).
 
