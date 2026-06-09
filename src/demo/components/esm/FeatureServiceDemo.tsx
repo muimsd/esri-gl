@@ -97,7 +97,6 @@ const FeatureServiceDemo: React.FC = () => {
         try {
           // Use getStyle() to get the appropriate layer configuration
           const style = (await featureService.getStyle()) as unknown as Record<string, unknown>;
-          console.log('Using FeatureService style:', style);
 
           setLoadingMessage('Adding layer to map...');
 

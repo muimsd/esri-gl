@@ -27,7 +27,12 @@ import {
   deleteAttachments,
 } from '@esri/arcgis-rest-feature-service';
 import { cleanTrailingSlash, removeMapSource, updateAttribution } from '@/utils';
-import { esriRequest, resolveAuthentication, type EsriAuthentication } from '@/request';
+import {
+  esriRequest,
+  esriRawRequest,
+  resolveAuthentication,
+  type EsriAuthentication,
+} from '@/request';
 import type {
   Map,
   FeatureServiceOptions,
@@ -121,6 +126,7 @@ export class FeatureService {
   private _serviceMetadata: ExtendedServiceMetadata | null = null;
   private _maxExtent: [number, number, number, number];
   private _boundEvent: (() => void) | null = null;
+  private _removed = false;
   private _format: 'pbf' | 'geojson' = 'pbf';
   private _sourceReadyResolve: (() => void) | null = null;
   private _sourceReadyReject: ((error: Error) => void) | null = null;
@@ -270,6 +276,7 @@ export class FeatureService {
    * Remove the source and clean up event listeners
    */
   remove(): void {
+    this._removed = true;
     this.disableRequests();
     removeMapSource(this._map, this._sourceId);
   }
@@ -468,6 +475,7 @@ export class FeatureService {
   }
 
   private async _findAndMapData(): Promise<void> {
+    if (this._removed) return;
     const z = this._map.getZoom();
 
     if (z < this._esriServiceOptions.minZoom) {
@@ -643,14 +651,13 @@ export class FeatureService {
 
     try {
       if (this._format === 'pbf') {
-        const response = await esriRequest(queryUrl, {
+        const response = await esriRawRequest(queryUrl, {
           params,
-          rawResponse: true,
           token,
           apiKey,
           authentication,
         });
-        const buffer = await (response as Response).arrayBuffer();
+        const buffer = await response.arrayBuffer();
         try {
           const decoded = tileDecode(new Uint8Array(buffer));
           return decoded.featureCollection;
@@ -675,11 +682,19 @@ export class FeatureService {
   }
 
   private _updateFcOnMap(fc: GeoJSON.FeatureCollection): void {
-    const source = this._map.getSource(this._sourceId) as
-      | { setData: (data: GeoJSON.FeatureCollection) => void }
-      | undefined;
-    if (source && 'setData' in source) {
-      source.setData(fc);
+    // Guard against an in-flight tile request resolving after the service/map
+    // was removed (e.g. a moveend handler firing during unmount).
+    const map = this._map as unknown as { style?: unknown; getSource?: (id: string) => unknown };
+    if (this._removed || !map || !map.style || typeof map.getSource !== 'function') return;
+
+    let source: unknown;
+    try {
+      source = map.getSource(this._sourceId);
+    } catch {
+      return;
+    }
+    if (source && typeof source === 'object' && 'setData' in source) {
+      (source as { setData: (data: GeoJSON.FeatureCollection) => void }).setData(fc);
     }
   }
 

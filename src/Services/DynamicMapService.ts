@@ -6,7 +6,7 @@ import {
   removeMapSource,
   updateAttribution,
 } from '@/utils';
-import { esriRequest, resolveAuthentication } from '@/request';
+import { esriRequest, esriRawRequest, resolveAuthentication } from '@/request';
 import { getLayer, getAllLayersAndTables, queryFeatures } from '@esri/arcgis-rest-feature-service';
 import type {
   Map,
@@ -754,13 +754,12 @@ export class DynamicMapService {
       params.historicMoment = options.historicMoment.toString();
     }
 
-    const response = await esriRequest(`${exportUrl}`, {
+    const response = await esriRawRequest(`${exportUrl}`, {
       params,
-      rawResponse: true,
       ...this._auth(),
     });
 
-    return (response as Response).blob();
+    return response.blob();
   }
 
   /** Generate legend information for layers */

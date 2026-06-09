@@ -105,3 +105,46 @@ export function esriRequest<T = unknown>(
 
   return request(url, requestOptions) as Promise<T>;
 }
+
+export interface EsriRawRequestOptions extends EsriAuthOptions {
+  /** Query parameters (objects are JSON-stringified). */
+  params?: Record<string, unknown>;
+  /** Abort signal for cancellation/timeout support. */
+  signal?: AbortSignal;
+  /** Additional request headers. */
+  headers?: Record<string, string>;
+}
+
+/**
+ * Fetch a **binary** ArcGIS response (PBF tiles, exported images) as a raw
+ * `Response`, applying esri-gl auth. Used instead of `esriRequest`'s deprecated
+ * `rawResponse` option (removed in ArcGIS REST JS v5).
+ */
+export async function esriRawRequest(
+  url: string,
+  options: EsriRawRequestOptions = {}
+): Promise<Response> {
+  const { params, signal, headers, ...auth } = options;
+
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value === undefined || value === null) continue;
+    search.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  }
+
+  const manager = resolveAuthentication(auth);
+  if (manager) {
+    try {
+      const token = await manager.getToken(url);
+      if (token) search.append('token', token);
+    } catch {
+      // fall through and request anonymously
+    }
+  }
+
+  const response = await fetch(`${url}?${search.toString()}`, { signal, headers });
+  if (!response.ok) {
+    throw new Error(`Request failed: HTTP ${response.status}`);
+  }
+  return response;
+}

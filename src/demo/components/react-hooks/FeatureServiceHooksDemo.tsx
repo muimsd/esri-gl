@@ -196,16 +196,20 @@ const FeatureServiceHooksDemo: React.FC = () => {
           <h3 style={DEMO_SECTION_TITLE_STYLE}>Query Features</h3>
           <button
             onClick={runQuery}
-            disabled={queryLoading}
+            disabled={queryLoading || !service}
             style={{
               padding: '8px 12px',
               borderRadius: '6px',
               border: '1px solid #d1d5db',
               backgroundColor: '#ffffff',
-              cursor: queryLoading ? 'not-allowed' : 'pointer',
+              cursor: queryLoading || !service ? 'not-allowed' : 'pointer',
             }}
           >
-            {queryLoading ? 'Running Query…' : 'Fetch Feature Count'}
+            {queryLoading
+              ? 'Running Query…'
+              : !service
+                ? 'Waiting for service…'
+                : 'Fetch Feature Count'}
           </button>
           <p style={{ margin: '8px 0 0', color: '#4b5563' }}>{featureCount}</p>
           {queryError && <p style={{ margin: 0, color: '#b91c1c' }}>{queryError}</p>}

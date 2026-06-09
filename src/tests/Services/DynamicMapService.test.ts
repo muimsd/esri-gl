@@ -1056,14 +1056,14 @@ describe('DynamicMapService', () => {
         const result = await service.exportMapImage(exportOptions);
 
         const exportCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        expect(exportCall[0]).toContain('/export');
-        const exportBody = (exportCall[1] as RequestInit)?.body as string;
-        expect(exportBody).toContain('f=image');
-        expect(exportBody).toContain('bbox=-100%2C30%2C-80%2C50');
-        expect(exportBody).toContain('size=800%2C600');
-        expect(exportBody).toContain('format=png');
-        expect(exportBody).toContain('transparent=true');
-        expect(exportBody).toContain('dpi=150');
+        const exportReq = String(exportCall[0]) + ((exportCall[1] as RequestInit)?.body ?? '');
+        expect(exportReq).toContain('/export');
+        expect(exportReq).toContain('f=image');
+        expect(exportReq).toContain('bbox=-100%2C30%2C-80%2C50');
+        expect(exportReq).toContain('size=800%2C600');
+        expect(exportReq).toContain('format=png');
+        expect(exportReq).toContain('transparent=true');
+        expect(exportReq).toContain('dpi=150');
         expect(result).toEqual(mockBlob);
       });
 
@@ -1086,8 +1086,9 @@ describe('DynamicMapService', () => {
         });
 
         const dynExportCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        const dynExportBody = (dynExportCall[1] as RequestInit)?.body as string;
-        expect(dynExportBody).toMatch(/dynamicLayers=/);
+        const dynExportReq =
+          String(dynExportCall[0]) + ((dynExportCall[1] as RequestInit)?.body ?? '');
+        expect(dynExportReq).toMatch(/dynamicLayers=/);
       });
     });
 

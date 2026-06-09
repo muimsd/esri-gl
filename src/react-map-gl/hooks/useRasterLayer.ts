@@ -8,6 +8,7 @@ type RasterService = { remove: () => void };
 type MapLayerApi = {
   getStyle?: () => unknown;
   getLayer?: (id: string) => unknown;
+  getSource?: (id: string) => unknown;
   addLayer?: (layer: unknown, beforeId?: string) => void;
   removeLayer?: (id: string) => void;
 };
@@ -61,7 +62,13 @@ export function useRasterLayer<TService extends RasterService>(
       };
     }
 
-    if (!mapInstance.getLayer(layerId)) {
+    // Only add the layer once its source is registered. During rapid
+    // mount/unmount (or HMR) the source can be missing, which would make
+    // addLayer throw "source ... not found".
+    const sourceReady =
+      typeof mapInstance.getSource !== 'function' || Boolean(mapInstance.getSource(sourceId));
+
+    if (!mapInstance.getLayer(layerId) && sourceReady) {
       const layerConfig = {
         id: layerId,
         type: 'raster' as const,
@@ -71,10 +78,17 @@ export function useRasterLayer<TService extends RasterService>(
         },
       };
 
-      if (beforeId) {
-        mapInstance.addLayer(layerConfig, beforeId);
-      } else {
-        mapInstance.addLayer(layerConfig);
+      try {
+        if (beforeId) {
+          mapInstance.addLayer(layerConfig, beforeId);
+        } else {
+          mapInstance.addLayer(layerConfig);
+        }
+      } catch (err) {
+        // Layer/source race during teardown — safe to skip.
+        if (process.env?.NODE_ENV !== 'test') {
+          console.warn(`useRasterLayer: skipped adding layer "${layerId}"`, err);
+        }
       }
     }
 
