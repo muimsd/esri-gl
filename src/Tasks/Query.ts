@@ -489,5 +489,3 @@ export class Query extends Task {
 export function query(options: string | QueryOptions): Query {
   return new Query(options);
 }
-
-export default query;

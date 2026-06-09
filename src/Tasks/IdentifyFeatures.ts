@@ -35,10 +35,6 @@ export interface IdentifyResult {
   geometryType?: string;
 }
 
-export interface IdentifyResponse {
-  results: IdentifyResult[];
-}
-
 export interface GeometryInput {
   x: number;
   y: number;

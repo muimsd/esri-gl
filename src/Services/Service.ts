@@ -413,5 +413,3 @@ export class Service {
 export function service(options: ServiceOptions): Service {
   return new Service(options);
 }
-
-export default service;

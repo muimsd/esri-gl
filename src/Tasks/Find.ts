@@ -274,5 +274,3 @@ export class Find extends Task {
 export function find(options: string | FindOptions): Find {
   return new Find(options);
 }
-
-export default find;

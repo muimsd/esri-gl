@@ -11,7 +11,6 @@ import QueryDemo from './components/esm/QueryDemo';
 import FindDemo from './components/esm/FindDemo';
 import IdentifyImageDemo from './components/esm/IdentifyImageDemo';
 
-// import MapLibreHooksDemo from './components/react-hooks/MapLibreHooksDemo';
 import DynamicMapServiceHooksDemo from './components/react-hooks/DynamicMapServiceHooksDemo';
 import TiledMapServiceHooksDemo from './components/react-hooks/TiledMapServiceHooksDemo';
 import FeatureServiceHooksDemo from './components/react-hooks/FeatureServiceHooksDemo';
@@ -23,7 +22,6 @@ import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
 import FindHooksDemo from './components/react-hooks/FindHooksDemo';
 import IdentifyImageHooksDemo from './components/react-hooks/IdentifyImageHooksDemo';
 
-// import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
 import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
 import TiledMapServiceReactMapGLDemo from './components/react-map-gl/TiledMapServiceReactMapGLDemo';
 import FeatureServiceReactMapGLDemo from './components/react-map-gl/FeatureServiceReactMapGLDemo';
