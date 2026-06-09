@@ -10,8 +10,15 @@ export function EsriVectorBasemapLayer(props: EsriVectorBasemapLayerProps) {
   const { current: map } = useReactMapGL();
 
   const service = useMemo(() => {
-    return new VectorBasemapStyle(props.basemapEnum, { token: props.token });
-  }, [props.basemapEnum, props.token]);
+    // Forward all the auth/locale options VectorBasemapStyle supports (token or
+    // apiKey, plus language/worldview), only including the ones provided.
+    const auth: { token?: string; apiKey?: string; language?: string; worldview?: string } = {};
+    if (props.token !== undefined) auth.token = props.token;
+    if (props.apiKey !== undefined) auth.apiKey = props.apiKey;
+    if (props.language !== undefined) auth.language = props.language;
+    if (props.worldview !== undefined) auth.worldview = props.worldview;
+    return new VectorBasemapStyle(props.basemapEnum, auth);
+  }, [props.basemapEnum, props.token, props.apiKey, props.language, props.worldview]);
 
   useEffect(() => {
     if (!map || !service) return;

@@ -57,6 +57,24 @@ describe('EsriVectorBasemapLayer', () => {
     });
   });
 
+  it('should forward apiKey, language and worldview', () => {
+    render(
+      <EsriVectorBasemapLayer
+        id="test-vector-basemap"
+        basemapEnum="arcgis/navigation"
+        apiKey="my-api-key"
+        language="es"
+        worldview="morocco"
+      />
+    );
+
+    expect(MockedVectorBasemapStyle).toHaveBeenCalledWith('arcgis/navigation', {
+      apiKey: 'my-api-key',
+      language: 'es',
+      worldview: 'morocco',
+    });
+  });
+
   it('should create service and handle cleanup', () => {
     const { unmount } = render(<EsriVectorBasemapLayer {...defaultProps} />);
 

@@ -56,7 +56,14 @@ export interface EsriVectorTileLayerProps extends EsriLayerBaseProps {
 
 export interface EsriVectorBasemapLayerProps extends EsriLayerBaseProps {
   basemapEnum: string;
-  token: string;
+  /** OAuth / user token (v2 host). Provide `token` or `apiKey`. */
+  token?: string;
+  /** ArcGIS Location Platform API key (v1 host). Provide `token` or `apiKey`. */
+  apiKey?: string;
+  /** Optional locale for the basemap labels. */
+  language?: string;
+  /** Optional worldview. */
+  worldview?: string;
 }
 
 export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
