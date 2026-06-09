@@ -6,7 +6,8 @@ import {
   removeMapSource,
   updateAttribution,
 } from '@/utils';
-import { esriRequest } from '@/request';
+import { esriRequest, resolveAuthentication } from '@/request';
+import { getLayer, getAllLayersAndTables, queryFeatures } from '@esri/arcgis-rest-feature-service';
 import type {
   Map,
   EsriServiceOptions,
@@ -370,6 +371,11 @@ export class DynamicMapService {
     return { token: o.token, apiKey: o.apiKey, authentication: o.authentication };
   }
 
+  /** Resolved ArcGIS REST JS auth manager for the typed feature-service helpers. */
+  private _authentication() {
+    return resolveAuthentication(this._auth());
+  }
+
   private _escapeValue(val: unknown): string {
     if (val === null) return 'NULL';
     if (val instanceof Date) return `${val.valueOf()}`; // epoch ms for time-enabled services
@@ -678,68 +684,43 @@ export class DynamicMapService {
       groupByFieldsForStatistics?: string;
     } = {}
   ): Promise<StatisticResult[]> {
-    const queryUrl = `${this.esriServiceOptions.url}/${layerId}/query`;
-    const params: Record<string, unknown> = {
+    const data = await queryFeatures({
+      url: `${this.esriServiceOptions.url}/${layerId}`,
       where: options.where || '1=1',
-      outStatistics: JSON.stringify(statisticFields),
-      returnGeometry: 'false',
-    };
-
-    if (options.groupByFieldsForStatistics) {
-      params.groupByFieldsForStatistics = options.groupByFieldsForStatistics;
-    }
-
-    const data = await esriRequest<{ features?: StatisticResult[] }>(queryUrl, {
-      params,
-      ...this._auth(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      outStatistics: statisticFields as any,
+      groupByFieldsForStatistics: options.groupByFieldsForStatistics,
+      returnGeometry: false,
+      authentication: this._authentication(),
     });
 
-    return data.features || [];
+    return ((data as { features?: StatisticResult[] }).features || []) as StatisticResult[];
   }
 
   /** Query features from a specific sublayer */
   async queryLayerFeatures(layerId: number, options: LayerQueryOptions = {}): Promise<FeatureSet> {
-    const queryUrl = `${this.esriServiceOptions.url}/${layerId}/query`;
-    const params: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestOptions: Record<string, any> = {
+      url: `${this.esriServiceOptions.url}/${layerId}`,
       where: options.where || '1=1',
-      returnGeometry: options.returnGeometry !== false ? 'true' : 'false',
-      outFields: Array.isArray(options.outFields)
-        ? options.outFields.join(',')
-        : options.outFields || '*',
+      returnGeometry: options.returnGeometry !== false,
+      outFields: options.outFields || '*',
+      authentication: this._authentication(),
     };
 
     if (options.geometry) {
-      params.geometry = JSON.stringify(options.geometry);
-      params.geometryType = options.geometryType || 'esriGeometryEnvelope';
-      params.spatialRel = options.spatialRel || 'esriSpatialRelIntersects';
+      requestOptions.geometry = options.geometry;
+      requestOptions.geometryType = options.geometryType || 'esriGeometryEnvelope';
+      requestOptions.spatialRel = options.spatialRel || 'esriSpatialRelIntersects';
     }
+    if (options.orderByFields) requestOptions.orderByFields = options.orderByFields;
+    if (options.resultOffset) requestOptions.resultOffset = options.resultOffset;
+    if (options.resultRecordCount) requestOptions.resultRecordCount = options.resultRecordCount;
+    if (options.returnCountOnly) requestOptions.returnCountOnly = true;
+    if (options.returnIdsOnly) requestOptions.returnIdsOnly = true;
 
-    if (options.orderByFields) {
-      params.orderByFields = options.orderByFields;
-    }
-
-    if (options.resultOffset) {
-      params.resultOffset = options.resultOffset.toString();
-    }
-
-    if (options.resultRecordCount) {
-      params.resultRecordCount = options.resultRecordCount.toString();
-    }
-
-    if (options.returnCountOnly) {
-      params.returnCountOnly = 'true';
-    }
-
-    if (options.returnIdsOnly) {
-      params.returnIdsOnly = 'true';
-    }
-
-    const data = await esriRequest<FeatureSet>(queryUrl, {
-      params,
-      ...this._auth(),
-    });
-
-    return data;
+    const data = await queryFeatures(requestOptions as Parameters<typeof queryFeatures>[0]);
+    return data as unknown as FeatureSet;
   }
 
   /** Export high-resolution map image */
@@ -801,15 +782,12 @@ export class DynamicMapService {
 
   /** Get detailed information about a specific layer */
   async getLayerInfo(layerId: number): Promise<LayerMetadata> {
-    const layerUrl = `${this.esriServiceOptions.url}/${layerId}`;
-    const params: Record<string, unknown> = {};
-
-    const data = await esriRequest<LayerMetadata>(layerUrl, {
-      params,
-      ...this._auth(),
+    const data = await getLayer({
+      url: `${this.esriServiceOptions.url}/${layerId}`,
+      authentication: this._authentication(),
     });
 
-    return data;
+    return data as unknown as LayerMetadata;
   }
 
   /** Get field information for a layer */
@@ -829,15 +807,12 @@ export class DynamicMapService {
 
   /** Discover all layers in the service */
   async discoverLayers(): Promise<LayerInfo[]> {
-    const serviceUrl = this.esriServiceOptions.url;
-    const params: Record<string, unknown> = {};
-
-    const data = await esriRequest<{ layers?: LayerInfo[] }>(serviceUrl, {
-      params,
-      ...this._auth(),
+    const data = await getAllLayersAndTables({
+      url: this.esriServiceOptions.url,
+      authentication: this._authentication(),
     });
 
-    return data.layers || [];
+    return ((data.layers as unknown as LayerInfo[]) || []) as LayerInfo[];
   }
 
   /** Apply multiple layer operations in a single update */

@@ -9,9 +9,12 @@
  * - {@link servicesFromWebMap} — read a Web Map item's `operationalLayers`
  *   (and optionally its basemap) and instantiate a service per layer.
  */
-import { getItem, getItemData } from '@esri/arcgis-rest-portal';
-import type { IItem } from '@esri/arcgis-rest-portal';
+import { getItem, getItemData, searchItems, SearchQueryBuilder } from '@esri/arcgis-rest-portal';
+import type { IItem, ISearchResult, ISearchOptions } from '@esri/arcgis-rest-portal';
 import { resolveAuthentication, type EsriAuthOptions } from '@/request';
+
+export { SearchQueryBuilder };
+export type { ISearchResult, ISearchOptions, IItem };
 import { cleanTrailingSlash } from '@/utils';
 import type { Map } from '@/types';
 
@@ -280,4 +283,31 @@ export async function servicesFromWebMap(
   });
 
   return results;
+}
+
+// -----------------------------
+// Portal item search
+// -----------------------------
+
+/**
+ * Search an ArcGIS portal for items, e.g. to discover services to load.
+ * Thin wrapper over `searchItems` from `@esri/arcgis-rest-portal`; accepts a
+ * query string, a {@link SearchQueryBuilder}, or a full `ISearchOptions`.
+ *
+ * @example
+ * const { results } = await searchPortalItems('type:"Feature Service" AND owner:esri');
+ * // or with auth / paging:
+ * await searchPortalItems({ q: 'wildfire', num: 20, authentication }, { token });
+ */
+export async function searchPortalItems(
+  search: string | SearchQueryBuilder | ISearchOptions,
+  options?: PortalRequestOptions
+): Promise<ISearchResult<IItem>> {
+  if (typeof search === 'string' || search instanceof SearchQueryBuilder) {
+    const { authentication } = requestOptions(options);
+    return searchItems({ q: search, authentication });
+  }
+  // Full ISearchOptions: merge in resolved auth/portal unless already provided.
+  const { authentication } = requestOptions(options);
+  return searchItems({ authentication, ...search });
 }

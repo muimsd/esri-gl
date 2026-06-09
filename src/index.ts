@@ -15,16 +15,21 @@ export { Find, find } from '@/Tasks/Find';
 export { IdentifyFeatures, type LayerScaleRange } from '@/Tasks/IdentifyFeatures';
 export { IdentifyImage, identifyImage } from '@/Tasks/IdentifyImage';
 
-// Portal item resolution (resolve item ids / web maps to services)
+// Portal item resolution (resolve item ids / web maps to services) + search
 export {
   serviceFromPortalItem,
   servicesFromWebMap,
+  searchPortalItems,
+  SearchQueryBuilder,
   type PortalResolvedService,
   type PortalServiceKind,
   type PortalServiceResult,
   type PortalRequestOptions,
   type PortalItemServiceOptions,
   type WebMapOptions,
+  type ISearchResult,
+  type ISearchOptions,
+  type IItem,
 } from '@/Portal';
 
 // Request / authentication helpers (ArcGIS REST JS)
@@ -33,6 +38,7 @@ export {
   resolveAuthentication,
   ApiKeyManager,
   ArcGISIdentityManager,
+  ApplicationCredentialsManager,
   type EsriAuthentication,
   type EsriAuthOptions,
   type EsriRequestOptions,

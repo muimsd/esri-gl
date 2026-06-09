@@ -154,10 +154,11 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await service.sourceReady;
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('?f=json'),
-        expect.objectContaining({ method: 'GET' })
-      );
+      // Layer metadata is fetched via getLayer (the url is a layer endpoint).
+      const metaCall = mockFetch.mock.calls.find(c => String(c[0]).includes('/FeatureServer/0'));
+      expect(metaCall).toBeDefined();
+      const reqText = String(metaCall![0]) + ((metaCall![1] as RequestInit)?.body ?? '');
+      expect(reqText).toContain('f=json');
     });
 
     it('should detect PBF support', async () => {

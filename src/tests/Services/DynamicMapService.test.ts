@@ -942,10 +942,10 @@ describe('DynamicMapService', () => {
         const result = await service.getLayerStatistics(1, stats);
 
         const statsCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        expect(statsCall[0]).toContain('/1/query');
-        const statsBody = (statsCall[1] as RequestInit)?.body as string;
-        expect(statsBody).toContain('where=1%3D1');
-        expect(statsBody).toContain('outStatistics=');
+        const statsReq = String(statsCall[0]) + ((statsCall[1] as RequestInit)?.body ?? '');
+        expect(statsReq).toContain('/1/query');
+        expect(statsReq).toContain('where=1%3D1');
+        expect(statsReq).toContain('outStatistics=');
         expect(result).toEqual(mockResponse.features);
       });
 
@@ -971,8 +971,9 @@ describe('DynamicMapService', () => {
         );
 
         const groupCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        const groupBody = (groupCall[1] as RequestInit)?.body as string;
-        expect(groupBody).toMatch(/where=STATE.*California.*groupByFieldsForStatistics=COUNTY/);
+        const groupReq = String(groupCall[0]) + ((groupCall[1] as RequestInit)?.body ?? '');
+        expect(groupReq).toMatch(/where=STATE.*California/);
+        expect(groupReq).toContain('groupByFieldsForStatistics=COUNTY');
       });
     });
 
@@ -999,9 +1000,9 @@ describe('DynamicMapService', () => {
         });
 
         const queryCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        expect(queryCall[0]).toContain('/2/query');
-        const queryBody = (queryCall[1] as RequestInit)?.body as string;
-        expect(queryBody).toContain('where=ID');
+        const queryReq = String(queryCall[0]) + ((queryCall[1] as RequestInit)?.body ?? '');
+        expect(queryReq).toContain('/2/query');
+        expect(queryReq).toContain('where=ID');
         expect(result).toEqual(mockResponse);
       });
 
@@ -1029,10 +1030,10 @@ describe('DynamicMapService', () => {
         });
 
         const spatialCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        const spatialBody = (spatialCall[1] as RequestInit)?.body as string;
-        expect(spatialBody).toMatch(
-          /geometry=.*geometryType=esriGeometryPolygon.*spatialRel=esriSpatialRelContains/
-        );
+        const spatialReq = String(spatialCall[0]) + ((spatialCall[1] as RequestInit)?.body ?? '');
+        expect(spatialReq).toContain('geometry=');
+        expect(spatialReq).toContain('geometryType=esriGeometryPolygon');
+        expect(spatialReq).toContain('spatialRel=esriSpatialRelContains');
       });
     });
 
@@ -1175,7 +1176,8 @@ describe('DynamicMapService', () => {
         const layers = await service.discoverLayers();
 
         const discoverCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        expect(discoverCall[0]).toMatch(/\/MapServer$/);
+        // getAllLayersAndTables targets the service's /layers endpoint
+        expect(discoverCall[0]).toMatch(/\/MapServer\/layers$/);
         expect(layers).toEqual(mockResponse.layers);
       });
 

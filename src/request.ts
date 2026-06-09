@@ -10,11 +10,12 @@ import {
   request,
   ApiKeyManager,
   ArcGISIdentityManager,
+  ApplicationCredentialsManager,
   type IAuthenticationManager,
   type IRequestOptions,
 } from '@esri/arcgis-rest-request';
 
-export { ApiKeyManager, ArcGISIdentityManager };
+export { ApiKeyManager, ArcGISIdentityManager, ApplicationCredentialsManager };
 export type { IAuthenticationManager };
 
 /**

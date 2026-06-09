@@ -16,6 +16,9 @@ import * as tilebelt from '@mapbox/tilebelt';
 import tileDecode from 'arcgis-pbf-parser';
 import {
   queryFeatures,
+  queryRelated,
+  decodeValues,
+  getLayer,
   addFeatures,
   updateFeatures,
   deleteFeatures,
@@ -23,7 +26,7 @@ import {
   getAttachments,
   deleteAttachments,
 } from '@esri/arcgis-rest-feature-service';
-import { cleanTrailingSlash, getServiceDetails, removeMapSource, updateAttribution } from '@/utils';
+import { cleanTrailingSlash, removeMapSource, updateAttribution } from '@/utils';
 import { esriRequest, resolveAuthentication, type EsriAuthentication } from '@/request';
 import type {
   Map,
@@ -696,14 +699,15 @@ export class FeatureService {
   private async _getServiceMetadata(): Promise<ExtendedServiceMetadata> {
     if (this._serviceMetadata !== null) return this._serviceMetadata;
 
-    const { token, apiKey, authentication } = this._authOptions();
-    const data = await getServiceDetails(this._esriServiceOptions.url, {
-      token,
-      apiKey,
-      authentication,
+    // The FeatureService url is a layer endpoint, so the layer definition
+    // (supportedQueryFormats, uniqueIdField, extent, geometryType, …) comes
+    // from the typed `getLayer` helper.
+    const data = await getLayer({
+      url: this._esriServiceOptions.url,
+      authentication: this._authentication(),
     });
 
-    this._serviceMetadata = data as ExtendedServiceMetadata;
+    this._serviceMetadata = data as unknown as ExtendedServiceMetadata;
     return this._serviceMetadata;
   }
 
@@ -935,6 +939,56 @@ export class FeatureService {
       }
     }
     return this;
+  }
+
+  // ========================================
+  // Related Records & Domain Decoding
+  // ========================================
+
+  /**
+   * Query records related to this layer's features through a relationship
+   * class. Wraps `queryRelated` from `@esri/arcgis-rest-feature-service`.
+   */
+  async queryRelatedRecords(options: {
+    relationshipId?: number;
+    objectIds?: number[];
+    outFields?: string | string[];
+    definitionExpression?: string;
+    returnGeometry?: boolean;
+  }): Promise<import('@esri/arcgis-rest-feature-service').IQueryRelatedResponse> {
+    return queryRelated({
+      url: this._esriServiceOptions.url,
+      relationshipId: options.relationshipId,
+      objectIds: options.objectIds,
+      outFields: options.outFields as never,
+      definitionExpression: options.definitionExpression,
+      // `returnGeometry` is not a top-level queryRelated option; pass via params.
+      params:
+        options.returnGeometry !== undefined
+          ? { returnGeometry: options.returnGeometry }
+          : undefined,
+      authentication: this._authentication(),
+    });
+  }
+
+  /**
+   * Replace coded-value-domain codes with their human-readable names in a
+   * query response. Wraps `decodeValues` from
+   * `@esri/arcgis-rest-feature-service`.
+   *
+   * @param queryResponse A response from a `f=json` feature query.
+   * @param fields Optional subset of field names to decode (defaults to all).
+   */
+  async decodeValues(
+    queryResponse: unknown,
+    fields?: string[]
+  ): Promise<import('@esri/arcgis-rest-feature-service').IQueryFeaturesResponse> {
+    return decodeValues({
+      url: this._esriServiceOptions.url,
+      queryResponse: queryResponse as never,
+      fields: fields as never,
+      authentication: this._authentication(),
+    });
   }
 
   // ========================================
