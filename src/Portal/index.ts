@@ -10,11 +10,18 @@
  *   (and optionally its basemap) and instantiate a service per layer.
  */
 import { getItem, getItemData, searchItems, SearchQueryBuilder } from '@esri/arcgis-rest-portal';
-import type { IItem, ISearchResult, ISearchOptions } from '@esri/arcgis-rest-portal';
+import type {
+  IItem,
+  ISearchResult,
+  ISearchOptions,
+  IGroup,
+  IUser,
+  IPagingParams,
+} from '@esri/arcgis-rest-portal';
 import { resolveAuthentication, type EsriAuthOptions } from '@/request';
 
 export { SearchQueryBuilder };
-export type { ISearchResult, ISearchOptions, IItem };
+export type { ISearchResult, ISearchOptions, IItem, IGroup, IUser, IPagingParams };
 import { cleanTrailingSlash } from '@/utils';
 import type { Map } from '@/types';
 

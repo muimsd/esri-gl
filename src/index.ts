@@ -30,7 +30,13 @@ export {
   type ISearchResult,
   type ISearchOptions,
   type IItem,
+  type IGroup,
+  type IUser,
+  type IPagingParams,
 } from '@/Portal';
+
+// ArcGIS REST JS data, query, edit, layer and basemap-session types
+export * from '@/esri-rest';
 
 // Request / authentication helpers (ArcGIS REST JS)
 export {
@@ -39,10 +45,13 @@ export {
   ApiKeyManager,
   ArcGISIdentityManager,
   ApplicationCredentialsManager,
+  ArcGISRequestError,
+  ArcGISAuthError,
   type EsriAuthentication,
   type EsriAuthOptions,
   type EsriRequestOptions,
   type IAuthenticationManager,
+  type IRequestOptions,
 } from '@/request';
 
 // Utilities

@@ -428,12 +428,15 @@ describe('Main Module Exports', () => {
       const expectedExportCount = 18; // 7 services + 8 tasks + 3 utilities
       const actualExportCount = Object.keys(esrigl).length;
 
-      // Allow for some variance due to type exports and potential additional exports.
-      // The arcgis-rest request-layer migration adds runtime exports (ApiKeyManager,
-      // ArcGISIdentityManager, esriRequest, resolveAuthentication) plus portal/webmap
-      // helpers (serviceFromPortalItem, servicesFromWebMap), so the buffer is wider.
+      // Runtime (value) exports added by the arcgis-rest-js migration:
+      //  - Portal: serviceFromPortalItem, servicesFromWebMap, searchPortalItems, SearchQueryBuilder
+      //  - Auth/request: esriRequest, resolveAuthentication, ApiKeyManager, ArcGISIdentityManager,
+      //    ApplicationCredentialsManager, ArcGISRequestError, ArcGISAuthError
+      //  - Sessions: BasemapStyleSession
+      // (Type-only re-exports do not add runtime keys.)
+      const addedRuntimeExports = 12;
       expect(actualExportCount).toBeGreaterThanOrEqual(expectedExportCount);
-      expect(actualExportCount).toBeLessThanOrEqual(expectedExportCount + 11); // Some buffer for types
+      expect(actualExportCount).toBeLessThanOrEqual(expectedExportCount + addedRuntimeExports + 3);
     });
   });
 });

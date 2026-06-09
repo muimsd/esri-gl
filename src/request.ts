@@ -11,12 +11,20 @@ import {
   ApiKeyManager,
   ArcGISIdentityManager,
   ApplicationCredentialsManager,
+  ArcGISRequestError,
+  ArcGISAuthError,
   type IAuthenticationManager,
   type IRequestOptions,
 } from '@esri/arcgis-rest-request';
 
-export { ApiKeyManager, ArcGISIdentityManager, ApplicationCredentialsManager };
-export type { IAuthenticationManager };
+export {
+  ApiKeyManager,
+  ArcGISIdentityManager,
+  ApplicationCredentialsManager,
+  ArcGISRequestError,
+  ArcGISAuthError,
+};
+export type { IAuthenticationManager, IRequestOptions };
 
 /**
  * Authentication accepted throughout esri-gl. Either an ArcGIS REST JS
