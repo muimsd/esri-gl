@@ -1,5 +1,6 @@
 // React Map GL specific types
 import type { EsriAuthentication } from '@/request';
+import type { PortalServiceResult } from '@/Portal';
 
 /**
  * Common authentication and request options forwarded to the underlying
@@ -65,4 +66,15 @@ export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
   type?: 'fill' | 'circle' | 'line' | 'symbol' | 'heatmap';
   paint?: Record<string, unknown>;
   layout?: Record<string, unknown>;
+}
+
+export interface EsriPortalLayerProps extends EsriLayerBaseProps {
+  /** ArcGIS portal item id to resolve to a service. */
+  itemId: string;
+  /** For multi-layer Feature Services, which sublayer to load (default 0). */
+  layerId?: number;
+  /** Portal sharing REST URL (defaults to ArcGIS Online). */
+  portal?: string;
+  /** Called once the item resolves, with the resolved service/kind/url/title. */
+  onResolve?: (result: PortalServiceResult) => void;
 }

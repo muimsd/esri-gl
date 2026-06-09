@@ -9,6 +9,7 @@ import type {
 } from '@/types';
 import type { IdentifyImageOptions } from '@/Tasks/IdentifyImage';
 import type { FindOptions } from '@/Tasks/Find';
+import type { PortalResolvedService, PortalServiceKind, PortalItemServiceOptions } from '@/Portal';
 
 // Base service hook types
 export interface UseEsriServiceOptions<T extends EsriServiceOptions = EsriServiceOptions> {
@@ -20,6 +21,29 @@ export interface UseEsriServiceOptions<T extends EsriServiceOptions = EsriServic
 
 export interface UseEsriServiceResult<T> {
   service: T | null;
+  loading: boolean;
+  error: Error | null;
+  reload: () => void;
+}
+
+// Portal item resolution hook
+export interface UsePortalItemOptions {
+  sourceId: string;
+  map: Map | null;
+  /** ArcGIS portal item id to resolve. */
+  itemId: string;
+  options?: PortalItemServiceOptions;
+}
+
+export interface UsePortalItemResult {
+  /** The resolved esri-gl service (source already added to the map), or null. */
+  service: PortalResolvedService | null;
+  /** Which service kind the item resolved to. */
+  kind: PortalServiceKind | null;
+  /** The service URL the item resolved to. */
+  url: string | null;
+  /** The portal item title. */
+  title: string | null;
   loading: boolean;
   error: Error | null;
   reload: () => void;

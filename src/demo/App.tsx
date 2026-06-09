@@ -22,6 +22,7 @@ import IdentifyFeaturesHooksDemo from './components/react-hooks/IdentifyFeatures
 import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
 import FindHooksDemo from './components/react-hooks/FindHooksDemo';
 import IdentifyImageHooksDemo from './components/react-hooks/IdentifyImageHooksDemo';
+import PortalHooksDemo from './components/react-hooks/PortalHooksDemo';
 
 import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
 import TiledMapServiceReactMapGLDemo from './components/react-map-gl/TiledMapServiceReactMapGLDemo';
@@ -33,6 +34,7 @@ import IdentifyFeaturesReactMapGLDemo from './components/react-map-gl/IdentifyFe
 import QueryReactMapGLDemo from './components/react-map-gl/QueryReactMapGLDemo';
 import FindReactMapGLDemo from './components/react-map-gl/FindReactMapGLDemo';
 import IdentifyImageReactMapGLDemo from './components/react-map-gl/IdentifyImageReactMapGLDemo';
+import PortalReactMapGLDemo from './components/react-map-gl/PortalReactMapGLDemo';
 
 type CategoryId = 'esm' | 'react-hooks' | 'react-map-gl';
 
@@ -80,6 +82,11 @@ const HOOK_TABS: DemoTab[] = [
     id: 'hooks-feature',
     label: 'Feature Service',
     component: FeatureServiceHooksDemo,
+  },
+  {
+    id: 'hooks-portal',
+    label: 'Portal Item',
+    component: PortalHooksDemo,
   },
   {
     id: 'hooks-image',
@@ -133,6 +140,11 @@ const REACT_MAP_GL_TABS: DemoTab[] = [
     id: 'react-map-gl-feature',
     label: 'Feature Service',
     component: FeatureServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-portal',
+    label: 'Portal Item',
+    component: PortalReactMapGLDemo,
   },
   {
     id: 'react-map-gl-image',
