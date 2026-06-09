@@ -104,6 +104,58 @@ interface WebMapOptions extends PortalItemServiceOptions {
 }
 ```
 
+## Re-exported ArcGIS REST JS Types
+
+esri-gl's methods return [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js) types
+(e.g. `FeatureService.queryRelatedRecords()` → `IQueryRelatedResponse`,
+`FeatureService.decodeValues()` → `IQueryFeaturesResponse`, `searchPortalItems()` →
+`ISearchResult<IItem>`). Those types — and the common data types you need to build geometries,
+features and queries — are re-exported from `esri-gl`, so you don't have to depend on the
+`@esri/arcgis-rest-*` packages by name:
+
+```typescript
+import type {
+  // geometry / feature / field data (@esri/arcgis-rest-request)
+  IFeature, IFeatureSet, IField, IGeometry, IPoint, IPolygon, IPolyline,
+  IMultipoint, IExtent, ISpatialReference, IHasZM, IDomain, ICodedValue,
+  GeometryType, FieldType, Units,
+  // query / edit / layer / service (@esri/arcgis-rest-feature-service)
+  IQueryFeaturesOptions, IQueryFeaturesResponse, IQueryResponse,
+  IQueryRelatedOptions, IQueryRelatedResponse,
+  IEditFeatureResult, IApplyEditsOptions, IApplyEditsResult,
+  IAddFeaturesOptions, IDeleteFeaturesOptions,
+  IGetLayerOptions, ILayer, ILayerDefinition, IFeatureServiceDefinition,
+  IAllLayersAndTablesResponse, IStatisticDefinition, IOrderByField,
+  IAttachmentInfo, IGetAttachmentsOptions, IDecodeValuesOptions,
+  // basemap sessions (@esri/arcgis-rest-basemap-sessions)
+  StyleFamily, IStartSessionParams,
+  // portal (@esri/arcgis-rest-portal)
+  IItem, ISearchResult, ISearchOptions, IGroup, IUser, IPagingParams,
+  // request layer
+  IAuthenticationManager, IRequestOptions,
+} from 'esri-gl';
+```
+
+Runtime values are re-exported too — the authentication managers
+(`ApiKeyManager`, `ArcGISIdentityManager`, `ApplicationCredentialsManager`), the error classes
+(`ArcGISRequestError`, `ArcGISAuthError`, useful for `instanceof` checks in a `catch`),
+`BasemapStyleSession`, and `SearchQueryBuilder`:
+
+```typescript
+import { ArcGISRequestError, ApiKeyManager, SearchQueryBuilder } from 'esri-gl';
+
+try {
+  await service.applyEdits(edits);
+} catch (e) {
+  if (e instanceof ArcGISRequestError) {
+    console.error(`${e.code}: ${e.message}`);
+  }
+}
+```
+
+See the [Authentication guide](../guides/authentication) for the auth managers and the
+`esriRequest` / `resolveAuthentication` helpers.
+
 ## Labeling Types
 
 ### LayerLabelingInfo
