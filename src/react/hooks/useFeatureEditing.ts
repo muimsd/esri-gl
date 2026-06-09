@@ -1,30 +1,10 @@
 import { useCallback, useState } from 'react';
 import type { FeatureService } from '@/Services/FeatureService';
 import type { EditResult, ApplyEditsResult } from '@/types';
+import type { UseFeatureEditingResult } from '../types';
 import { useAsyncOperation } from './useAsyncOperation';
 
-export interface UseFeatureEditingResult {
-  addFeatures: (
-    features: GeoJSON.Feature[],
-    options?: { gdbVersion?: string }
-  ) => Promise<EditResult[]>;
-  updateFeatures: (
-    features: GeoJSON.Feature[],
-    options?: { gdbVersion?: string }
-  ) => Promise<EditResult[]>;
-  deleteFeatures: (params: { objectIds?: number[]; where?: string }) => Promise<EditResult[]>;
-  applyEdits: (
-    edits: {
-      adds?: GeoJSON.Feature[];
-      updates?: GeoJSON.Feature[];
-      deletes?: number[];
-    },
-    options?: { gdbVersion?: string }
-  ) => Promise<ApplyEditsResult>;
-  loading: boolean;
-  error: Error | null;
-  lastResult: EditResult[] | ApplyEditsResult | null;
-}
+export type { UseFeatureEditingResult };
 
 /**
  * Hook for feature editing operations on a FeatureService
