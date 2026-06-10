@@ -25,6 +25,7 @@ export function EsriImageLayer(props: EsriImageLayerProps) {
       props.format,
       props.token,
       props.apiKey,
+      props.authentication,
       props.proxy,
       props.getAttributionFromService,
       props.requestParams,

@@ -27,6 +27,7 @@ export function EsriDynamicLayer(props: EsriDynamicLayerProps) {
       props.transparent,
       props.token,
       props.apiKey,
+      props.authentication,
       props.proxy,
       props.getAttributionFromService,
       props.requestParams,

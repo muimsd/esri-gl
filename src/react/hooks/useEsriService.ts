@@ -12,7 +12,13 @@ interface RemovableService {
  */
 export function useEsriService<T extends RemovableService>(
   createService: (map: Map) => T,
-  map: Map | null
+  map: Map | null,
+  /**
+   * Values that, when changed, rebuild the service (and its source). Pass the
+   * service-defining options (e.g. `url`, `token`) so option changes are
+   * reflected; the base hook otherwise only rebuilds when `map` changes.
+   */
+  deps: ReadonlyArray<unknown> = []
 ): UseEsriServiceResult<T> {
   const [service, setService] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,7 +104,8 @@ export function useEsriService<T extends RemovableService>(
       clearTimeout(timeoutId);
       if (retryTimeoutId) clearTimeout(retryTimeoutId);
     };
-  }, [map, reload]);
+    // deps trigger a rebuild when service-defining options change.
+  }, [map, reload, ...deps]);
 
   // Cleanup on unmount only
   useEffect(() => {

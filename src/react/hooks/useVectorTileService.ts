@@ -13,6 +13,7 @@ export function useVectorTileService({
 }: UseVectorTileServiceOptions): UseEsriServiceResult<VectorTileService> {
   return useEsriService(
     mapInstance => new VectorTileService(sourceId, mapInstance, options, sourceOptions),
-    map
+    map,
+    [sourceId, options.url, options.token, options.apiKey]
   );
 }
