@@ -9,18 +9,21 @@ import {
   DEMO_MAP_CONTAINER_STYLE,
 } from '../shared/styles';
 
+// Public ArcGIS Image Services (no token required) so the raster layer + identify
+// work anonymously. Token-gated Living Atlas services returned 499 errors that
+// MapLibre then failed to decode as image tiles ("source image could not be decoded").
 const services = {
   elevation: {
     url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
     name: 'World Elevation',
   },
-  landcover: {
-    url: 'https://landscape6.arcgis.com/arcgis/rest/services/WorldLandCover/ImageServer',
-    name: 'World Land Cover',
+  landsat: {
+    url: 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer',
+    name: 'Landsat (Multispectral)',
   },
-  temperature: {
-    url: 'https://utility.arcgis.com/usrsvcs/servers/4462bf95dc4e4ad59b9ed542e47d6096/rest/services/LiveFeeds/WorldTemperatures/ImageServer',
-    name: 'World Temperatures',
+  sentinel: {
+    url: 'https://sentinel.arcgis.com/arcgis/rest/services/Sentinel2/ImageServer',
+    name: 'Sentinel-2',
   },
 };
 
