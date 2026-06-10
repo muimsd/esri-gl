@@ -295,7 +295,7 @@ const App: React.FC = () => {
         </nav>
         <a
           className="shell-github"
-          href="https://github.com/esri-gl/esri-gl"
+          href="https://github.com/muimsd/esri-gl"
           target="_blank"
           rel="noopener noreferrer"
         >

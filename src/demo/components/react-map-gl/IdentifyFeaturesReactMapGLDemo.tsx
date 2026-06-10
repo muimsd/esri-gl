@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { MapLayerMouseEvent, MapRef } from '@vis.gl/react-maplibre';
-import { Map, NavigationControl, ScaleControl } from 'react-map-gl/maplibre';
+import { Map, NavigationControl, ScaleControl, Popup } from 'react-map-gl/maplibre';
 import { EsriDynamicLayer, IdentifyFeatures } from '../../../react-map-gl';
 import { MAPLIBRE_MAP_LIB } from './maplib';
 import {
@@ -19,10 +19,13 @@ type LayerOption = {
 
 type AttributeEntry = [string, unknown];
 
+type LngLat = { lng: number; lat: number };
+
 type IdentifyState =
-  | { status: 'idle'; message: string }
+  | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; attributes: AttributeEntry[]; location: { lng: number; lat: number } }
+  | { status: 'success'; attributes: AttributeEntry[] }
+  | { status: 'empty'; message: string }
   | { status: 'error'; message: string };
 
 const SERVICE_URL = 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer';
@@ -38,21 +41,20 @@ const IdentifyFeaturesReactMapGLDemo: React.FC = () => {
   const mapRef = useRef<MapRef | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [selectedLayers, setSelectedLayers] = useState<number[]>([0, 1, 2]);
-  const [identifyState, setIdentifyState] = useState<IdentifyState>({
-    status: 'idle',
-    message: 'Click anywhere on the map to identify visible dynamic layers.',
-  });
+  const [identifyState, setIdentifyState] = useState<IdentifyState>({ status: 'idle' });
+  const [popupLocation, setPopupLocation] = useState<LngLat | null>(null);
 
   const layersParam = useMemo(() => {
     return selectedLayers.length ? selectedLayers : false;
   }, [selectedLayers]);
 
-  const statusChip = useMemo(() => {
-    return createBadgeStyle('#bbf7d0', '#064e3b');
-  }, []);
+  const statusChip = useMemo(() => createBadgeStyle('#bbf7d0', '#064e3b'), []);
 
-  const handleMapLoad = useCallback(() => {
-    setMapReady(true);
+  const handleMapLoad = useCallback(() => setMapReady(true), []);
+
+  const closePopup = useCallback(() => {
+    setPopupLocation(null);
+    setIdentifyState({ status: 'idle' });
   }, []);
 
   const toggleLayer = useCallback((layerId: number) => {
@@ -68,6 +70,7 @@ const IdentifyFeaturesReactMapGLDemo: React.FC = () => {
     async (event: MapLayerMouseEvent) => {
       if (!mapReady || !mapRef.current) return;
 
+      setPopupLocation({ lng: event.lngLat.lng, lat: event.lngLat.lat });
       setIdentifyState({ status: 'loading' });
 
       try {
@@ -87,18 +90,14 @@ const IdentifyFeaturesReactMapGLDemo: React.FC = () => {
         const feature = featureCollection.features?.[0];
         if (!feature || !feature.properties) {
           setIdentifyState({
-            status: 'idle',
-            message: 'No features returned for that location. Try enabling additional sublayers.',
+            status: 'empty',
+            message: 'No features here. Try enabling more sublayers or another spot.',
           });
           return;
         }
 
         const entries = Object.entries(feature.properties).slice(0, 10) as AttributeEntry[];
-        setIdentifyState({
-          status: 'success',
-          attributes: entries,
-          location: { lng: event.lngLat.lng, lat: event.lngLat.lat },
-        });
+        setIdentifyState({ status: 'success', attributes: entries });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown identify error';
         setIdentifyState({ status: 'error', message });
@@ -137,52 +136,9 @@ const IdentifyFeaturesReactMapGLDemo: React.FC = () => {
           </div>
         </div>
 
-        <div>
-          <h3 style={DEMO_SECTION_TITLE_STYLE}>Identify Result</h3>
-          {identifyState.status === 'idle' && (
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>{identifyState.message}</p>
-          )}
-          {identifyState.status === 'loading' && (
-            <p style={{ margin: 0, color: '#4b5563', fontSize: '13px' }}>Running identify…</p>
-          )}
-          {identifyState.status === 'error' && (
-            <p style={{ margin: 0, color: '#991b1b', fontSize: '13px' }}>{identifyState.message}</p>
-          )}
-          {identifyState.status === 'success' && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-                fontSize: '12px',
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                padding: '8px',
-                maxHeight: '180px',
-                overflow: 'auto',
-              }}
-            >
-              <div style={{ color: '#4b5563', marginBottom: '4px' }}>
-                Location: {identifyState.location.lng.toFixed(4)},{' '}
-                {identifyState.location.lat.toFixed(4)}
-              </div>
-              {identifyState.attributes.map(([key, value]) => (
-                <div
-                  key={key}
-                  style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}
-                >
-                  <strong>{key}</strong>
-                  <span>{String(value ?? '—')}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div style={DEMO_FOOTER_STYLE}>
-          Identify requests respect dynamic sublayer visibility, mirroring the MapServer behaviour
-          in ArcGIS web maps.
+          Click anywhere on the map to identify visible dynamic layers — results appear in a popup
+          at the clicked point. Identify requests respect sublayer visibility.
         </div>
       </aside>
 
@@ -200,6 +156,47 @@ const IdentifyFeaturesReactMapGLDemo: React.FC = () => {
           <ScaleControl position="bottom-left" maxWidth={120} unit="imperial" />
 
           <EsriDynamicLayer id="react-map-gl-identify" url={SERVICE_URL} layers={layersParam} />
+
+          {popupLocation && identifyState.status !== 'idle' && (
+            <Popup
+              longitude={popupLocation.lng}
+              latitude={popupLocation.lat}
+              anchor="top"
+              maxWidth="300px"
+              closeOnClick={false}
+              onClose={closePopup}
+            >
+              <div
+                style={{
+                  fontSize: '12px',
+                  maxHeight: '220px',
+                  overflow: 'auto',
+                  minWidth: '180px',
+                }}
+              >
+                <div style={{ color: '#4b5563', marginBottom: '6px' }}>
+                  {popupLocation.lng.toFixed(4)}, {popupLocation.lat.toFixed(4)}
+                </div>
+                {identifyState.status === 'loading' && <div>Running identify…</div>}
+                {identifyState.status === 'empty' && (
+                  <div style={{ color: '#6b7280' }}>{identifyState.message}</div>
+                )}
+                {identifyState.status === 'error' && (
+                  <div style={{ color: '#991b1b' }}>{identifyState.message}</div>
+                )}
+                {identifyState.status === 'success' &&
+                  identifyState.attributes.map(([key, value]) => (
+                    <div
+                      key={key}
+                      style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}
+                    >
+                      <strong style={{ color: '#374151' }}>{key}</strong>
+                      <span style={{ color: '#1f2937' }}>{String(value ?? '—')}</span>
+                    </div>
+                  ))}
+              </div>
+            </Popup>
+          )}
         </Map>
       </div>
     </div>
