@@ -1,9 +1,28 @@
 Change Log
 ==========
 
-### Unreleased
+### v2.0.0
+**ArcGIS REST JS internals, unified authentication & portal item resolution**
 
-#### Internal Refactor — no public API changes
+#### Breaking Changes
+- **Authentication flows through ArcGIS REST JS**: every service and task now accepts `token`, `apiKey`, or `authentication` (an `IAuthenticationManager` such as `ApiKeyManager` or `ArcGISIdentityManager`), with precedence `authentication` → `apiKey` → `token`. `apiKey` is sent as the `token` parameter, not an `X-Esri-Authorization` header.
+- **Errors are `ArcGISRequestError`**: requests reject with ArcGIS REST JS error classes (numeric `.code`; message prefixed with the code for service-level errors) instead of plain `Error`s.
+- **`proxy` and `fetchOptions` options are no longer applied** — use an `authentication` manager (or a custom `IAuthenticationManager`) for tokenized/proxied access.
+
+#### New Features
+- **Portal item resolution** (`src/Portal`): `serviceFromPortalItem(sourceId, map, itemId, options?)` resolves a portal item id to the matching esri-gl service; `servicesFromWebMap(map, itemId, options?)` instantiates a service per Web Map operational layer (optionally including the basemap); `searchPortalItems(query, options?)` searches a portal for items (re-exports `SearchQueryBuilder`)
+- **React**: new `usePortalItem` hook resolves an item id to a service with loading/error state and a `reload()` helper
+- **react-map-gl**: new `EsriPortalLayer` component resolves an item id and adds a renderer-appropriate layer (raster or the service's default style)
+- **Re-exported ArcGIS REST JS types**: curated geometry/feature/query/edit/layer/basemap-session types are available directly from `esri-gl` (see `src/esri-rest.ts`), e.g. `IExtent`, `IFeature`, `IQueryFeaturesResponse`, `IEditFeatureResult`
+- **Typed REST helpers**: FeatureService CRUD/attachments and metadata now use `@esri/arcgis-rest-feature-service` (`getLayer`, `queryFeatures`, `queryRelated`, `decodeValues`, …); portal reads use `@esri/arcgis-rest-portal`
+- **Live portal smoke test**: `npm run test:portal` resolves real public ArcGIS Online items (network test, not part of the jest suite)
+
+#### Internals
+- All ArcGIS REST calls route through `src/request.ts` (`esriRequest`/`esriRawRequest` over `@esri/arcgis-rest-request`); tile and image-export URL builders are unchanged
+- Rollup externalizes `@esri/*` in the ESM/`.d.ts` builds and bundles them in the UMD/CDN build
+- React service hooks rebuild when service-defining options (`url`, auth) change; react-map-gl layer components tear down and recreate sources on `url`/auth changes
+
+#### Internal Refactor (pre-2.0, previously unreleased)
 - **react-map-gl layer components**: Extracted the "wait for map style load" effect into a shared `useMapLoaded` hook used by all five layer components. `EsriDynamicLayer`, `EsriTiledLayer`, and `EsriImageLayer` now share a `useRasterLayer` hook for service creation + raster-layer lifecycle.
 - **react-map-gl hooks**: `useEsriMapboxLayer` and `useEsriMaplibreLayer` now delegate to a shared `createEsriLayerHooks` factory — they differed only by which `useMap` implementation they imported.
 - **Services**: Added `removeMapSource` and `appendTokenIfExists` helpers in `utils.ts`; `DynamicMapService`, `TiledMapService`, `ImageService`, `VectorTileService`, and `FeatureService` `remove()` methods now share one implementation instead of five near-duplicates.

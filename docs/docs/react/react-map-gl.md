@@ -169,6 +169,35 @@ import { EsriVectorBasemapLayer } from 'esri-gl/react-map-gl';
 </Map>
 ```
 
+### EsriPortalLayer
+
+Resolves an ArcGIS **portal item id** to the matching service and adds a
+renderer-appropriate layer for it — raster for Dynamic/Tiled/Image services, the
+service's default style for Feature and Vector Tile services.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| itemId | `string` | **Required** ArcGIS portal item id to resolve |
+| layerId | `number` | For multi-layer Feature Services, which sublayer to load (default 0) |
+| portal | `string` | Portal sharing REST URL (defaults to ArcGIS Online) |
+| onResolve | `(result: PortalServiceResult) => void` | Called once the item resolves, with the service/kind/url/title |
+| token / apiKey / authentication | | Standard [auth options](../guides/authentication) |
+
+```tsx
+import { EsriPortalLayer } from 'esri-gl/react-map-gl';
+
+<Map>
+  <EsriPortalLayer
+    id="portal-item"
+    itemId="a1b2c3d4e5f6"
+    token="YOUR_TOKEN"
+    onResolve={({ kind, title }) => console.log(`Loaded ${kind}: ${title}`)}
+  />
+</Map>
+```
+
+See the [Portal Items guide](../guides/portal-items) for how item types map to services.
+
 ## Integration Hooks
 
 These hooks provide access to the underlying map instance and pre-configured service hooks for react-map-gl applications.

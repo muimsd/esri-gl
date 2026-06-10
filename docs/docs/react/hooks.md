@@ -159,6 +159,42 @@ const { service } = useVectorBasemapStyle({
 });
 ```
 
+### usePortalItem
+
+Resolves an ArcGIS **portal item id** to the matching esri-gl service via
+[`serviceFromPortalItem`](../guides/portal-items) and adds its source to the map.
+Re-resolves when `itemId` or `map` change, cleaning up the previous service.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| sourceId | `string` | Source ID for the map |
+| map | `Map \| null` | Map instance |
+| itemId | `string` | ArcGIS portal item id to resolve |
+| options | `PortalItemServiceOptions` | Auth (`token`/`apiKey`/`authentication`), `portal`, `layerId`, and per-kind source options |
+
+**Returns:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| service | `PortalResolvedService \| null` | The resolved service (source already on the map) |
+| kind | `PortalServiceKind \| null` | `'dynamic'`, `'tiled'`, `'image'`, `'vector-tile'`, or `'feature'` |
+| url | `string \| null` | The service URL the item resolved to |
+| title | `string \| null` | The portal item title |
+| loading | `boolean` | Resolution in progress |
+| error | `Error \| null` | Resolution error, if any |
+| reload | `() => void` | Re-resolve the item |
+
+```tsx
+const { service, kind, title, loading, error } = usePortalItem({
+  sourceId: 'portal-src',
+  map,
+  itemId: 'a1b2c3d4e5f6',
+  options: { token: 'YOUR_TOKEN' },
+});
+```
+
+See the [Portal Items guide](../guides/portal-items) for item-type mapping and Web Map resolution.
+
 ## Task Hooks
 
 These hooks wrap spatial tasks with loading/error state management.
