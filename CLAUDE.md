@@ -50,6 +50,12 @@ entry points:
   `token` parameter (via `ApiKeyManager`), not an `X-Esri-Authorization` header.
 - Errors surfaced from requests are `ArcGISRequestError` (numeric `.code`; message prefixed with
   the code for ArcGIS service errors).
+- **React services rebuild on option changes.** `useEsriService` only rebuilds when `map` changes,
+  so a service hook must pass its service-defining options (e.g. `url`, `token`) as the third `deps`
+  arg. react-map-gl layer components include those options in their effect/`serviceDeps` array so a
+  changed `url`/auth tears down the old source before recreating it (same-`sourceId` reuse otherwise
+  skips the update). ESLint here has no `react-hooks/exhaustive-deps` rule — don't add a disable
+  directive for it.
 - Match the surrounding code's style; Prettier + ESLint are enforced. `any` is discouraged
   (warns, doesn't fail).
 
