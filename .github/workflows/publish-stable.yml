@@ -36,6 +36,10 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Upgrade npm for OIDC trusted publishing
+        # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22 ships npm 10.x.
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -81,10 +85,11 @@ jobs:
         continue-on-error: true
 
       - name: Publish to NPM (latest)
+        # Authenticated via OIDC trusted publishing (no NODE_AUTH_TOKEN); the
+        # job's `id-token: write` permission lets npm mint a short-lived token.
+        # Provenance attestations are generated automatically.
         if: steps.version-check.outputs.exists != 'true'
         run: npm publish --tag latest
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract release notes
         id: extract-notes
