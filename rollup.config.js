@@ -62,6 +62,7 @@ const esConfig = {
     entryFileNames: '[name].js'
   },
   plugins: basePlugins,
+  /** @param {import('rollup').RollupLog} warning @param {(w: import('rollup').RollupLog) => void} warn */
   onwarn(warning, warn) {
     // Suppress certain warnings
     if (warning.code === 'THIS_IS_UNDEFINED') return;
@@ -90,6 +91,7 @@ const umdConfig = {
     }
   },
   plugins: [...basePlugins, commonjs()],
+  /** @param {import('rollup').RollupLog} warning @param {(w: import('rollup').RollupLog) => void} warn */
   onwarn(warning, warn) {
     if (warning.code === 'THIS_IS_UNDEFINED') return;
     if (warning.code === 'EMPTY_BUNDLE') return;

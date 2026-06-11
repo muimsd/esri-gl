@@ -84,13 +84,15 @@ const FeatureServiceHooksDemo: React.FC = () => {
           map.removeLayer(LAYER_ID);
         }
 
+        // The service's default style is dynamic, so it can't satisfy a specific
+        // LayerSpecification statically.
         map.addLayer({
           id: LAYER_ID,
           type: typedLayerType,
           source: SOURCE_ID,
           layout,
           paint,
-        });
+        } as maplibregl.AddLayerObject);
       } catch (err) {
         console.warn('Failed to apply feature style, using fallback.', err);
         if (map.getLayer(LAYER_ID)) {

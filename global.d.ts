@@ -10,3 +10,5 @@ declare module 'react-map-gl/maplibre' {
   export * from '@vis.gl/react-maplibre';
   export { Map as default } from '@vis.gl/react-maplibre';
 }
+// Injected by vite (define in vite.config.js).
+declare const __APP_VERSION__: string;

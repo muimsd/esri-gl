@@ -78,6 +78,13 @@ The Husky pre-commit hook runs the full validate gate.
 - Rollup externalizes `@esri/*` (and other runtime deps) in the **ESM** and **`.d.ts`** builds, but
   **bundles** them in the **UMD/CDN** build (`dist/index.umd.js`). If you add a runtime dependency,
   update `commonExternal` in `rollup.config.js`.
+- TypeScript is **solution-style**: the root `tsconfig.json` is references-only (checks nothing
+  itself — don't point scripts at it). `type-check` runs the three projects explicitly:
+  `tsconfig.app.json` (library + demo, **excludes `src/tests`**), `tsconfig.test.json` (library +
+  tests with jest types; ts-jest uses it), `tsconfig.node.json` (JS config files, `checkJs`).
+  Keep tests out of the app project: the jest maplibre mock's ambient `declare module 'maplibre-gl'`
+  (`src/tests/react-map-gl/__mocks__/maplibre-gl.d.ts`) shadows the real maplibre types for any
+  project that includes it. Rollup builds with a separate `tsconfig.build.json`.
 - Jest stubs the ESM-only `pbf` package via `moduleNameMapper` (`src/tests/__mocks__/pbf.js`) — it
   is pulled in transitively by `@esri/arcgis-rest-feature-service` and would otherwise break the
   loader. Tests mock `global.fetch`; `@esri/arcgis-rest-request` parses by `params.f`, so
