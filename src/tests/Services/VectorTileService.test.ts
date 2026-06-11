@@ -194,10 +194,11 @@ describe('VectorTileService', () => {
       const metadata = await service.getMetadata();
 
       expect(metadata).toEqual(mockMetadata);
-      expect(mockGetServiceDetails).toHaveBeenCalledWith(
-        'https://example.com/VectorTileServer',
-        undefined
-      );
+      expect(mockGetServiceDetails).toHaveBeenCalledWith('https://example.com/VectorTileServer', {
+        token: undefined,
+        apiKey: undefined,
+        authentication: undefined,
+      });
     });
 
     it('should handle metadata fetch errors', async () => {
@@ -406,8 +407,8 @@ describe('VectorTileService', () => {
       const style = await service.getStyle();
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://example.com/VectorTileServer/resources/styles/root.json',
-        undefined
+        expect.stringContaining('https://example.com/VectorTileServer/resources/styles/root.json'),
+        expect.objectContaining({ method: 'GET' })
       );
 
       expect(style).toEqual({
@@ -467,6 +468,7 @@ describe('VectorTileService', () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 404,
+        json: () => Promise.resolve({}),
       });
 
       const options: VectorTileServiceOptions = {
@@ -475,7 +477,8 @@ describe('VectorTileService', () => {
 
       const service = new VectorTileService('test-source', mockMap, options);
 
-      await expect(service.getStyle()).rejects.toThrow('Failed to fetch style: 404');
+      // arcgis-rest-request throws an ArcGISRequestError on HTTP failure.
+      await expect(service.getStyle()).rejects.toThrow();
     });
 
     it('should handle style fetch network errors', async () => {
@@ -545,7 +548,7 @@ describe('VectorTileService', () => {
       );
     });
 
-    it('should use fetchOptions for style requests', async () => {
+    it('should request the style URL through the request layer', async () => {
       const mockStyleData = {
         layers: [
           {
@@ -576,8 +579,8 @@ describe('VectorTileService', () => {
       await service.getStyle();
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://example.com/VectorTileServer/resources/styles/root.json',
-        undefined
+        expect.stringContaining('https://example.com/VectorTileServer/resources/styles/root.json'),
+        expect.objectContaining({ method: 'GET' })
       );
     });
 
@@ -697,25 +700,21 @@ describe('VectorTileService', () => {
     });
   });
 
-  describe('fetchOptions Integration', () => {
-    it('should pass fetchOptions to getServiceDetails for metadata', async () => {
-      const fetchOptions = {
-        headers: { 'X-API-Key': 'secret123' },
-        timeout: 5000,
-      };
-
+  describe('Auth Integration', () => {
+    it('should pass auth options to getServiceDetails for metadata', async () => {
       const options = {
         url: 'https://example.com/VectorTileServer',
-        fetchOptions,
-      } as VectorTileServiceOptions & { fetchOptions: RequestInit };
+        token: 'secret123',
+      } as VectorTileServiceOptions & { token: string };
 
       const service = new VectorTileService('test-source', mockMap, options);
       await service.getMetadata();
 
-      expect(mockGetServiceDetails).toHaveBeenCalledWith(
-        'https://example.com/VectorTileServer',
-        fetchOptions
-      );
+      expect(mockGetServiceDetails).toHaveBeenCalledWith('https://example.com/VectorTileServer', {
+        token: 'secret123',
+        apiKey: undefined,
+        authentication: undefined,
+      });
     });
   });
 

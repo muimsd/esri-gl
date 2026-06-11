@@ -111,25 +111,32 @@ describe('Utils', () => {
 
       const result = await getServiceDetails('https://example.com/MapServer');
 
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', {});
+      // Requests now flow through @esri/arcgis-rest-request; the URL always
+      // carries f=json and fetch options are managed by the client.
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/MapServer?f=json',
+        expect.objectContaining({ method: 'GET' })
+      );
       expect(result).toEqual(mockMetadata);
     });
 
-    it('should pass custom fetch options', async () => {
+    it('should pass authentication options', async () => {
       const mockMetadata = { serviceDescription: 'Test' };
-      const fetchOptions = {
-        method: 'POST',
-        headers: { Authorization: 'Bearer token123' },
-      };
 
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockMetadata),
       } as Response);
 
-      await getServiceDetails('https://example.com/MapServer', fetchOptions);
+      // The signature is now getServiceDetails(url, { token?, apiKey?, authentication? }).
+      const result = await getServiceDetails('https://example.com/MapServer', {
+        apiKey: 'my-api-key',
+      });
 
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', fetchOptions);
+      const fetchUrl = mockFetch.mock.calls[0][0] as string;
+      expect(fetchUrl).toContain('f=json');
+      expect(fetchUrl).toContain('token=my-api-key');
+      expect(result).toEqual(mockMetadata);
     });
 
     it('should handle network errors', async () => {
@@ -141,25 +148,27 @@ describe('Utils', () => {
     });
 
     it('should handle HTTP errors', async () => {
+      // arcgis-rest reads the error body, so the mock must provide json().
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
-        json: () => Promise.resolve({ error: 'Service not found' }),
+        statusText: 'Not Found',
+        json: () => Promise.resolve({}),
       } as Response);
 
-      // Should throw an error for non-ok HTTP responses
-      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
-        'Failed to fetch service details: HTTP 404'
-      );
+      // arcgis-rest throws an ArcGISRequestError whose message/code reflect the HTTP status.
+      await expect(getServiceDetails('https://example.com/MapServer')).rejects.toMatchObject({
+        code: 'HTTP 404',
+      });
     });
 
     it('should handle ESRI error responses', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ error: { message: 'Service not found' } }),
+        json: () => Promise.resolve({ error: { code: 400, message: 'Service not found' } }),
       } as Response);
 
-      // Should throw an error for ESRI error responses
+      // ESRI JSON errors throw an ArcGISRequestError; the message is prefixed with the code.
       await expect(getServiceDetails('https://example.com/MapServer')).rejects.toThrow(
         'Service not found'
       );
@@ -184,7 +193,7 @@ describe('Utils', () => {
         json: () => Promise.resolve(mockMetadata),
       } as Response);
 
-      await getServiceDetails('https://example.com/MapServer', {}, 'my-token');
+      await getServiceDetails('https://example.com/MapServer', { token: 'my-token' });
 
       const fetchUrl = mockFetch.mock.calls[0][0] as string;
       expect(fetchUrl).toContain('token=my-token');
@@ -200,7 +209,7 @@ describe('Utils', () => {
 
       await getServiceDetails('');
 
-      expect(mockFetch).toHaveBeenCalledWith('?f=json', {});
+      expect(mockFetch).toHaveBeenCalledWith('?f=json', expect.objectContaining({ method: 'GET' }));
     });
   });
 
@@ -352,7 +361,10 @@ describe('Utils', () => {
       const cleanedUrl = cleanTrailingSlash('https://example.com/MapServer/');
       const result = await getServiceDetails(cleanedUrl);
 
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/MapServer?f=json', {});
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/MapServer?f=json',
+        expect.objectContaining({ method: 'GET' })
+      );
       expect(result).toEqual(mockMetadata);
     });
   });

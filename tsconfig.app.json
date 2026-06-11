@@ -31,5 +31,9 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "global.d.ts"]
+  "include": ["src", "global.d.ts"],
+  // Tests are type-checked by tsconfig.test.json (jest types); keeping them out
+  // also keeps the jest mock's ambient `declare module 'maplibre-gl'` from
+  // shadowing the real maplibre-gl types in this project.
+  "exclude": ["src/tests"]
 }

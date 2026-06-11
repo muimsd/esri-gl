@@ -49,7 +49,7 @@ map.addLayer({
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | url | `string` | | **Required** URL of the MapService (does not end in a number) |
-| fetchOptions | `object` | | Options passed to [fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) for authorization headers |
+| fetchOptions | `object` | | Deprecated — no longer forwarded to requests; use `authentication` instead. |
 | layers | `Array<string>` | | Array of layer IDs to restrict which layers to show (e.g., `[1, 2, 3]`) |
 | dynamicLayers | `Array<DynamicLayer>` | | Server-side layer styling and filtering configuration |
 | format | `string` | `'png24'` | Output format of the image |
@@ -58,7 +58,11 @@ map.addLayer({
 | from | `Date` | | Start date for time-enabled layers |
 | to | `Date` | | End date for time-enabled layers |
 | token | `string` | | Authentication token for secured services |
+| apiKey | `string` | | ArcGIS Location Platform API key (sent as the `token` parameter) |
+| authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
 | getAttributionFromService | `boolean` | `true` | Retrieve copyrightText from service and add as map attribution |
+
+> Authentication runs on [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js). See the [Authentication guide](../guides/authentication) for tokens, API keys, and auth managers.
 
 ## Dynamic Layers
 

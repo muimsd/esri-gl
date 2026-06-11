@@ -5,6 +5,7 @@ export { EsriImageLayer } from './react-map-gl/components/EsriImageLayer';
 export { EsriVectorTileLayer } from './react-map-gl/components/EsriVectorTileLayer';
 export { EsriVectorBasemapLayer } from './react-map-gl/components/EsriVectorBasemapLayer';
 export { EsriFeatureLayer } from './react-map-gl/components/EsriFeatureLayer';
+export { EsriPortalLayer } from './react-map-gl/components/EsriPortalLayer';
 
 // Hooks specifically for react-map-gl
 export { useEsriMapboxLayer } from './react-map-gl/hooks/useEsriMapboxLayer';
@@ -18,6 +19,7 @@ export type {
   EsriVectorTileLayerProps as ReactMapGLEsriVectorTileLayerProps,
   EsriVectorBasemapLayerProps as ReactMapGLEsriVectorBasemapLayerProps,
   EsriFeatureLayerProps as ReactMapGLEsriFeatureLayerProps,
+  EsriPortalLayerProps as ReactMapGLEsriPortalLayerProps,
 } from './react-map-gl/types';
 
 // Re-export everything from index

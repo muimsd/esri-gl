@@ -1,5 +1,16 @@
 // Type definitions for esri-gl
 export type { Map } from 'maplibre-gl';
+import type { EsriAuthentication } from '@/request';
+export type { EsriAuthentication, EsriAuthOptions } from '@/request';
+
+// Prefer the ArcGIS REST JS package types as the single source of truth; the
+// names below are esri-gl aliases of them (kept for backwards-compatible naming).
+import type { IExtent, IField, IFeatureSet } from '@esri/arcgis-rest-request';
+import type {
+  IEditFeatureResult,
+  IApplyEditsResult,
+  IAttachmentInfo,
+} from '@esri/arcgis-rest-feature-service';
 export interface ServiceMetadata {
   attribution?: string;
   copyrightText?: string;
@@ -24,6 +35,12 @@ export interface EsriServiceOptions {
   transparent?: boolean;
   getAttributionFromService?: boolean;
   time?: number[] | false;
+  /** Static token sent as the `token` parameter. */
+  token?: string;
+  /** ArcGIS Location Platform API key. */
+  apiKey?: string;
+  /** An ArcGIS REST JS authentication manager (takes precedence over token/apiKey). */
+  authentication?: EsriAuthentication;
 }
 
 export interface RasterSourceOptions {
@@ -90,7 +107,8 @@ export interface FeatureServiceOptions {
   useBoundingBox?: boolean; // Enable screen bounding box filtering for better performance
   useVectorTiles?: boolean; // Use vector tiles instead of GeoJSON
   token?: string;
-  apiKey?: string; // API key sent via X-Esri-Authorization header
+  apiKey?: string; // ArcGIS Location Platform API key
+  authentication?: EsriAuthentication; // ArcGIS REST JS authentication manager
   // Not standard query params but kept for API symmetry; ignored for query URL
   layers?: number[] | number;
 }
@@ -98,6 +116,9 @@ export interface FeatureServiceOptions {
 export interface VectorTileServiceOptions {
   url: string;
   getAttributionFromService?: boolean;
+  token?: string;
+  apiKey?: string;
+  authentication?: EsriAuthentication;
 }
 
 export interface VectorBasemapStyleOptions {
@@ -269,33 +290,12 @@ export interface StatisticResult {
   attributes: Record<string, unknown>;
 }
 
-export interface FieldInfo {
-  name: string;
-  type:
-    | 'esriFieldTypeOID'
-    | 'esriFieldTypeString'
-    | 'esriFieldTypeInteger'
-    | 'esriFieldTypeSmallInteger'
-    | 'esriFieldTypeDouble'
-    | 'esriFieldTypeSingle'
-    | 'esriFieldTypeDate'
-    | 'esriFieldTypeGeometry'
-    | 'esriFieldTypeBlob'
-    | 'esriFieldTypeRaster'
-    | 'esriFieldTypeGUID'
-    | 'esriFieldTypeGlobalID'
-    | 'esriFieldTypeXML';
-  alias?: string;
+/** Layer field metadata. Alias of `IField` (@esri/arcgis-rest-request). */
+export type FieldInfo = IField & {
   length?: number;
   nullable?: boolean;
   defaultValue?: unknown;
-  domain?: {
-    type: 'codedValue' | 'range';
-    name?: string;
-    codedValues?: Array<{ name: string; code: unknown }>;
-    range?: [number, number];
-  };
-}
+};
 
 // Layer metadata
 export interface LayerInfo {
@@ -343,32 +343,14 @@ export interface LayerMetadata extends LayerInfo {
   }>;
 }
 
-// Spatial extent
-export interface Extent {
-  xmin: number;
-  ymin: number;
-  xmax: number;
-  ymax: number;
-  spatialReference?: {
-    wkid?: number;
-    latestWkid?: number;
-  };
-}
+// Spatial extent — alias of `IExtent` (@esri/arcgis-rest-request).
+export type Extent = IExtent;
 
-// Feature set for query results
-export interface FeatureSet {
-  features: Array<{
-    attributes: Record<string, unknown>;
-    geometry?: Record<string, unknown>;
-  }>;
-  geometryType?: string;
-  spatialReference?: {
-    wkid?: number;
-    latestWkid?: number;
-  };
-  fields?: FieldInfo[];
+// Feature set for query results — alias of `IFeatureSet`
+// (@esri/arcgis-rest-request) plus the query pagination flag.
+export type FeatureSet = IFeatureSet & {
   exceededTransferLimit?: boolean;
-}
+};
 
 // Layer query options
 export interface LayerQueryOptions {
@@ -490,27 +472,17 @@ export interface AGOLServiceError {
   details?: string[];
 }
 
-export interface EditResult {
-  objectId: number;
-  globalId?: string;
-  success: boolean;
-  error?: AGOLServiceError;
-}
+/** Result of a single add/update/delete. Alias of `IEditFeatureResult`. */
+export type EditResult = IEditFeatureResult;
 
-export interface ApplyEditsResult {
-  addResults?: EditResult[];
-  updateResults?: EditResult[];
-  deleteResults?: EditResult[];
-}
+/** Result of an applyEdits transaction. Alias of `IApplyEditsResult`. */
+export type ApplyEditsResult = IApplyEditsResult;
 
-export interface AttachmentInfo {
-  id: number;
+/** Feature attachment metadata. Alias of `IAttachmentInfo` plus optional extras. */
+export type AttachmentInfo = IAttachmentInfo & {
   globalId?: string;
-  name: string;
-  contentType: string;
-  size: number;
   keywords?: string;
-}
+};
 
 export interface PaginatedFeatureCollection extends GeoJSON.FeatureCollection {
   exceededTransferLimit?: boolean;

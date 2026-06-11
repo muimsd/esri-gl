@@ -13,6 +13,7 @@ export function useFeatureService({
 }: UseFeatureServiceOptions): UseEsriServiceResult<FeatureService> {
   return useEsriService(
     mapInstance => new FeatureService(sourceId, mapInstance, options, sourceOptions),
-    map
+    map,
+    [sourceId, options.url, options.where, options.outFields, options.token, options.apiKey]
   );
 }

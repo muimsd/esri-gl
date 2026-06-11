@@ -209,6 +209,28 @@ describe('ImageService', () => {
       expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expectedSource);
     });
 
+    it('should send apiKey as the token parameter in the export tile URL', () => {
+      new ImageService('test-source', mockMap, {
+        url: 'https://example.com/ImageServer',
+        apiKey: 'my-api-key',
+      });
+
+      const source = mockMap.addSource.mock.calls[0][1] as { tiles: string[] };
+      expect(source.tiles[0]).toContain('token=my-api-key');
+    });
+
+    it('should prefer token over apiKey in the export tile URL', () => {
+      new ImageService('test-source', mockMap, {
+        url: 'https://example.com/ImageServer',
+        token: 'tok',
+        apiKey: 'my-api-key',
+      });
+
+      const source = mockMap.addSource.mock.calls[0][1] as { tiles: string[] };
+      expect(source.tiles[0]).toContain('token=tok');
+      expect(source.tiles[0]).not.toContain('my-api-key');
+    });
+
     it('should include custom tileSize from raster options', () => {
       const options: ImageServiceOptions = {
         url: 'https://example.com/ImageServer',
@@ -374,15 +396,16 @@ describe('ImageService', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('https://example.com/ImageServer/identify'),
-        undefined
+        expect.objectContaining({ method: 'POST' })
       );
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
-      expect(callUrl).toContain('sr=4326');
-      expect(callUrl).toContain('geometryType=esriGeometryPoint');
-      expect(callUrl).toContain('returnGeometry=false');
-      expect(callUrl).toContain('f=json');
-      expect(callUrl).toContain(
+      // Params are now sent as a URL-encoded request body via arcgis-rest-request.
+      const callBody = mockFetch.mock.calls[0][1]?.body as string;
+      expect(callBody).toContain('sr=4326');
+      expect(callBody).toContain('geometryType=esriGeometryPoint');
+      expect(callBody).toContain('returnGeometry=false');
+      expect(callBody).toContain('f=json');
+      expect(callBody).toContain(
         `geometry=${encodeURIComponent(
           JSON.stringify({
             x: point.lng,
@@ -410,8 +433,8 @@ describe('ImageService', () => {
 
       await service.identify({ lng: -118.2437, lat: 34.0522 }, true);
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
-      expect(callUrl).toContain('returnGeometry=true');
+      const callBody = mockFetch.mock.calls[0][1]?.body as string;
+      expect(callBody).toContain('returnGeometry=true');
     });
 
     it('should handle identify request errors', async () => {
@@ -680,9 +703,9 @@ describe('ImageService', () => {
 
       await service.identify({ lng: -118.2437, lat: 34.0522 });
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const callBody = mockFetch.mock.calls[0][1]?.body as string;
       const expectedTimeParam = `time=${fromDate.valueOf()}%2C${toDate.valueOf()}`;
-      expect(callUrl).toContain(expectedTimeParam);
+      expect(callBody).toContain(expectedTimeParam);
     });
   });
 
@@ -771,11 +794,11 @@ describe('ImageService', () => {
 
       await service.setAttributionFromService();
 
-      expect(mockGetServiceDetails).toHaveBeenCalledWith(
-        'https://example.com/ImageServer',
-        undefined,
-        undefined
-      );
+      expect(mockGetServiceDetails).toHaveBeenCalledWith('https://example.com/ImageServer', {
+        token: undefined,
+        apiKey: undefined,
+        authentication: undefined,
+      });
       expect(mockUpdateAttribution).toHaveBeenCalledWith(
         'Fetched Attribution',
         'test-source',
@@ -919,9 +942,9 @@ describe('ImageService', () => {
 
       await service.identify({ lng: -180, lat: 85 });
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
-      expect(callUrl).toContain('x%22%3A-180');
-      expect(callUrl).toContain('y%22%3A85');
+      const callBody = mockFetch.mock.calls[0][1]?.body as string;
+      expect(callBody).toContain('x%22%3A-180');
+      expect(callBody).toContain('y%22%3A85');
     });
   });
 });

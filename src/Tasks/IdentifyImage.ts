@@ -14,11 +14,6 @@ export interface IdentifyImageOptions {
   f?: string;
 }
 
-export interface PixelValue {
-  attributes: Record<string, unknown>;
-  geometry?: unknown;
-}
-
 export interface IdentifyImageResult {
   objectId?: number;
   name?: string;
@@ -239,5 +234,3 @@ export class IdentifyImage extends Task {
 export function identifyImage(options: string | IdentifyImageOptions): IdentifyImage {
   return new IdentifyImage(options);
 }
-
-export default identifyImage;

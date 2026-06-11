@@ -170,7 +170,7 @@ describe('DynamicMapService', () => {
       const identifyCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
       const identifyUrl = identifyCall[0] as string;
 
-      expect(identifyUrl).toContain('/identify?');
+      expect(identifyUrl).toContain('/identify');
 
       expect(results).toEqual({
         results: expect.arrayContaining([
@@ -188,9 +188,9 @@ describe('DynamicMapService', () => {
 
       // Check the identify call (should be the last/second call)
       const identifyCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-      const url = identifyCall[0] as string;
+      const body = (identifyCall[1] as RequestInit)?.body as string;
 
-      expect(url).toContain('returnGeometry=true');
+      expect(body).toContain('returnGeometry=true');
     });
 
     it('should handle identify errors', async () => {
@@ -941,9 +941,11 @@ describe('DynamicMapService', () => {
 
         const result = await service.getLayerStatistics(1, stats);
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/1/query?f=json&where=1%3D1&outStatistics=')
-        );
+        const statsCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const statsReq = String(statsCall[0]) + ((statsCall[1] as RequestInit)?.body ?? '');
+        expect(statsReq).toContain('/1/query');
+        expect(statsReq).toContain('where=1%3D1');
+        expect(statsReq).toContain('outStatistics=');
         expect(result).toEqual(mockResponse.features);
       });
 
@@ -968,9 +970,10 @@ describe('DynamicMapService', () => {
           }
         );
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringMatching(/where=STATE.*California.*groupByFieldsForStatistics=COUNTY/)
-        );
+        const groupCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const groupReq = String(groupCall[0]) + ((groupCall[1] as RequestInit)?.body ?? '');
+        expect(groupReq).toMatch(/where=STATE.*California/);
+        expect(groupReq).toContain('groupByFieldsForStatistics=COUNTY');
       });
     });
 
@@ -996,7 +999,10 @@ describe('DynamicMapService', () => {
           returnGeometry: true,
         });
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/2/query?f=json&where=ID'));
+        const queryCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const queryReq = String(queryCall[0]) + ((queryCall[1] as RequestInit)?.body ?? '');
+        expect(queryReq).toContain('/2/query');
+        expect(queryReq).toContain('where=ID');
         expect(result).toEqual(mockResponse);
       });
 
@@ -1023,11 +1029,11 @@ describe('DynamicMapService', () => {
           spatialRel: 'esriSpatialRelContains',
         });
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringMatching(
-            /geometry=.*geometryType=esriGeometryPolygon.*spatialRel=esriSpatialRelContains/
-          )
-        );
+        const spatialCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const spatialReq = String(spatialCall[0]) + ((spatialCall[1] as RequestInit)?.body ?? '');
+        expect(spatialReq).toContain('geometry=');
+        expect(spatialReq).toContain('geometryType=esriGeometryPolygon');
+        expect(spatialReq).toContain('spatialRel=esriSpatialRelContains');
       });
     });
 
@@ -1049,11 +1055,15 @@ describe('DynamicMapService', () => {
 
         const result = await service.exportMapImage(exportOptions);
 
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(
-            '/export?f=image&bbox=-100%2C30%2C-80%2C50&size=800%2C600&format=png&transparent=true&dpi=150'
-          )
-        );
+        const exportCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const exportReq = String(exportCall[0]) + ((exportCall[1] as RequestInit)?.body ?? '');
+        expect(exportReq).toContain('/export');
+        expect(exportReq).toContain('f=image');
+        expect(exportReq).toContain('bbox=-100%2C30%2C-80%2C50');
+        expect(exportReq).toContain('size=800%2C600');
+        expect(exportReq).toContain('format=png');
+        expect(exportReq).toContain('transparent=true');
+        expect(exportReq).toContain('dpi=150');
         expect(result).toEqual(mockBlob);
       });
 
@@ -1075,7 +1085,10 @@ describe('DynamicMapService', () => {
           dynamicLayers: service.esriServiceOptions.dynamicLayers as any,
         });
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/dynamicLayers=/));
+        const dynExportCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const dynExportReq =
+          String(dynExportCall[0]) + ((dynExportCall[1] as RequestInit)?.body ?? '');
+        expect(dynExportReq).toMatch(/dynamicLayers=/);
       });
     });
 
@@ -1103,7 +1116,10 @@ describe('DynamicMapService', () => {
 
         const legend = await service.generateLegend();
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/legend?f=json'));
+        const legendCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        expect(legendCall[0]).toContain('/legend');
+        const legendBody = (legendCall[1] as RequestInit)?.body as string;
+        expect(legendBody).toContain('f=json');
         expect(legend).toEqual(mockResponse.layers);
       });
 
@@ -1115,7 +1131,9 @@ describe('DynamicMapService', () => {
 
         await service.generateLegend([1, 3]);
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('layers=1%2C3'));
+        const legendCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        const legendBody = (legendCall[1] as RequestInit)?.body as string;
+        expect(legendBody).toContain('layers=1%2C3');
       });
     });
 
@@ -1138,7 +1156,8 @@ describe('DynamicMapService', () => {
 
         const info = await service.getLayerInfo(1);
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/1?f=json'));
+        const infoCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        expect(infoCall[0]).toContain('/1');
         expect(info).toEqual(mockResponse);
       });
 
@@ -1157,7 +1176,9 @@ describe('DynamicMapService', () => {
 
         const layers = await service.discoverLayers();
 
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/MapServer\?f=json$/));
+        const discoverCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+        // getAllLayersAndTables targets the service's /layers endpoint
+        expect(discoverCall[0]).toMatch(/\/MapServer\/layers$/);
         expect(layers).toEqual(mockResponse.layers);
       });
 
@@ -1265,7 +1286,7 @@ describe('DynamicMapService', () => {
               outStatisticFieldName: 'count',
             },
           ])
-        ).rejects.toThrow('Statistics query failed: Statistics query failed');
+        ).rejects.toThrow('Statistics query failed');
       });
 
       it('should handle feature query errors', async () => {
@@ -1278,14 +1299,16 @@ describe('DynamicMapService', () => {
         } as Response);
 
         await expect(service.queryLayerFeatures(1, { where: '1=1' })).rejects.toThrow(
-          'Layer query failed: Query failed'
+          'Query failed'
         );
       });
 
       it('should handle export errors', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
+          status: 500,
           statusText: 'Internal Server Error',
+          json: () => Promise.resolve({}),
         } as Response);
 
         await expect(
@@ -1293,7 +1316,7 @@ describe('DynamicMapService', () => {
             bbox: [-100, 30, -80, 50],
             size: [800, 600],
           })
-        ).rejects.toThrow('Export failed: Internal Server Error');
+        ).rejects.toThrow();
       });
 
       it('should handle legend generation errors', async () => {
@@ -1305,9 +1328,7 @@ describe('DynamicMapService', () => {
             }),
         } as Response);
 
-        await expect(service.generateLegend()).rejects.toThrow(
-          'Legend generation failed: Legend generation failed'
-        );
+        await expect(service.generateLegend()).rejects.toThrow('Legend generation failed');
       });
 
       it('should handle layer info errors', async () => {
@@ -1319,9 +1340,7 @@ describe('DynamicMapService', () => {
             }),
         } as Response);
 
-        await expect(service.getLayerInfo(999)).rejects.toThrow(
-          'Layer info request failed: Layer not found'
-        );
+        await expect(service.getLayerInfo(999)).rejects.toThrow('Layer not found');
       });
 
       it('should handle missing extent error', async () => {
@@ -1390,9 +1409,10 @@ describe('DynamicMapService', () => {
 
       const identifyCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
       const identifyUrl = identifyCall[0] as string;
+      const identifyBody = (identifyCall[1] as RequestInit)?.body as string;
 
-      expect(identifyUrl).toContain('/identify?');
-      expect(identifyUrl).toContain('token=test-token');
+      expect(identifyUrl).toContain('/identify');
+      expect(identifyBody).toContain('token=test-token');
     });
 
     it('should pass token to getServiceDetails when fetching metadata', async () => {

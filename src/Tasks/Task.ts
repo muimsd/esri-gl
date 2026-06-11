@@ -1,14 +1,19 @@
 import { cleanTrailingSlash } from '@/utils';
+import { esriRequest } from '@/request';
+import type { EsriAuthentication } from '@/request';
 import { Service } from '@/Services/Service';
 import type { ServiceCallback } from '@/Services/Service';
 
 export interface TaskOptions {
   url?: string;
+  /** @deprecated No longer applied; use `authentication` or a global fetch override. */
   proxy?: string | boolean;
   useCors?: boolean;
   requestParams?: Record<string, unknown>;
   token?: string;
   apikey?: string;
+  /** An ArcGIS REST JS authentication manager (takes precedence over token/apikey). */
+  authentication?: EsriAuthentication;
 }
 
 /**
@@ -128,7 +133,10 @@ export class Task {
   }
 
   /**
-   * Direct HTTP request (when not using a service)
+   * Direct HTTP request (when not using a service), delegated to
+   * `@esri/arcgis-rest-request`. Token/apiKey supplied either as task options
+   * or as `token`/`apiKey` params are routed through the auth layer rather than
+   * being sent as raw query parameters.
    */
   private _request(
     method: string,
@@ -141,64 +149,20 @@ export class Task {
       return;
     }
 
-    // Ensure proper URL construction with path separator
-    const baseUrl = this.options.url.endsWith('/')
-      ? this.options.url.slice(0, -1)
-      : this.options.url;
+    const baseUrl = cleanTrailingSlash(this.options.url);
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    const fullServiceUrl = `${baseUrl}${cleanPath}`;
+    const url = `${baseUrl}${cleanPath}`;
 
-    const url = this.options.proxy ? `${this.options.proxy}?${fullServiceUrl}` : fullServiceUrl;
+    const { token, apiKey, ...restParams } = params;
 
-    // Convert params to URLSearchParams
-    const searchParams = new URLSearchParams();
-    Object.keys(params).forEach(key => {
-      const value = params[key];
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          searchParams.append(key, value.join(','));
-        } else if (typeof value === 'object') {
-          searchParams.append(key, JSON.stringify(value));
-        } else {
-          searchParams.append(key, value.toString());
-        }
-      }
-    });
-
-    const fullUrl = method === 'GET' ? `${url}?${searchParams.toString()}` : url;
-
-    const fetchOptions: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    };
-
-    if (method === 'POST') {
-      fetchOptions.body = searchParams.toString();
-    }
-
-    fetch(fullUrl, fetchOptions)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        // Check for AGOL JSON-level errors (HTTP 200 with error body)
-        if (data && typeof data === 'object' && data.error) {
-          const err = new Error(data.error.message || 'ArcGIS service error') as Error & {
-            code?: number;
-            details?: string[];
-          };
-          err.code = data.error.code;
-          err.details = data.error.details;
-          callback(err);
-          return;
-        }
-        callback(undefined, data);
-      })
-      .catch(error => callback(error));
+    esriRequest(url, {
+      params: restParams,
+      httpMethod: method === 'GET' ? 'GET' : 'POST',
+      token: (token as string | undefined) ?? this.options.token,
+      apiKey: (apiKey as string | undefined) ?? this.options.apikey,
+      authentication: this.options.authentication,
+    })
+      .then(data => callback(undefined, data))
+      .catch(error => callback(error as Error));
   }
 }

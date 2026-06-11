@@ -5,6 +5,7 @@ import {
   removeMapSource,
   updateAttribution,
 } from '@/utils';
+import { esriRequest, type EsriAuthentication } from '@/request';
 import type { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface ImageServiceExtendedOptions extends ImageServiceOptions {
@@ -18,7 +19,16 @@ export class ImageService {
   private _map: Map;
   private _defaultEsriOptions: Omit<
     Required<ImageServiceOptions>,
-    'url' | 'renderingRule' | 'mosaicRule' | 'bbox' | 'size' | 'bboxSR' | 'imageSR'
+    | 'url'
+    | 'renderingRule'
+    | 'mosaicRule'
+    | 'bbox'
+    | 'size'
+    | 'bboxSR'
+    | 'imageSR'
+    | 'token'
+    | 'apiKey'
+    | 'authentication'
   >;
   private _serviceMetadata: ServiceMetadata | null = null;
 
@@ -101,7 +111,9 @@ export class ImageService {
       params.append('mosaicRule', JSON.stringify(this.options.mosaicRule));
     if (this.options.renderingRule)
       params.append('renderingRule', JSON.stringify(this.options.renderingRule));
-    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
+    // apiKey is sent as the token URL parameter, matching the request-based paths.
+    const auth = this.esriServiceOptions as { token?: string; apiKey?: string };
+    appendTokenIfExists(params, auth.token ?? auth.apiKey);
 
     return {
       type: 'raster',
@@ -177,12 +189,13 @@ export class ImageService {
 
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
+    const { token, apiKey, authentication } = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
     return new Promise((resolve, reject) => {
-      getServiceDetails(
-        this.esriServiceOptions.url,
-        this.esriServiceOptions.fetchOptions,
-        (this.esriServiceOptions as any).token
-      )
+      getServiceDetails(this.esriServiceOptions.url, { token, apiKey, authentication })
         .then(data => {
           this._serviceMetadata = data;
           resolve(this._serviceMetadata);
@@ -200,7 +213,7 @@ export class ImageService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bounds = (this._map as any).getBounds().toArray();
 
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       sr: '4326',
       geometryType: 'esriGeometryPoint',
       geometry: JSON.stringify({
@@ -214,28 +227,22 @@ export class ImageService {
       returnGeometry: returnGeometry.toString(),
       imageDisplay: `${canvas.width},${canvas.height},${this.options.dpi}`,
       mapExtent: `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`,
-      f: 'json',
+    };
+
+    if (this._time) params.time = this._time;
+
+    const { token, apiKey, authentication } = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
+
+    return esriRequest(`${this.esriServiceOptions.url}/identify`, {
+      params,
+      token,
+      apiKey,
+      authentication,
     });
-
-    if (this._time) params.append('time', this._time);
-    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
-
-    const response = await fetch(
-      `${this.esriServiceOptions.url}/identify?${params.toString()}`,
-      this.esriServiceOptions.fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Identify request failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Identify request failed: ${data.error.message}`);
-    }
-
-    return data;
   }
 
   update(): void {

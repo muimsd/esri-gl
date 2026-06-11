@@ -1,8 +1,12 @@
 import { cleanTrailingSlash, updateAttribution } from '@/utils';
+import { esriRequest } from '@/request';
+import type { EsriAuthentication } from '@/request';
 import type { Map, ServiceMetadata } from '@/types';
 
 export interface ServiceOptions {
   url: string;
+  /** @deprecated The leaflet-style proxy string is no longer applied; configure
+   * a proxy through your `authentication` manager or a global fetch override. */
   proxy?: string | boolean;
   useCors?: boolean;
   timeout?: number;
@@ -10,6 +14,8 @@ export interface ServiceOptions {
   requestParams?: Record<string, unknown>;
   getAttributionFromService?: boolean;
   apiKey?: string;
+  /** An ArcGIS REST JS authentication manager (takes precedence over token/apiKey). */
+  authentication?: EsriAuthentication;
 }
 
 export type ServiceCallback<T = unknown> = (error?: Error, response?: T) => void;
@@ -241,10 +247,9 @@ export class Service {
       callback(error, response as T);
     });
 
+    // Token/apiKey/authentication are applied by the request adapter, not as
+    // raw params, so they are not injected here.
     let finalParams = { ...params };
-    if (this.options.token) {
-      finalParams.token = this.options.token;
-    }
     if (this.options.requestParams) {
       finalParams = { ...finalParams, ...this.options.requestParams };
     }
@@ -303,9 +308,7 @@ export class Service {
     params: Record<string, unknown>,
     callback: (error?: Error, response?: unknown) => void
   ): Promise<void> {
-    const url = this.options.proxy
-      ? `${this.options.proxy}?${this.options.url}${path}`
-      : `${this.options.url}${path}`;
+    const url = `${this.options.url}${path}`;
 
     // Set up abort controller for timeout support
     const controller = new AbortController();
@@ -318,82 +321,23 @@ export class Service {
     }
 
     try {
-      let response: Response;
-      const fetchOptions: RequestInit = { signal: controller.signal };
-
-      // Add API key header if present
-      if (this.options.apiKey) {
-        fetchOptions.headers = {
-          'X-Esri-Authorization': `Bearer ${this.options.apiKey}`,
-        };
-      }
-
-      if (method === 'POST') {
-        const formData = new FormData();
-        Object.keys(params).forEach(key => {
-          const value = params[key];
-          if (value !== undefined && value !== null) {
-            if (typeof value === 'object') {
-              formData.append(key, JSON.stringify(value));
-            } else {
-              formData.append(key, value.toString());
-            }
-          }
-        });
-
-        response = await fetch(url, {
-          ...fetchOptions,
-          method: 'POST',
-          body: formData,
-        });
-      } else {
-        const searchParams = new URLSearchParams();
-        Object.keys(params).forEach(key => {
-          const value = params[key];
-          if (value !== undefined && value !== null) {
-            if (Array.isArray(value)) {
-              searchParams.append(key, value.join(','));
-            } else if (typeof value === 'object') {
-              searchParams.append(key, JSON.stringify(value));
-            } else {
-              searchParams.append(key, value.toString());
-            }
-          }
-        });
-
-        const fullUrl = `${url}?${searchParams.toString()}`;
-        response = await fetch(fullUrl, fetchOptions);
-      }
-
-      if (!response.ok) {
-        const error = new Error(`HTTP error! status: ${response.status}`) as Error & {
-          code?: number;
-        };
-        error.code = response.status;
-        throw error;
-      }
-
-      const data = await response.json();
-
-      // Check for AGOL JSON-level errors (HTTP 200 with error body)
-      if (data && typeof data === 'object' && data.error) {
-        const err = new Error(data.error.message || 'ArcGIS service error') as Error & {
-          code?: number;
-          details?: string[];
-        };
-        err.code = data.error.code;
-        err.details = data.error.details;
-        callback(err);
-        return;
-      }
+      const data = await esriRequest(url, {
+        params,
+        httpMethod: method === 'POST' ? 'POST' : 'GET',
+        signal: controller.signal,
+        token: this.options.token,
+        apiKey: this.options.apiKey,
+        authentication: this.options.authentication,
+      });
 
       callback(undefined, data);
     } catch (error) {
       // Provide clearer error message for timeout
       if (error instanceof Error && error.name === 'AbortError' && this.options.timeout > 0) {
-        const timeoutError = new Error(`Request timed out after ${this.options.timeout}ms`);
-        callback(timeoutError);
+        callback(new Error(`Request timed out after ${this.options.timeout}ms`));
       } else {
+        // ArcGISRequestError exposes a numeric `code` used downstream for
+        // authentication (498/499) detection.
         callback(error as Error);
       }
     } finally {
@@ -469,5 +413,3 @@ export class Service {
 export function service(options: ServiceOptions): Service {
   return new Service(options);
 }
-
-export default service;

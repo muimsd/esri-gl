@@ -10,8 +10,8 @@ import IdentifyFeaturesDemo from './components/esm/IdentifyFeaturesDemo';
 import QueryDemo from './components/esm/QueryDemo';
 import FindDemo from './components/esm/FindDemo';
 import IdentifyImageDemo from './components/esm/IdentifyImageDemo';
+import PortalDemo from './components/esm/PortalDemo';
 
-// import MapLibreHooksDemo from './components/react-hooks/MapLibreHooksDemo';
 import DynamicMapServiceHooksDemo from './components/react-hooks/DynamicMapServiceHooksDemo';
 import TiledMapServiceHooksDemo from './components/react-hooks/TiledMapServiceHooksDemo';
 import FeatureServiceHooksDemo from './components/react-hooks/FeatureServiceHooksDemo';
@@ -22,8 +22,8 @@ import IdentifyFeaturesHooksDemo from './components/react-hooks/IdentifyFeatures
 import QueryHooksDemo from './components/react-hooks/QueryHooksDemo';
 import FindHooksDemo from './components/react-hooks/FindHooksDemo';
 import IdentifyImageHooksDemo from './components/react-hooks/IdentifyImageHooksDemo';
+import PortalHooksDemo from './components/react-hooks/PortalHooksDemo';
 
-// import ReactMapGLMapLibreDemo from './components/react-map-gl/MapLibreReactMapGLDemo';
 import DynamicMapServiceReactMapGLDemo from './components/react-map-gl/DynamicMapServiceReactMapGLDemo';
 import TiledMapServiceReactMapGLDemo from './components/react-map-gl/TiledMapServiceReactMapGLDemo';
 import FeatureServiceReactMapGLDemo from './components/react-map-gl/FeatureServiceReactMapGLDemo';
@@ -34,6 +34,7 @@ import IdentifyFeaturesReactMapGLDemo from './components/react-map-gl/IdentifyFe
 import QueryReactMapGLDemo from './components/react-map-gl/QueryReactMapGLDemo';
 import FindReactMapGLDemo from './components/react-map-gl/FindReactMapGLDemo';
 import IdentifyImageReactMapGLDemo from './components/react-map-gl/IdentifyImageReactMapGLDemo';
+import PortalReactMapGLDemo from './components/react-map-gl/PortalReactMapGLDemo';
 
 type CategoryId = 'esm' | 'react-hooks' | 'react-map-gl';
 
@@ -56,6 +57,7 @@ const ESM_TABS: DemoTab[] = [
   { id: 'dynamic', label: 'Dynamic Map Service', component: DynamicMapServiceDemo },
   { id: 'tiled', label: 'Tiled Map Service', component: TiledMapServiceDemo },
   { id: 'features', label: 'Feature Service', component: FeatureServiceDemo },
+  { id: 'portal', label: 'Portal Item', component: PortalDemo },
   { id: 'image', label: 'Image Service', component: ImageServiceDemo },
   { id: 'vector', label: 'Vector Tile Service', component: VectorTileServiceDemo },
   { id: 'basemap', label: 'Vector Basemap Style', component: VectorBasemapStyleDemo },
@@ -80,6 +82,11 @@ const HOOK_TABS: DemoTab[] = [
     id: 'hooks-feature',
     label: 'Feature Service',
     component: FeatureServiceHooksDemo,
+  },
+  {
+    id: 'hooks-portal',
+    label: 'Portal Item',
+    component: PortalHooksDemo,
   },
   {
     id: 'hooks-image',
@@ -133,6 +140,11 @@ const REACT_MAP_GL_TABS: DemoTab[] = [
     id: 'react-map-gl-feature',
     label: 'Feature Service',
     component: FeatureServiceReactMapGLDemo,
+  },
+  {
+    id: 'react-map-gl-portal',
+    label: 'Portal Item',
+    component: PortalReactMapGLDemo,
   },
   {
     id: 'react-map-gl-image',
@@ -283,7 +295,7 @@ const App: React.FC = () => {
         </nav>
         <a
           className="shell-github"
-          href="https://github.com/esri-gl/esri-gl"
+          href="https://github.com/muimsd/esri-gl"
           target="_blank"
           rel="noopener noreferrer"
         >

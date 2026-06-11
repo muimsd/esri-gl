@@ -21,6 +21,23 @@ All services follow this signature:
 new ServiceClass(sourceId: string, map: Map, esriOptions: Options, sourceOptions?: SourceOptions)
 ```
 
+### Authentication
+
+Every service accepts `token`, `apiKey`, or an `authentication` manager. Requests run on
+[ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js):
+
+```typescript
+new DynamicMapService('source', map, { url: '...', apiKey: 'AAPK…' });
+```
+
+See the [Authentication guide](../guides/authentication) for auth managers and the
+`authenticationrequired` event.
+
+### From a Portal item
+
+Don't have the service URL? Resolve a portal item id or Web Map to services with
+[`serviceFromPortalItem` / `servicesFromWebMap`](../guides/portal-items).
+
 ## Service Comparison
 
 | Service | Data Type | Performance | Customization | Best For |

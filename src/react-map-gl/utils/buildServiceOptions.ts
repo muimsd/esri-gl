@@ -9,6 +9,7 @@ export function applyAuthOptions<T extends object>(options: T, props: EsriAuthPr
   const target = options as Record<string, unknown>;
   if (props.token !== undefined) target.token = props.token;
   if (props.apiKey !== undefined) target.apiKey = props.apiKey;
+  if (props.authentication !== undefined) target.authentication = props.authentication;
   if (props.proxy !== undefined) target.proxy = props.proxy;
   if (props.getAttributionFromService !== undefined)
     target.getAttributionFromService = props.getAttributionFromService;

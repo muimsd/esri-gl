@@ -12,12 +12,15 @@ All components share these common props:
 | sourceId | `string` | Custom source ID (defaults to `id`) |
 | beforeId | `string` | Insert layer before this layer ID |
 | visible | `boolean` | Layer visibility |
-| token | `string` | ArcGIS token sent as `token` query param with every request |
-| apiKey | `string` | ArcGIS API key sent via `X-Esri-Authorization: Bearer` header |
-| proxy | `string \| boolean` | Proxy URL or flag forwarded to the service |
+| token | `string` | ArcGIS token (sent as the `token` request parameter) |
+| apiKey | `string` | ArcGIS Location Platform API key (sent as the `token` parameter) |
+| authentication | `IAuthenticationManager \| string` | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
 | getAttributionFromService | `boolean` | Whether to fetch attribution from the service (default `true`) |
 | requestParams | `Record<string, unknown>` | Extra params merged into every service request |
-| fetchOptions | `RequestInit` | Extra fetch options used by the service |
+| proxy | `string \| boolean` | _Deprecated_ — no longer applied |
+| fetchOptions | `RequestInit` | _Deprecated_ — no longer forwarded to requests |
+
+Requests run on [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js); see the [Authentication guide](../guides/authentication).
 
 :::tip Authenticated services
 Use `token` (or `apiKey`) on any layer component to access secured services:
@@ -165,6 +168,35 @@ import { EsriVectorBasemapLayer } from 'esri-gl/react-map-gl';
   />
 </Map>
 ```
+
+### EsriPortalLayer
+
+Resolves an ArcGIS **portal item id** to the matching service and adds a
+renderer-appropriate layer for it — raster for Dynamic/Tiled/Image services, the
+service's default style for Feature and Vector Tile services.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| itemId | `string` | **Required** ArcGIS portal item id to resolve |
+| layerId | `number` | For multi-layer Feature Services, which sublayer to load (default 0) |
+| portal | `string` | Portal sharing REST URL (defaults to ArcGIS Online) |
+| onResolve | `(result: PortalServiceResult) => void` | Called once the item resolves, with the service/kind/url/title |
+| token / apiKey / authentication | | Standard [auth options](../guides/authentication) |
+
+```tsx
+import { EsriPortalLayer } from 'esri-gl/react-map-gl';
+
+<Map>
+  <EsriPortalLayer
+    id="portal-item"
+    itemId="a1b2c3d4e5f6"
+    token="YOUR_TOKEN"
+    onResolve={({ kind, title }) => console.log(`Loaded ${kind}: ${title}`)}
+  />
+</Map>
+```
+
+See the [Portal Items guide](../guides/portal-items) for how item types map to services.
 
 ## Integration Hooks
 

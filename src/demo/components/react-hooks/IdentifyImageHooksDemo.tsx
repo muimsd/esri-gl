@@ -14,18 +14,19 @@ import { useMapLibreDemo } from './useMapLibreDemo';
 const SOURCE_ID = 'hooks-identify-image-source';
 const LAYER_ID = 'hooks-identify-image-layer';
 
+// Public ArcGIS Image Services (no token required) so identify works anonymously.
 const services = {
   elevation: {
     url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
     name: 'World Elevation',
   },
-  landcover: {
-    url: 'https://landscape6.arcgis.com/arcgis/rest/services/WorldLandCover/ImageServer',
-    name: 'World Land Cover',
+  landsat: {
+    url: 'https://landsat2.arcgis.com/arcgis/rest/services/Landsat/MS/ImageServer',
+    name: 'Landsat (Multispectral)',
   },
-  temperature: {
-    url: 'https://utility.arcgis.com/usrsvcs/servers/4462bf95dc4e4ad59b9ed542e47d6096/rest/services/LiveFeeds/WorldTemperatures/ImageServer',
-    name: 'World Temperatures',
+  sentinel: {
+    url: 'https://sentinel.arcgis.com/arcgis/rest/services/Sentinel2/ImageServer',
+    name: 'Sentinel-2',
   },
 };
 

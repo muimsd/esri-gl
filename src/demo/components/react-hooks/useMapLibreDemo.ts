@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
+import type { StyleSpecification } from 'maplibre-gl';
 import type { Map as EsriMap } from '../../../types';
 
-type MapLibreStyle = string | Record<string, unknown>;
+type MapLibreStyle = string | StyleSpecification;
 
 export interface MapLibreDemoOptions {
   style?: MapLibreStyle;
@@ -54,7 +55,9 @@ export function useMapLibreDemo(options: MapLibreDemoOptions = {}): UseMapLibreD
       zoom: opts.zoom ?? DEFAULT_OPTIONS.zoom,
       pitch: opts.pitch ?? DEFAULT_OPTIONS.pitch,
       bearing: opts.bearing ?? DEFAULT_OPTIONS.bearing,
-      attributionControl: opts.attributionControl ?? DEFAULT_OPTIONS.attributionControl,
+      // MapLibre v5 takes `false` to disable or options to configure; `undefined` keeps the default control.
+      attributionControl:
+        (opts.attributionControl ?? DEFAULT_OPTIONS.attributionControl) ? undefined : false,
     });
 
     mapRef.current = map;

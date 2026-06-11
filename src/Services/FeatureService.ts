@@ -15,11 +15,24 @@
 import * as tilebelt from '@mapbox/tilebelt';
 import tileDecode from 'arcgis-pbf-parser';
 import {
-  appendTokenIfExists,
-  cleanTrailingSlash,
-  removeMapSource,
-  updateAttribution,
-} from '@/utils';
+  queryFeatures,
+  queryRelated,
+  decodeValues,
+  getLayer,
+  addFeatures,
+  updateFeatures,
+  deleteFeatures,
+  applyEdits,
+  getAttachments,
+  deleteAttachments,
+} from '@esri/arcgis-rest-feature-service';
+import { cleanTrailingSlash, removeMapSource, updateAttribution } from '@/utils';
+import {
+  esriRequest,
+  esriRawRequest,
+  resolveAuthentication,
+  type EsriAuthentication,
+} from '@/request';
 import type {
   Map,
   FeatureServiceOptions,
@@ -51,7 +64,7 @@ export interface FeatureServiceExtendedOptions extends FeatureServiceOptions {
   useServiceBounds?: boolean;
   /** Custom projection endpoint URL */
   projectionEndpoint?: string;
-  /** API key sent via X-Esri-Authorization header */
+  /** ArcGIS Location Platform API key (sent as the `token` parameter) */
   apiKey?: string;
 }
 
@@ -113,6 +126,7 @@ export class FeatureService {
   private _serviceMetadata: ExtendedServiceMetadata | null = null;
   private _maxExtent: [number, number, number, number];
   private _boundEvent: (() => void) | null = null;
+  private _removed = false;
   private _format: 'pbf' | 'geojson' = 'pbf';
   private _sourceReadyResolve: (() => void) | null = null;
   private _sourceReadyReject: ((error: Error) => void) | null = null;
@@ -262,6 +276,7 @@ export class FeatureService {
    * Remove the source and clean up event listeners
    */
   remove(): void {
+    this._removed = true;
     this.disableRequests();
     removeMapSource(this._map, this._sourceId);
   }
@@ -460,6 +475,7 @@ export class FeatureService {
   }
 
   private async _findAndMapData(): Promise<void> {
+    if (this._removed) return;
     const z = this._map.getZoom();
 
     if (z < this._esriServiceOptions.minZoom) {
@@ -603,7 +619,7 @@ export class FeatureService {
       ymax: tileBounds[3],
     };
 
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       f: this._format,
       geometry: JSON.stringify(extent),
       where: this._esriServiceOptions.where,
@@ -624,26 +640,23 @@ export class FeatureService {
       spatialRel: 'esriSpatialRelIntersects',
       geometryType: 'esriGeometryEnvelope',
       inSR: '4326',
-    });
+    };
 
     if (this._time) {
-      params.append('time', this._time);
+      params.time = this._time;
     }
 
-    this._appendTokenIfExists(params);
+    const { token, apiKey, authentication } = this._authOptions();
+    const queryUrl = `${this._esriServiceOptions.url}/query`;
 
     try {
-      const response = await fetch(
-        `${this._esriServiceOptions.url}/query?${params.toString()}`,
-        this._esriServiceOptions.fetchOptions
-      );
-
-      if (!response.ok) {
-        console.warn(`Tile fetch failed: HTTP ${response.status}`);
-        return null;
-      }
-
       if (this._format === 'pbf') {
+        const response = await esriRawRequest(queryUrl, {
+          params,
+          token,
+          apiKey,
+          authentication,
+        });
         const buffer = await response.arrayBuffer();
         try {
           const decoded = tileDecode(new Uint8Array(buffer));
@@ -653,8 +666,12 @@ export class FeatureService {
           return null;
         }
       } else {
-        const data = await response.json();
-        this._checkAgolError(data);
+        const data = await esriRequest<GeoJSON.FeatureCollection>(queryUrl, {
+          params,
+          token,
+          apiKey,
+          authentication,
+        });
         return data;
       }
     } catch (error) {
@@ -665,11 +682,19 @@ export class FeatureService {
   }
 
   private _updateFcOnMap(fc: GeoJSON.FeatureCollection): void {
-    const source = this._map.getSource(this._sourceId) as
-      | { setData: (data: GeoJSON.FeatureCollection) => void }
-      | undefined;
-    if (source && 'setData' in source) {
-      source.setData(fc);
+    // Guard against an in-flight tile request resolving after the service/map
+    // was removed (e.g. a moveend handler firing during unmount).
+    const map = this._map as unknown as { style?: unknown; getSource?: (id: string) => unknown };
+    if (this._removed || !map || !map.style || typeof map.getSource !== 'function') return;
+
+    let source: unknown;
+    try {
+      source = map.getSource(this._sourceId);
+    } catch {
+      return;
+    }
+    if (source && typeof source === 'object' && 'setData' in source) {
+      (source as { setData: (data: GeoJSON.FeatureCollection) => void }).setData(fc);
     }
   }
 
@@ -689,25 +714,15 @@ export class FeatureService {
   private async _getServiceMetadata(): Promise<ExtendedServiceMetadata> {
     if (this._serviceMetadata !== null) return this._serviceMetadata;
 
-    const params = new URLSearchParams({ f: 'json' });
-    this._appendTokenIfExists(params);
+    // The FeatureService url is a layer endpoint, so the layer definition
+    // (supportedQueryFormats, uniqueIdField, extent, geometryType, …) comes
+    // from the typed `getLayer` helper.
+    const data = await getLayer({
+      url: this._esriServiceOptions.url,
+      authentication: this._authentication(),
+    });
 
-    const response = await fetch(
-      `${this._esriServiceOptions.url}?${params.toString()}`,
-      this._esriServiceOptions.fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch service metadata: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(JSON.stringify(data.error));
-    }
-
-    this._serviceMetadata = data as ExtendedServiceMetadata;
+    this._serviceMetadata = data as unknown as ExtendedServiceMetadata;
     return this._serviceMetadata;
   }
 
@@ -719,7 +734,7 @@ export class FeatureService {
     radius: number = 20,
     returnGeometry: boolean = false
   ): Promise<GeoJSON.FeatureCollection> {
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       sr: '4326',
       geometryType: 'esriGeometryPoint',
       geometry: JSON.stringify({
@@ -727,30 +742,25 @@ export class FeatureService {
         y: lnglat.lat,
         spatialReference: { wkid: 4326 },
       }),
-      returnGeometry: returnGeometry.toString(),
+      returnGeometry,
       outFields: '*',
       spatialRel: 'esriSpatialRelIntersects',
       units: 'esriSRUnit_Meter',
-      distance: radius.toString(),
+      distance: radius,
       f: 'geojson',
-    });
+    };
 
     if (this._time) {
-      params.append('time', this._time);
+      params.time = this._time;
     }
 
-    this._appendTokenIfExists(params);
+    const result = await queryFeatures({
+      url: this._esriServiceOptions.url,
+      params,
+      authentication: this._authentication(),
+    });
 
-    const response = await fetch(
-      `${this._esriServiceOptions.url}/query?${params.toString()}`,
-      this._esriServiceOptions.fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Query failed: HTTP ${response.status}`);
-    }
-
-    return await response.json();
+    return result as unknown as GeoJSON.FeatureCollection;
   }
 
   /**
@@ -762,26 +772,21 @@ export class FeatureService {
   ): Promise<GeoJSON.FeatureCollection> {
     const idsString = Array.isArray(objectIds) ? objectIds.join(',') : objectIds;
 
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       sr: '4326',
       objectIds: idsString,
-      returnGeometry: returnGeometry.toString(),
+      returnGeometry,
       outFields: '*',
       f: 'geojson',
+    };
+
+    const result = await queryFeatures({
+      url: this._esriServiceOptions.url,
+      params,
+      authentication: this._authentication(),
     });
 
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(
-      `${this._esriServiceOptions.url}/query?${params.toString()}`,
-      this._esriServiceOptions.fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Query failed: HTTP ${response.status}`);
-    }
-
-    return await response.json();
+    return result as unknown as GeoJSON.FeatureCollection;
   }
 
   /**
@@ -791,48 +796,41 @@ export class FeatureService {
     options?: Partial<FeatureServiceOptions>
   ): Promise<GeoJSON.FeatureCollection> {
     const queryOptions = { ...this._esriServiceOptions, ...options };
-    const params = new URLSearchParams();
+    const params: Record<string, unknown> = {};
 
-    params.append('f', 'geojson');
-    params.append('where', queryOptions.where || '1=1');
-    params.append(
-      'outFields',
+    params.f = 'geojson';
+    params.where = queryOptions.where || '1=1';
+    params.outFields =
       typeof queryOptions.outFields === 'string'
         ? queryOptions.outFields
-        : queryOptions.outFields?.join(',') || '*'
-    );
-    params.append('returnGeometry', (queryOptions.returnGeometry !== false).toString());
+        : queryOptions.outFields?.join(',') || '*';
+    params.returnGeometry = (queryOptions.returnGeometry !== false).toString();
 
     if (queryOptions.geometry) {
-      params.append('geometry', JSON.stringify(queryOptions.geometry));
-      if (queryOptions.geometryType) params.append('geometryType', queryOptions.geometryType);
-      if (queryOptions.spatialRel) params.append('spatialRel', queryOptions.spatialRel);
-      if (queryOptions.inSR) params.append('inSR', queryOptions.inSR);
+      params.geometry = JSON.stringify(queryOptions.geometry);
+      if (queryOptions.geometryType) params.geometryType = queryOptions.geometryType;
+      if (queryOptions.spatialRel) params.spatialRel = queryOptions.spatialRel;
+      if (queryOptions.inSR) params.inSR = queryOptions.inSR;
     }
-    if (queryOptions.outSR) params.append('outSR', queryOptions.outSR);
-    if (queryOptions.orderByFields) params.append('orderByFields', queryOptions.orderByFields);
+    if (queryOptions.outSR) params.outSR = queryOptions.outSR;
+    if (queryOptions.orderByFields) params.orderByFields = queryOptions.orderByFields;
     if (queryOptions.groupByFieldsForStatistics)
-      params.append('groupByFieldsForStatistics', queryOptions.groupByFieldsForStatistics);
+      params.groupByFieldsForStatistics = queryOptions.groupByFieldsForStatistics;
     if (queryOptions.outStatistics && queryOptions.outStatistics.length > 0)
-      params.append('outStatistics', JSON.stringify(queryOptions.outStatistics));
-    if (queryOptions.having) params.append('having', queryOptions.having);
-    if (queryOptions.resultOffset)
-      params.append('resultOffset', queryOptions.resultOffset.toString());
+      params.outStatistics = JSON.stringify(queryOptions.outStatistics);
+    if (queryOptions.having) params.having = queryOptions.having;
+    if (queryOptions.resultOffset) params.resultOffset = queryOptions.resultOffset.toString();
     if (queryOptions.resultRecordCount)
-      params.append('resultRecordCount', queryOptions.resultRecordCount.toString());
-    if (queryOptions.token) params.append('token', queryOptions.token);
+      params.resultRecordCount = queryOptions.resultRecordCount.toString();
 
     try {
-      const response = await fetch(
-        `${this._esriServiceOptions.url}/query?${params.toString()}`,
-        this._esriServiceOptions.fetchOptions
-      );
+      const result = await queryFeatures({
+        url: this._esriServiceOptions.url,
+        params,
+        authentication: this._authentication(),
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      return result as unknown as GeoJSON.FeatureCollection;
     } catch (error) {
       const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
       if (!isTestEnvironment) {
@@ -845,7 +843,7 @@ export class FeatureService {
   private async _projectBounds(): Promise<void> {
     if (!this._serviceMetadata?.extent) return;
 
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       geometries: JSON.stringify({
         geometryType: 'esriGeometryEnvelope',
         geometries: [this._serviceMetadata.extent],
@@ -853,30 +851,19 @@ export class FeatureService {
       inSR: (this._serviceMetadata.extent.spatialReference?.wkid || 4326).toString(),
       outSR: '4326',
       f: 'json',
-    });
+    };
 
-    let fetchOptions = this._esriServiceOptions.fetchOptions;
-    if (!this._projectionEndpointIsFallback()) {
-      this._appendTokenIfExists(params);
-    } else {
-      fetchOptions = undefined;
-    }
+    // The public fallback projection endpoint is anonymous; only forward auth
+    // to the service's own projection endpoint.
+    const auth = this._projectionEndpointIsFallback() ? {} : this._authOptions();
 
     try {
-      const response = await fetch(
-        `${this._esriServiceOptions.projectionEndpoint}?${params.toString()}`,
-        fetchOptions
-      );
-
-      if (!response.ok) {
-        throw new Error(`Projection failed: HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(JSON.stringify(data.error));
-      }
+      const data = await esriRequest<{
+        geometries: Array<{ xmin: number; ymin: number; xmax: number; ymax: number }>;
+      }>(this._esriServiceOptions.projectionEndpoint, {
+        params,
+        ...auth,
+      });
 
       const extent = data.geometries[0];
       this._maxExtent = [extent.xmin, extent.ymin, extent.xmax, extent.ymax];
@@ -907,29 +894,23 @@ export class FeatureService {
     }
   }
 
-  private _appendTokenIfExists(params: URLSearchParams): void {
-    appendTokenIfExists(params, this._esriServiceOptions.token);
+  /**
+   * Read the authentication-related fields off the service options. The
+   * `authentication` field is not part of the public options type, so the
+   * options object is cast to surface it for {@link resolveAuthentication}.
+   */
+  private _authOptions(): { token?: string; apiKey?: string; authentication?: EsriAuthentication } {
+    const opts = this._esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
+    return { token: opts.token, apiKey: opts.apiKey, authentication: opts.authentication };
   }
 
-  private _getFetchHeaders(): HeadersInit | undefined {
-    if (this._esriServiceOptions.apiKey) {
-      return { 'X-Esri-Authorization': `Bearer ${this._esriServiceOptions.apiKey}` };
-    }
-    return undefined;
-  }
-
-  private _checkAgolError(data: unknown): void {
-    if (data && typeof data === 'object' && 'error' in data) {
-      const errorData = (data as { error: { code?: number; message?: string; details?: string[] } })
-        .error;
-      const err = new Error(errorData.message || 'ArcGIS service error') as Error & {
-        code?: number;
-        details?: string[];
-      };
-      err.code = errorData.code;
-      err.details = errorData.details;
-      throw err;
-    }
+  /** Build an ArcGIS REST JS authentication manager from the service options. */
+  private _authentication() {
+    return resolveAuthentication(this._authOptions());
   }
 
   private _handleAuthError(error: unknown): void {
@@ -976,6 +957,56 @@ export class FeatureService {
   }
 
   // ========================================
+  // Related Records & Domain Decoding
+  // ========================================
+
+  /**
+   * Query records related to this layer's features through a relationship
+   * class. Wraps `queryRelated` from `@esri/arcgis-rest-feature-service`.
+   */
+  async queryRelatedRecords(options: {
+    relationshipId?: number;
+    objectIds?: number[];
+    outFields?: string | string[];
+    definitionExpression?: string;
+    returnGeometry?: boolean;
+  }): Promise<import('@esri/arcgis-rest-feature-service').IQueryRelatedResponse> {
+    return queryRelated({
+      url: this._esriServiceOptions.url,
+      relationshipId: options.relationshipId,
+      objectIds: options.objectIds,
+      outFields: options.outFields as never,
+      definitionExpression: options.definitionExpression,
+      // `returnGeometry` is not a top-level queryRelated option; pass via params.
+      params:
+        options.returnGeometry !== undefined
+          ? { returnGeometry: options.returnGeometry }
+          : undefined,
+      authentication: this._authentication(),
+    });
+  }
+
+  /**
+   * Replace coded-value-domain codes with their human-readable names in a
+   * query response. Wraps `decodeValues` from
+   * `@esri/arcgis-rest-feature-service`.
+   *
+   * @param queryResponse A response from a `f=json` feature query.
+   * @param fields Optional subset of field names to decode (defaults to all).
+   */
+  async decodeValues(
+    queryResponse: unknown,
+    fields?: string[]
+  ): Promise<import('@esri/arcgis-rest-feature-service').IQueryFeaturesResponse> {
+    return decodeValues({
+      url: this._esriServiceOptions.url,
+      queryResponse: queryResponse as never,
+      fields: fields as never,
+      authentication: this._authentication(),
+    });
+  }
+
+  // ========================================
   // Feature Editing Methods
   // ========================================
 
@@ -986,27 +1017,13 @@ export class FeatureService {
     features: GeoJSON.Feature[],
     options?: { gdbVersion?: string }
   ): Promise<EditResult[]> {
-    const params = new URLSearchParams({
-      f: 'json',
-      features: JSON.stringify(features),
+    const res = await addFeatures({
+      url: this._esriServiceOptions.url,
+      features: features as unknown as Parameters<typeof addFeatures>[0]['features'],
+      gdbVersion: options?.gdbVersion,
+      authentication: this._authentication(),
     });
-    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${this._esriServiceOptions.url}/addFeatures`, {
-      method: 'POST',
-      body: params,
-      headers: this._getFetchHeaders(),
-      ...this._esriServiceOptions.fetchOptions,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Add features failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.addResults;
+    return res.addResults as unknown as EditResult[];
   }
 
   /**
@@ -1016,27 +1033,13 @@ export class FeatureService {
     features: GeoJSON.Feature[],
     options?: { gdbVersion?: string }
   ): Promise<EditResult[]> {
-    const params = new URLSearchParams({
-      f: 'json',
-      features: JSON.stringify(features),
+    const res = await updateFeatures({
+      url: this._esriServiceOptions.url,
+      features: features as unknown as Parameters<typeof updateFeatures>[0]['features'],
+      gdbVersion: options?.gdbVersion,
+      authentication: this._authentication(),
     });
-    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${this._esriServiceOptions.url}/updateFeatures`, {
-      method: 'POST',
-      body: params,
-      headers: this._getFetchHeaders(),
-      ...this._esriServiceOptions.fetchOptions,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Update features failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.updateResults;
+    return res.updateResults as unknown as EditResult[];
   }
 
   /**
@@ -1046,29 +1049,17 @@ export class FeatureService {
     objectIds?: number[];
     where?: string;
   }): Promise<EditResult[]> {
-    const params = new URLSearchParams({ f: 'json' });
-    if (deleteParams.objectIds) {
-      params.append('objectIds', deleteParams.objectIds.join(','));
-    }
-    if (deleteParams.where) {
-      params.append('where', deleteParams.where);
-    }
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${this._esriServiceOptions.url}/deleteFeatures`, {
-      method: 'POST',
-      body: params,
-      headers: this._getFetchHeaders(),
-      ...this._esriServiceOptions.fetchOptions,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Delete features failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.deleteResults;
+    // Pass objectIds / where as first-order fields so arcgis-rest encodes them.
+    // Only include each when supplied: deletion by `where` alone must not send
+    // an empty objectIds list, and a hardcoded `objectIds: []` would (being
+    // truthy) override a supplied `where`/objectIds via appendCustomParams.
+    const res = await deleteFeatures({
+      url: this._esriServiceOptions.url,
+      authentication: this._authentication(),
+      ...(deleteParams.objectIds ? { objectIds: deleteParams.objectIds } : {}),
+      ...(deleteParams.where ? { where: deleteParams.where } : {}),
+    } as Parameters<typeof deleteFeatures>[0]);
+    return res.deleteResults as unknown as EditResult[];
   }
 
   /**
@@ -1082,27 +1073,16 @@ export class FeatureService {
     },
     options?: { gdbVersion?: string }
   ): Promise<ApplyEditsResult> {
-    const params = new URLSearchParams({ f: 'json' });
-    if (edits.adds) params.append('adds', JSON.stringify(edits.adds));
-    if (edits.updates) params.append('updates', JSON.stringify(edits.updates));
-    if (edits.deletes) params.append('deletes', edits.deletes.join(','));
-    if (options?.gdbVersion) params.append('gdbVersion', options.gdbVersion);
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${this._esriServiceOptions.url}/applyEdits`, {
-      method: 'POST',
-      body: params,
-      headers: this._getFetchHeaders(),
-      ...this._esriServiceOptions.fetchOptions,
+    type ApplyEditsParams = Parameters<typeof applyEdits>[0];
+    const data = await applyEdits({
+      url: this._esriServiceOptions.url,
+      adds: edits.adds as unknown as ApplyEditsParams['adds'],
+      updates: edits.updates as unknown as ApplyEditsParams['updates'],
+      deletes: edits.deletes,
+      gdbVersion: options?.gdbVersion,
+      authentication: this._authentication(),
     });
-
-    if (!response.ok) {
-      throw new Error(`Apply edits failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data;
+    return data as unknown as ApplyEditsResult;
   }
 
   // ========================================
@@ -1116,88 +1096,45 @@ export class FeatureService {
     objectId: number,
     options?: { globalIds?: string[] }
   ): Promise<AttachmentInfo[]> {
-    const params = new URLSearchParams({ f: 'json' });
-    if (options?.globalIds) {
-      params.append('globalIds', options.globalIds.join(','));
-    }
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(
-      `${this._esriServiceOptions.url}/${objectId}/attachments?${params.toString()}`,
-      {
-        headers: this._getFetchHeaders(),
-        ...this._esriServiceOptions.fetchOptions,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Query attachments failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.attachmentInfos || [];
+    const res = await getAttachments({
+      url: this._esriServiceOptions.url,
+      featureId: objectId,
+      params: options?.globalIds ? { globalIds: options.globalIds.join(',') } : undefined,
+      authentication: this._authentication(),
+    });
+    return (res.attachmentInfos as unknown as AttachmentInfo[]) || [];
   }
 
   /**
    * Add an attachment to a feature
    */
   async addAttachment(objectId: number, file: Blob | File, fileName?: string): Promise<EditResult> {
-    const formData = new FormData();
-    formData.append('f', 'json');
-    formData.append(
-      'attachment',
-      file,
-      fileName || (file instanceof File ? file.name : 'attachment')
+    // The package `addAttachment` only accepts a `File`. Preserve the existing
+    // support for bare `Blob`s and an explicit `fileName` by posting the
+    // attachment ourselves; `esriRequest` handles auth and error responses.
+    const name = fileName || (file instanceof File ? file.name : 'attachment');
+    const res = await esriRequest<{ addAttachmentResult: EditResult }>(
+      `${this._esriServiceOptions.url}/${objectId}/addAttachment`,
+      {
+        params: { attachment: file, fileName: name },
+        httpMethod: 'POST',
+        ...this._authOptions(),
+      }
     );
-    if (this._esriServiceOptions.token) {
-      formData.append('token', this._esriServiceOptions.token);
-    }
-
-    const headers: HeadersInit = {};
-    if (this._esriServiceOptions.apiKey) {
-      headers['X-Esri-Authorization'] = `Bearer ${this._esriServiceOptions.apiKey}`;
-    }
-
-    const response = await fetch(`${this._esriServiceOptions.url}/${objectId}/addAttachment`, {
-      method: 'POST',
-      body: formData,
-      headers: Object.keys(headers).length > 0 ? headers : undefined,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Add attachment failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.addAttachmentResult;
+    return res.addAttachmentResult;
   }
 
   /**
    * Delete attachments from a feature
    */
   async deleteAttachments(objectId: number, attachmentIds: number[]): Promise<EditResult[]> {
-    const params = new URLSearchParams({
-      f: 'json',
-      attachmentIds: attachmentIds.join(','),
+    const res = await deleteAttachments({
+      url: this._esriServiceOptions.url,
+      featureId: objectId,
+      attachmentIds,
+      authentication: this._authentication(),
     });
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${this._esriServiceOptions.url}/${objectId}/deleteAttachments`, {
-      method: 'POST',
-      body: params,
-      headers: this._getFetchHeaders(),
-      ...this._esriServiceOptions.fetchOptions,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Delete attachments failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    this._checkAgolError(data);
-    return data.deleteAttachmentResults;
+    return res.deleteAttachmentResults as unknown as EditResult[];
   }
 
   // Legacy method aliases for backwards compatibility

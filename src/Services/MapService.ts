@@ -44,5 +44,3 @@ export class MapService extends Service {
 export function mapService(options: MapServiceOptions): MapService {
   return new MapService(options);
 }
-
-export default mapService;

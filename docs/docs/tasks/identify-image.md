@@ -25,7 +25,8 @@ identifyImage(options) // Convenience function
 |--------|------|---------|-------------|
 | url | `string` | | **Required.** Image Service URL |
 | token | `string` | | Authentication token |
-| fetchOptions | `object` | | Additional fetch request options |
+| apiKey | `string` | | ArcGIS Location Platform API key |
+| authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager ([guide](../guides/authentication)) |
 
 ## Chainable Methods
 

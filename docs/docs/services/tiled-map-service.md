@@ -52,9 +52,13 @@ new TiledMapService(id, map, esriServiceOptions, rasterSourceOptions?)
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `url` | `string` | *required* | ArcGIS MapServer URL |
-| `fetchOptions` | `object` | — | Custom fetch options (headers, etc.) |
+| `fetchOptions` | `object` | — | Deprecated — no longer forwarded to requests; use `authentication` instead. |
 | `token` | `string` | — | ArcGIS authentication token |
+| `apiKey` | `string` | — | ArcGIS Location Platform API key (sent as the `token` parameter) |
+| `authentication` | `IAuthenticationManager \| string` | — | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
 | `getAttributionFromService` | `boolean` | `true` | Fetch copyright text from service metadata |
+
+> Authentication runs on [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js). See the [Authentication guide](../guides/authentication) for tokens, API keys, and auth managers.
 
 ## Methods
 

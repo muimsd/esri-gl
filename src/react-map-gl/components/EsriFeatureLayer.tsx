@@ -92,6 +92,7 @@ export function EsriFeatureLayer(props: EsriFeatureLayerProps) {
     props.type,
     props.token,
     props.apiKey,
+    props.authentication,
     props.proxy,
     props.getAttributionFromService,
     props.requestParams,

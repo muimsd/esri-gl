@@ -1,4 +1,5 @@
 import { cleanTrailingSlash, getServiceDetails, removeMapSource, updateAttribution } from '@/utils';
+import type { EsriAuthentication } from '@/request';
 import type { Map, EsriServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface TiledMapServiceOptions extends EsriServiceOptions {
@@ -94,12 +95,13 @@ export class TiledMapService {
 
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
+    const { token, apiKey, authentication } = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+    };
     return new Promise((resolve, reject) => {
-      getServiceDetails(
-        this.esriServiceOptions.url,
-        this.esriServiceOptions.fetchOptions,
-        (this.esriServiceOptions as any).token
-      )
+      getServiceDetails(this.esriServiceOptions.url, { token, apiKey, authentication })
         .then(data => {
           this._serviceMetadata = data;
           resolve(data);

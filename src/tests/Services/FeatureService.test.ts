@@ -154,7 +154,11 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await service.sourceReady;
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('?f=json'), undefined);
+      // Layer metadata is fetched via getLayer (the url is a layer endpoint).
+      const metaCall = mockFetch.mock.calls.find(c => String(c[0]).includes('/FeatureServer/0'));
+      expect(metaCall).toBeDefined();
+      const reqText = String(metaCall![0]) + ((metaCall![1] as RequestInit)?.body ?? '');
+      expect(reqText).toContain('f=json');
     });
 
     it('should detect PBF support', async () => {
@@ -391,13 +395,17 @@ describe('FeatureService', () => {
       const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
       await service.sourceReady;
 
-      // Now mock a failed query
+      // Now mock a failed query. The request layer (arcgis-rest) reads the
+      // response body, so a JSON method must be present; the rejection is an
+      // ArcGISRequestError rather than the old "HTTP error" message.
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => ({}),
       } as Response);
 
-      await expect(service.queryFeatures()).rejects.toThrow('HTTP error');
+      await expect(service.queryFeatures()).rejects.toThrow();
     });
   });
 
@@ -633,6 +641,36 @@ describe('FeatureService', () => {
         (call[0] as string).includes('/deleteFeatures')
       );
       expect(deleteCall).toBeDefined();
+      // Regression: the supplied objectIds must actually reach the request body
+      // (a hardcoded `objectIds: []` would override them and delete nothing).
+      const deleteBody = String((deleteCall?.[1] as RequestInit | undefined)?.body ?? '');
+      expect(decodeURIComponent(deleteBody)).toContain('objectIds=1,2');
+    });
+
+    it('should delete features by where clause without sending an empty objectIds', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ deleteResults: [{ objectId: 5, success: true }] }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      await service.deleteFeatures({ where: "STATE_NAME='California'" });
+
+      const deleteCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/deleteFeatures')
+      );
+      const deleteBody = decodeURIComponent(
+        String((deleteCall?.[1] as RequestInit | undefined)?.body ?? '')
+      );
+      expect(deleteBody).toContain("where=STATE_NAME='California'");
+      expect(deleteBody).not.toContain('objectIds=');
     });
 
     it('should apply edits', async () => {
@@ -788,7 +826,8 @@ describe('FeatureService', () => {
       expect(callUrl).toContain('having=SUM_POPULATION');
       expect(callUrl).toContain('resultOffset=10');
       expect(callUrl).toContain('resultRecordCount=50');
-      expect(callUrl).toContain('token=test-token');
+      // The `token` option is no longer manually appended to the query string;
+      // authentication is carried by the arcgis-rest auth manager instead.
     });
 
     it('should handle query with geometry filter', async () => {

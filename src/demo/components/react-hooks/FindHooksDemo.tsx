@@ -157,7 +157,8 @@ const FindHooksDemo: React.FC = () => {
 
     map.addSource(RESULTS_SOURCE_ID, {
       type: 'geojson',
-      data: results,
+      // Find results type geometries as nullable; the GL source wants them non-null.
+      data: results as GeoJSON.FeatureCollection,
     });
 
     map.addLayer({

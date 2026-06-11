@@ -9,6 +9,7 @@ import type {
 } from '@/types';
 import type { IdentifyImageOptions } from '@/Tasks/IdentifyImage';
 import type { FindOptions } from '@/Tasks/Find';
+import type { PortalResolvedService, PortalServiceKind, PortalItemServiceOptions } from '@/Portal';
 
 // Base service hook types
 export interface UseEsriServiceOptions<T extends EsriServiceOptions = EsriServiceOptions> {
@@ -20,6 +21,29 @@ export interface UseEsriServiceOptions<T extends EsriServiceOptions = EsriServic
 
 export interface UseEsriServiceResult<T> {
   service: T | null;
+  loading: boolean;
+  error: Error | null;
+  reload: () => void;
+}
+
+// Portal item resolution hook
+export interface UsePortalItemOptions {
+  sourceId: string;
+  map: Map | null;
+  /** ArcGIS portal item id to resolve. */
+  itemId: string;
+  options?: PortalItemServiceOptions;
+}
+
+export interface UsePortalItemResult {
+  /** The resolved esri-gl service (source already added to the map), or null. */
+  service: PortalResolvedService | null;
+  /** Which service kind the item resolved to. */
+  kind: PortalServiceKind | null;
+  /** The service URL the item resolved to. */
+  url: string | null;
+  /** The portal item title. */
+  title: string | null;
   loading: boolean;
   error: Error | null;
   reload: () => void;
@@ -97,47 +121,5 @@ export interface EsriLayerProps {
   beforeId?: string;
 }
 
-// React Map GL specific types
-export interface EsriLayerBaseProps {
-  id: string;
-  sourceId?: string;
-  beforeId?: string;
-  visible?: boolean;
-}
-
-export interface EsriDynamicLayerProps extends EsriLayerBaseProps {
-  url: string;
-  layers?: number[] | number | false;
-  layerDefs?: Record<string, string> | false;
-  format?: string;
-  dpi?: number;
-  transparent?: boolean;
-}
-
-export interface EsriTiledLayerProps extends EsriLayerBaseProps {
-  url: string;
-}
-
-export interface EsriImageLayerProps extends EsriLayerBaseProps {
-  url: string;
-  renderingRule?: Record<string, unknown> | false;
-  mosaicRule?: Record<string, unknown> | false;
-  format?: string;
-}
-
-export interface EsriVectorTileLayerProps extends EsriLayerBaseProps {
-  url: string;
-}
-
-export interface EsriVectorBasemapLayerProps extends EsriLayerBaseProps {
-  basemapEnum: string;
-  token: string;
-}
-
-export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
-  url: string;
-  where?: string;
-  outFields?: string | string[];
-  paint?: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-}
+// (react-map-gl layer prop types live in src/react-map-gl/types.ts, exported as
+// ReactMapGL* from `esri-gl/react-map-gl`.)

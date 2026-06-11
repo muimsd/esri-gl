@@ -1,21 +1,25 @@
 // React Map GL specific types
+import type { EsriAuthentication } from '@/request';
+import type { PortalServiceResult } from '@/Portal';
 
 /**
  * Common authentication and request options forwarded to the underlying
  * Esri service when any defined value is passed on a layer component.
  */
 export interface EsriAuthProps {
-  /** ArcGIS token sent with every request as `token` query param */
+  /** ArcGIS token (sent as the `token` request parameter) */
   token?: string;
-  /** ArcGIS API key sent via `X-Esri-Authorization` header */
+  /** ArcGIS Location Platform API key (sent as the `token` parameter) */
   apiKey?: string;
-  /** Proxy URL or flag forwarded to the service */
+  /** ArcGIS REST JS authentication manager (preferred for OAuth/user sign-in) */
+  authentication?: EsriAuthentication;
+  /** @deprecated No longer applied. */
   proxy?: string | boolean;
   /** Whether to fetch and apply service attribution (default true in services) */
   getAttributionFromService?: boolean;
   /** Extra request params merged into every service request */
   requestParams?: Record<string, unknown>;
-  /** Extra fetch options used by the service */
+  /** @deprecated No longer forwarded to requests; use `authentication`. */
   fetchOptions?: RequestInit;
 }
 
@@ -52,7 +56,14 @@ export interface EsriVectorTileLayerProps extends EsriLayerBaseProps {
 
 export interface EsriVectorBasemapLayerProps extends EsriLayerBaseProps {
   basemapEnum: string;
-  token: string;
+  /** OAuth / user token (v2 host). Provide `token` or `apiKey`. */
+  token?: string;
+  /** ArcGIS Location Platform API key (v1 host). Provide `token` or `apiKey`. */
+  apiKey?: string;
+  /** Optional locale for the basemap labels. */
+  language?: string;
+  /** Optional worldview. */
+  worldview?: string;
 }
 
 export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
@@ -62,4 +73,15 @@ export interface EsriFeatureLayerProps extends EsriLayerBaseProps {
   type?: 'fill' | 'circle' | 'line' | 'symbol' | 'heatmap';
   paint?: Record<string, unknown>;
   layout?: Record<string, unknown>;
+}
+
+export interface EsriPortalLayerProps extends EsriLayerBaseProps {
+  /** ArcGIS portal item id to resolve to a service. */
+  itemId: string;
+  /** For multi-layer Feature Services, which sublayer to load (default 0). */
+  layerId?: number;
+  /** Portal sharing REST URL (defaults to ArcGIS Online). */
+  portal?: string;
+  /** Called once the item resolves, with the resolved service/kind/url/title. */
+  onResolve?: (result: PortalServiceResult) => void;
 }

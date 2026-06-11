@@ -62,7 +62,11 @@ new ImageService(id, map, esriServiceOptions, rasterSourceOptions?)
 | `pixelType` | `string` | — | Output pixel type |
 | `noData` | `number` | — | NoData value for transparency |
 | `token` | `string` | — | ArcGIS authentication token |
-| `fetchOptions` | `object` | — | Custom fetch options (headers, etc.) |
+| `apiKey` | `string` | — | ArcGIS Location Platform API key (sent as the `token` parameter) |
+| `authentication` | `IAuthenticationManager \| string` | — | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
+| `fetchOptions` | `object` | — | Deprecated — no longer forwarded to requests; use `authentication` instead. |
+
+> Authentication runs on [ArcGIS REST JS](https://github.com/Esri/arcgis-rest-js). See the [Authentication guide](../guides/authentication) for tokens, API keys, and auth managers.
 
 ## Methods
 

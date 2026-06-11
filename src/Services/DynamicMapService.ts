@@ -6,6 +6,8 @@ import {
   removeMapSource,
   updateAttribution,
 } from '@/utils';
+import { esriRequest, esriRawRequest, resolveAuthentication } from '@/request';
+import { getLayer, getAllLayersAndTables, queryFeatures } from '@esri/arcgis-rest-feature-service';
 import type {
   Map,
   EsriServiceOptions,
@@ -51,7 +53,10 @@ interface DynamicMapServiceOptions extends EsriServiceOptions {
 export class DynamicMapService {
   private _sourceId: string;
   private _map: Map;
-  private _defaultEsriOptions: Omit<Required<EsriServiceOptions>, 'url' | 'time'>;
+  private _defaultEsriOptions: Omit<
+    Required<EsriServiceOptions>,
+    'url' | 'time' | 'token' | 'apiKey' | 'authentication'
+  >;
   private _serviceMetadata: ServiceMetadata | null = null;
   private _pendingUpdate: number | null = null;
   private _lastUpdateTime = 0;
@@ -354,7 +359,23 @@ export class DynamicMapService {
   }
 
   private _appendTokenIfExists(params: URLSearchParams): void {
-    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
+    // apiKey is sent as the token URL parameter, matching the request-based paths.
+    const auth = this.esriServiceOptions as { token?: string; apiKey?: string };
+    appendTokenIfExists(params, auth.token ?? auth.apiKey);
+  }
+
+  private _auth() {
+    const o = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: import('@/request').EsriAuthentication;
+    };
+    return { token: o.token, apiKey: o.apiKey, authentication: o.authentication };
+  }
+
+  /** Resolved ArcGIS REST JS auth manager for the typed feature-service helpers. */
+  private _authentication() {
+    return resolveAuthentication(this._auth());
   }
 
   private _escapeValue(val: unknown): string {
@@ -483,11 +504,7 @@ export class DynamicMapService {
   getMetadata(): Promise<ServiceMetadata> {
     if (this._serviceMetadata !== null) return Promise.resolve(this._serviceMetadata);
     return new Promise((resolve, reject) => {
-      getServiceDetails(
-        this.esriServiceOptions.url,
-        this.esriServiceOptions.fetchOptions,
-        (this.esriServiceOptions as any).token
-      )
+      getServiceDetails(this.esriServiceOptions.url, this._auth())
         .then(data => {
           this._serviceMetadata = data;
           resolve(this._serviceMetadata);
@@ -510,7 +527,7 @@ export class DynamicMapService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bounds = (this._map as any).getBounds().toArray();
 
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       sr: '4326',
       geometryType: 'esriGeometryPoint',
       geometry: JSON.stringify({
@@ -525,29 +542,16 @@ export class DynamicMapService {
       imageDisplay: `${canvas.width},${canvas.height},${this.options.dpi}`,
       mapExtent: `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`,
       layers: this._layersStrIdentify || '',
-      f: 'json',
+    };
+
+    if (this._layerDefs) params.layerDefs = this._layerDefs;
+    if (this._dynamicLayers) params.dynamicLayers = this._dynamicLayers;
+    if (this._time) params.time = this._time;
+
+    const data = await esriRequest(`${this.esriServiceOptions.url}/identify`, {
+      params,
+      ...this._auth(),
     });
-
-    if (this._layerDefs) params.append('layerDefs', this._layerDefs);
-    if (this._dynamicLayers) params.append('dynamicLayers', this._dynamicLayers);
-    if (this._time) params.append('time', this._time);
-
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(
-      `${this.esriServiceOptions.url}/identify?${params.toString()}`,
-      this.esriServiceOptions.fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Identify request failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Identify request failed: ${data.error.message}`);
-    }
 
     return data;
   }
@@ -682,94 +686,49 @@ export class DynamicMapService {
       groupByFieldsForStatistics?: string;
     } = {}
   ): Promise<StatisticResult[]> {
-    const queryUrl = `${this.esriServiceOptions.url}/${layerId}/query`;
-    const params = new URLSearchParams({
-      f: 'json',
+    const data = await queryFeatures({
+      url: `${this.esriServiceOptions.url}/${layerId}`,
       where: options.where || '1=1',
-      outStatistics: JSON.stringify(statisticFields),
-      returnGeometry: 'false',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      outStatistics: statisticFields as any,
+      groupByFieldsForStatistics: options.groupByFieldsForStatistics,
+      returnGeometry: false,
+      authentication: this._authentication(),
     });
 
-    if (options.groupByFieldsForStatistics) {
-      params.append('groupByFieldsForStatistics', options.groupByFieldsForStatistics);
-    }
-
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${queryUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Statistics query failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Statistics query failed: ${data.error.message}`);
-    }
-
-    return data.features || [];
+    return ((data as { features?: StatisticResult[] }).features || []) as StatisticResult[];
   }
 
   /** Query features from a specific sublayer */
   async queryLayerFeatures(layerId: number, options: LayerQueryOptions = {}): Promise<FeatureSet> {
-    const queryUrl = `${this.esriServiceOptions.url}/${layerId}/query`;
-    const params = new URLSearchParams({
-      f: 'json',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestOptions: Record<string, any> = {
+      url: `${this.esriServiceOptions.url}/${layerId}`,
       where: options.where || '1=1',
-      returnGeometry: options.returnGeometry !== false ? 'true' : 'false',
-      outFields: Array.isArray(options.outFields)
-        ? options.outFields.join(',')
-        : options.outFields || '*',
-    });
+      returnGeometry: options.returnGeometry !== false,
+      outFields: options.outFields || '*',
+      authentication: this._authentication(),
+    };
 
     if (options.geometry) {
-      params.append('geometry', JSON.stringify(options.geometry));
-      params.append('geometryType', options.geometryType || 'esriGeometryEnvelope');
-      params.append('spatialRel', options.spatialRel || 'esriSpatialRelIntersects');
+      requestOptions.geometry = options.geometry;
+      requestOptions.geometryType = options.geometryType || 'esriGeometryEnvelope';
+      requestOptions.spatialRel = options.spatialRel || 'esriSpatialRelIntersects';
     }
+    if (options.orderByFields) requestOptions.orderByFields = options.orderByFields;
+    if (options.resultOffset) requestOptions.resultOffset = options.resultOffset;
+    if (options.resultRecordCount) requestOptions.resultRecordCount = options.resultRecordCount;
+    if (options.returnCountOnly) requestOptions.returnCountOnly = true;
+    if (options.returnIdsOnly) requestOptions.returnIdsOnly = true;
 
-    if (options.orderByFields) {
-      params.append('orderByFields', options.orderByFields);
-    }
-
-    if (options.resultOffset) {
-      params.append('resultOffset', options.resultOffset.toString());
-    }
-
-    if (options.resultRecordCount) {
-      params.append('resultRecordCount', options.resultRecordCount.toString());
-    }
-
-    if (options.returnCountOnly) {
-      params.append('returnCountOnly', 'true');
-    }
-
-    if (options.returnIdsOnly) {
-      params.append('returnIdsOnly', 'true');
-    }
-
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${queryUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Layer query failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Layer query failed: ${data.error.message}`);
-    }
-
-    return data;
+    const data = await queryFeatures(requestOptions as Parameters<typeof queryFeatures>[0]);
+    return data as unknown as FeatureSet;
   }
 
   /** Export high-resolution map image */
   async exportMapImage(options: MapExportOptions): Promise<Blob> {
     const exportUrl = `${this.esriServiceOptions.url}/export`;
-    const params = new URLSearchParams({
+    const params: Record<string, unknown> = {
       f: 'image',
       bbox: options.bbox.join(','),
       size: options.size.join(','),
@@ -778,32 +737,29 @@ export class DynamicMapService {
       dpi: (options.dpi || 96).toString(),
       bboxSR: (options.bboxSR || 3857).toString(),
       imageSR: (options.imageSR || 3857).toString(),
-    });
+    };
 
     if (options.layerDefs) {
-      params.append('layerDefs', JSON.stringify(options.layerDefs));
+      params.layerDefs = JSON.stringify(options.layerDefs);
     }
 
     if (options.dynamicLayers) {
       const normalized = this._ensureAllVisibleLayers(options.dynamicLayers);
-      params.append('dynamicLayers', JSON.stringify(normalized));
+      params.dynamicLayers = JSON.stringify(normalized);
     }
 
     if (options.gdbVersion) {
-      params.append('gdbVersion', options.gdbVersion);
+      params.gdbVersion = options.gdbVersion;
     }
 
     if (options.historicMoment) {
-      params.append('historicMoment', options.historicMoment.toString());
+      params.historicMoment = options.historicMoment.toString();
     }
 
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${exportUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.statusText}`);
-    }
+    const response = await esriRawRequest(`${exportUrl}`, {
+      params,
+      ...this._auth(),
+    });
 
     return response.blob();
   }
@@ -811,51 +767,28 @@ export class DynamicMapService {
   /** Generate legend information for layers */
   async generateLegend(layerIds?: number[]): Promise<LegendInfo[]> {
     const legendUrl = `${this.esriServiceOptions.url}/legend`;
-    const params = new URLSearchParams({
-      f: 'json',
-    });
+    const params: Record<string, unknown> = {};
 
     if (layerIds?.length) {
-      params.append('layers', layerIds.join(','));
+      params.layers = layerIds.join(',');
     }
 
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${legendUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Legend generation failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Legend generation failed: ${data.error.message}`);
-    }
+    const data = await esriRequest<{ layers?: LegendInfo[] }>(legendUrl, {
+      params,
+      ...this._auth(),
+    });
 
     return data.layers || [];
   }
 
   /** Get detailed information about a specific layer */
   async getLayerInfo(layerId: number): Promise<LayerMetadata> {
-    const layerUrl = `${this.esriServiceOptions.url}/${layerId}`;
-    const params = new URLSearchParams({ f: 'json' });
+    const data = await getLayer({
+      url: `${this.esriServiceOptions.url}/${layerId}`,
+      authentication: this._authentication(),
+    });
 
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${layerUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Layer info request failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Layer info request failed: ${data.error.message}`);
-    }
-
-    return data;
+    return data as unknown as LayerMetadata;
   }
 
   /** Get field information for a layer */
@@ -875,24 +808,12 @@ export class DynamicMapService {
 
   /** Discover all layers in the service */
   async discoverLayers(): Promise<LayerInfo[]> {
-    const serviceUrl = this.esriServiceOptions.url;
-    const params = new URLSearchParams({ f: 'json' });
+    const data = await getAllLayersAndTables({
+      url: this.esriServiceOptions.url,
+      authentication: this._authentication(),
+    });
 
-    this._appendTokenIfExists(params);
-
-    const response = await fetch(`${serviceUrl}?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Service discovery failed: HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(`Service discovery failed: ${data.error.message}`);
-    }
-
-    return data.layers || [];
+    return ((data.layers as unknown as LayerInfo[]) || []) as LayerInfo[];
   }
 
   /** Apply multiple layer operations in a single update */

@@ -47,6 +47,8 @@ new Find(options: FindOptions)
 | layerDefs | `object` | | Layer definition expressions |
 | sr | `number` | | Spatial reference for results |
 | token | `string` | | Authentication token |
+| apiKey | `string` | | ArcGIS Location Platform API key |
+| authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager ([guide](../guides/authentication)) |
 
 ## Chainable Methods
 

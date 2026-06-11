@@ -90,7 +90,6 @@ const VectorTileServiceDemo: React.FC = () => {
       setLayerLoading(true);
       try {
         const style = await service.current.getStyle();
-        console.log('Fetched style:', style);
         if (!style) {
           throw new Error('Style data is empty or invalid.');
         }

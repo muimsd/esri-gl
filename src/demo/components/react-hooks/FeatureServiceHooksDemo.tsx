@@ -84,13 +84,15 @@ const FeatureServiceHooksDemo: React.FC = () => {
           map.removeLayer(LAYER_ID);
         }
 
+        // The service's default style is dynamic, so it can't satisfy a specific
+        // LayerSpecification statically.
         map.addLayer({
           id: LAYER_ID,
           type: typedLayerType,
           source: SOURCE_ID,
           layout,
           paint,
-        });
+        } as maplibregl.AddLayerObject);
       } catch (err) {
         console.warn('Failed to apply feature style, using fallback.', err);
         if (map.getLayer(LAYER_ID)) {
@@ -196,16 +198,20 @@ const FeatureServiceHooksDemo: React.FC = () => {
           <h3 style={DEMO_SECTION_TITLE_STYLE}>Query Features</h3>
           <button
             onClick={runQuery}
-            disabled={queryLoading}
+            disabled={queryLoading || !service}
             style={{
               padding: '8px 12px',
               borderRadius: '6px',
               border: '1px solid #d1d5db',
               backgroundColor: '#ffffff',
-              cursor: queryLoading ? 'not-allowed' : 'pointer',
+              cursor: queryLoading || !service ? 'not-allowed' : 'pointer',
             }}
           >
-            {queryLoading ? 'Running Query…' : 'Fetch Feature Count'}
+            {queryLoading
+              ? 'Running Query…'
+              : !service
+                ? 'Waiting for service…'
+                : 'Fetch Feature Count'}
           </button>
           <p style={{ margin: '8px 0 0', color: '#4b5563' }}>{featureCount}</p>
           {queryError && <p style={{ margin: 0, color: '#b91c1c' }}>{queryError}</p>}

@@ -371,9 +371,11 @@ describe('Find Task', () => {
     });
 
     it('should handle malformed response', async () => {
+      // A response body with no `results` array (arcgis-rest-request requires a
+      // parseable object, so use an empty object rather than null here).
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(null),
+        json: () => Promise.resolve({ malformed: true }),
       } as Response);
 
       const result = await find.text('test').run();

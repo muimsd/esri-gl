@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Map } from '@/types';
 import type { ReactMapGLMapRef } from '../utils/useReactMapGL';
 import { useMapLoaded } from './useMapLoaded';
@@ -8,6 +8,7 @@ type RasterService = { remove: () => void };
 type MapLayerApi = {
   getStyle?: () => unknown;
   getLayer?: (id: string) => unknown;
+  getSource?: (id: string) => unknown;
   addLayer?: (layer: unknown, beforeId?: string) => void;
   removeLayer?: (id: string) => void;
 };
@@ -29,39 +30,42 @@ export interface UseRasterLayerOptions<TService extends RasterService> {
 
 /**
  * Shared lifecycle for react-map-gl components that wrap an Esri raster
- * service. Waits for the map style to load, constructs the service, and
- * adds/removes a raster layer bound to its source.
+ * service. Waits for the map style to load, then (re)builds the service and its
+ * raster layer in a single effect so that when `serviceDeps` change the old
+ * source is torn down *before* the new service recreates it — otherwise the
+ * service constructor would see the stale source and skip re-adding it.
  */
 export function useRasterLayer<TService extends RasterService>(
   options: UseRasterLayerOptions<TService>
 ): TService | null {
   const { map, layerId, sourceId, beforeId, visible, serviceDeps, createService } = options;
   const isMapLoaded = useMapLoaded(map);
+  const [service, setService] = useState<TService | null>(null);
 
-  const service = useMemo<TService | null>(() => {
-    if (!map || !isMapLoaded) return null;
-
-    const mapInstance = map.getMap?.();
-    if (!mapInstance) return null;
-
-    return createService(mapInstance as unknown as Map, sourceId);
-  }, [map, isMapLoaded, sourceId, ...serviceDeps]);
+  // Keep the latest createService without making it a dependency (callers pass
+  // a fresh closure each render; serviceDeps captures what actually matters).
+  const createServiceRef = useRef(createService);
+  createServiceRef.current = createService;
 
   useEffect(() => {
-    if (!map || !service) return;
-
-    const mapInstance = map.getMap?.() as MapLayerApi | undefined;
-    if (
-      !mapInstance ||
-      typeof mapInstance.getLayer !== 'function' ||
-      typeof mapInstance.addLayer !== 'function'
-    ) {
-      return () => {
-        service.remove();
-      };
+    if (!map || !isMapLoaded) {
+      setService(null);
+      return;
     }
 
-    if (!mapInstance.getLayer(layerId)) {
+    const mapInstance = map.getMap?.() as MapLayerApi | undefined;
+    if (!mapInstance || typeof mapInstance.addLayer !== 'function') {
+      return;
+    }
+
+    const svc = createServiceRef.current(mapInstance as unknown as Map, sourceId);
+    setService(svc);
+
+    // Add the raster layer once its source exists.
+    const sourceReady =
+      typeof mapInstance.getSource !== 'function' || Boolean(mapInstance.getSource(sourceId));
+
+    if (!mapInstance.getLayer?.(layerId) && sourceReady) {
       const layerConfig = {
         id: layerId,
         type: 'raster' as const,
@@ -70,21 +74,33 @@ export function useRasterLayer<TService extends RasterService>(
           visibility: (visible !== false ? 'visible' : 'none') as 'visible' | 'none',
         },
       };
-
-      if (beforeId) {
-        mapInstance.addLayer(layerConfig, beforeId);
-      } else {
-        mapInstance.addLayer(layerConfig);
+      try {
+        if (beforeId) {
+          mapInstance.addLayer?.(layerConfig, beforeId);
+        } else {
+          mapInstance.addLayer?.(layerConfig);
+        }
+      } catch (err) {
+        if (process.env?.NODE_ENV !== 'test') {
+          console.warn(`useRasterLayer: skipped adding layer "${layerId}"`, err);
+        }
       }
     }
 
     return () => {
-      if (mapInstance.getStyle?.() && mapInstance.getLayer?.(layerId)) {
-        mapInstance.removeLayer?.(layerId);
+      // Remove the layer first, then the service (which removes its source), so
+      // a subsequent rebuild gets a clean slate for the same sourceId.
+      try {
+        if (mapInstance.getStyle?.() && mapInstance.getLayer?.(layerId)) {
+          mapInstance.removeLayer?.(layerId);
+        }
+      } catch {
+        // layer may already be gone
       }
-      service.remove();
+      svc.remove();
     };
-  }, [map, service, layerId, beforeId, visible, sourceId]);
+    // serviceDeps is spread so any change rebuilds the layer + source.
+  }, [map, isMapLoaded, sourceId, layerId, beforeId, visible, ...serviceDeps]);
 
   return service;
 }

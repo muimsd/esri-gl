@@ -13,6 +13,7 @@ export function useTiledMapService({
 }: UseTiledMapServiceOptions): UseEsriServiceResult<TiledMapService> {
   return useEsriService(
     mapInstance => new TiledMapService(sourceId, mapInstance, options, sourceOptions),
-    map
+    map,
+    [sourceId, options.url, options.token, options.apiKey]
   );
 }

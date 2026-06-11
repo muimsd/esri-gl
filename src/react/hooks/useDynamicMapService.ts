@@ -17,10 +17,18 @@ export function useDynamicMapService({
 
   const createService = useCallback(
     (mapInstance: Map) => new DynamicMapService(sourceId, mapInstance, options, sourceOptions),
-    [sourceId, sourceOptions] // Remove options from dependencies to prevent service recreation
+    // url/token/apiKey changes need a fresh closure + rebuild (below); layers /
+    // layerDefs are applied in place by the effect, so they stay out of here.
+    [sourceId, sourceOptions, options.url, options.token, options.apiKey]
   );
 
-  const result = useEsriService(createService, map);
+  // Rebuild the service when the url / auth changes.
+  const result = useEsriService(createService, map, [
+    sourceId,
+    options.url,
+    options.token,
+    options.apiKey,
+  ]);
 
   // Update service options when they change
   useEffect(() => {
