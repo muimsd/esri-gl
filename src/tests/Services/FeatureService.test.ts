@@ -641,6 +641,36 @@ describe('FeatureService', () => {
         (call[0] as string).includes('/deleteFeatures')
       );
       expect(deleteCall).toBeDefined();
+      // Regression: the supplied objectIds must actually reach the request body
+      // (a hardcoded `objectIds: []` would override them and delete nothing).
+      const deleteBody = String((deleteCall?.[1] as RequestInit | undefined)?.body ?? '');
+      expect(decodeURIComponent(deleteBody)).toContain('objectIds=1,2');
+    });
+
+    it('should delete features by where clause without sending an empty objectIds', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockMetadataResponse),
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ deleteResults: [{ objectId: 5, success: true }] }),
+        } as Response);
+
+      const service = new FeatureService('test-source', mockMap as Map, mockServiceOptions);
+      await service.sourceReady;
+
+      await service.deleteFeatures({ where: "STATE_NAME='California'" });
+
+      const deleteCall = mockFetch.mock.calls.find(call =>
+        (call[0] as string).includes('/deleteFeatures')
+      );
+      const deleteBody = decodeURIComponent(
+        String((deleteCall?.[1] as RequestInit | undefined)?.body ?? '')
+      );
+      expect(deleteBody).toContain("where=STATE_NAME='California'");
+      expect(deleteBody).not.toContain('objectIds=');
     });
 
     it('should apply edits', async () => {

@@ -67,6 +67,23 @@ describe('usePortalItem Hook', () => {
     expect(result.current.service).toBeNull();
   });
 
+  it('clears loading when itemId is removed mid-resolution', async () => {
+    // Resolution that never settles, so loading would stay true if not cleared.
+    mockResolve.mockImplementation(() => new Promise(() => {}));
+
+    const { result, rerender } = renderHook(
+      ({ itemId }) => usePortalItem({ sourceId: 'src', map: mockMap, itemId }),
+      { initialProps: { itemId: 'abc' } }
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(true));
+
+    rerender({ itemId: '' });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.service).toBeNull();
+  });
+
   it('removes the resolved service on unmount', async () => {
     const { result, unmount } = renderHook(() =>
       usePortalItem({ sourceId: 'src', map: mockMap, itemId: 'abc' })

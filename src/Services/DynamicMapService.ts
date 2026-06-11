@@ -359,7 +359,9 @@ export class DynamicMapService {
   }
 
   private _appendTokenIfExists(params: URLSearchParams): void {
-    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
+    // apiKey is sent as the token URL parameter, matching the request-based paths.
+    const auth = this.esriServiceOptions as { token?: string; apiKey?: string };
+    appendTokenIfExists(params, auth.token ?? auth.apiKey);
   }
 
   private _auth() {

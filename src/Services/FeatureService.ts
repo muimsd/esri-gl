@@ -1049,18 +1049,16 @@ export class FeatureService {
     objectIds?: number[];
     where?: string;
   }): Promise<EditResult[]> {
-    // Preserve the original behaviour of only sending the params that were
-    // supplied (deletion by `where` alone must not send an empty objectIds).
-    const params: Record<string, unknown> = {};
-    if (deleteParams.objectIds) params.objectIds = deleteParams.objectIds.join(',');
-    if (deleteParams.where) params.where = deleteParams.where;
-
+    // Pass objectIds / where as first-order fields so arcgis-rest encodes them.
+    // Only include each when supplied: deletion by `where` alone must not send
+    // an empty objectIds list, and a hardcoded `objectIds: []` would (being
+    // truthy) override a supplied `where`/objectIds via appendCustomParams.
     const res = await deleteFeatures({
       url: this._esriServiceOptions.url,
-      objectIds: [],
-      params,
       authentication: this._authentication(),
-    });
+      ...(deleteParams.objectIds ? { objectIds: deleteParams.objectIds } : {}),
+      ...(deleteParams.where ? { where: deleteParams.where } : {}),
+    } as Parameters<typeof deleteFeatures>[0]);
     return res.deleteResults as unknown as EditResult[];
   }
 

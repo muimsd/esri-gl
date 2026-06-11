@@ -111,7 +111,9 @@ export class ImageService {
       params.append('mosaicRule', JSON.stringify(this.options.mosaicRule));
     if (this.options.renderingRule)
       params.append('renderingRule', JSON.stringify(this.options.renderingRule));
-    appendTokenIfExists(params, (this.esriServiceOptions as { token?: string }).token);
+    // apiKey is sent as the token URL parameter, matching the request-based paths.
+    const auth = this.esriServiceOptions as { token?: string; apiKey?: string };
+    appendTokenIfExists(params, auth.token ?? auth.apiKey);
 
     return {
       type: 'raster',

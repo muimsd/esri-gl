@@ -48,6 +48,8 @@ export function usePortalItem({
       setKind(null);
       setUrl(null);
       setTitle(null);
+      // Clear any in-flight loading state from a previous itemId/map.
+      setLoading(false);
       return;
     }
 

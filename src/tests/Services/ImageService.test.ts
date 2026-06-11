@@ -209,6 +209,28 @@ describe('ImageService', () => {
       expect(mockMap.addSource).toHaveBeenCalledWith('test-source', expectedSource);
     });
 
+    it('should send apiKey as the token parameter in the export tile URL', () => {
+      new ImageService('test-source', mockMap, {
+        url: 'https://example.com/ImageServer',
+        apiKey: 'my-api-key',
+      });
+
+      const source = mockMap.addSource.mock.calls[0][1] as { tiles: string[] };
+      expect(source.tiles[0]).toContain('token=my-api-key');
+    });
+
+    it('should prefer token over apiKey in the export tile URL', () => {
+      new ImageService('test-source', mockMap, {
+        url: 'https://example.com/ImageServer',
+        token: 'tok',
+        apiKey: 'my-api-key',
+      });
+
+      const source = mockMap.addSource.mock.calls[0][1] as { tiles: string[] };
+      expect(source.tiles[0]).toContain('token=tok');
+      expect(source.tiles[0]).not.toContain('my-api-key');
+    });
+
     it('should include custom tileSize from raster options', () => {
       const options: ImageServiceOptions = {
         url: 'https://example.com/ImageServer',
