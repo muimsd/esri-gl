@@ -23,6 +23,14 @@ import { resolveAuthentication, type EsriAuthOptions } from '@/request';
 export { SearchQueryBuilder };
 export type { ISearchResult, ISearchOptions, IItem, IGroup, IUser, IPagingParams };
 import { cleanTrailingSlash } from '@/utils';
+import { urlHasLayerIndex } from './resolveServiceUrl';
+
+export {
+  isPortalItemId,
+  resolveServiceUrl,
+  urlHasLayerIndex,
+  type ResolveServiceUrlOptions,
+} from './resolveServiceUrl';
 import type { Map } from '@/types';
 
 import { DynamicMapService } from '@/Services/DynamicMapService';
@@ -90,11 +98,6 @@ function authServiceFields(options: EsriAuthOptions | undefined) {
   if (options?.apiKey !== undefined) fields.apiKey = options.apiKey;
   if (options?.token !== undefined) fields.token = options.token;
   return fields;
-}
-
-/** True when a Feature Service url already points at a specific sublayer. */
-function urlHasLayerIndex(url: string): boolean {
-  return /\/\d+$/.test(cleanTrailingSlash(url));
 }
 
 /**
@@ -179,6 +182,13 @@ function kindFromItemType(type: string, typeKeywords: string[] = []): PortalServ
 /**
  * Resolve a single-layer portal item to the matching esri-gl service and add
  * its source to the map.
+ *
+ * @deprecated Pass the portal item id directly as a service `url` instead — every
+ * service (and its React hook / react-map-gl component) now accepts an item id
+ * wherever it accepts a service url, e.g.
+ * `new DynamicMapService(sourceId, map, { url: itemId })`. This helper remains
+ * for the case where the service type is unknown ahead of time and must be
+ * auto-detected from the item metadata.
  *
  * @example
  * const { service } = await serviceFromPortalItem('my-source', map, 'a1b2c3', { token });

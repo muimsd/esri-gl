@@ -1,5 +1,10 @@
 import { cleanTrailingSlash, getServiceDetails, removeMapSource } from '@/utils';
 import { esriRequest, type EsriAuthentication } from '@/request';
+import {
+  isPortalItemId,
+  resolveServiceUrl,
+  type ResolveServiceUrlOptions,
+} from '@/Portal/resolveServiceUrl';
 import type { Map, VectorTileServiceOptions, VectorSourceOptions, ServiceMetadata } from '@/types';
 
 interface VectorTileServiceExtendedOptions extends VectorTileServiceOptions {
@@ -26,9 +31,16 @@ export class VectorTileService {
   private _defaultEsriOptions: { useDefaultStyle: boolean };
   private _serviceMetadata: ServiceMetadata | null = null;
   private _defaultStyleData: StyleData | null = null;
+  private _removed = false;
 
   public vectorSrcOptions?: VectorSourceOptions;
   public esriServiceOptions: VectorTileServiceExtendedOptions;
+
+  /**
+   * Resolves once the source has been created — synchronously for a plain `url`,
+   * or after a portal item id `url` has been resolved to a service url.
+   */
+  public sourceReady: Promise<void>;
 
   constructor(
     sourceId: string,
@@ -40,8 +52,6 @@ export class VectorTileService {
       throw new Error('A url must be supplied as part of the esriServiceOptions object.');
     }
 
-    esriServiceOptions.url = cleanTrailingSlash(esriServiceOptions.url);
-
     this._sourceId = sourceId;
     this._map = map;
 
@@ -52,7 +62,33 @@ export class VectorTileService {
     this.vectorSrcOptions = vectorSrcOptions;
     this.esriServiceOptions = esriServiceOptions;
 
-    this._createSource();
+    this.sourceReady = this._initSource();
+  }
+
+  /** Resolve `url` (service url or portal item id) and add the source. */
+  private _initSource(): Promise<void> {
+    const url = this.esriServiceOptions.url;
+    if (!isPortalItemId(url)) {
+      this.esriServiceOptions.url = cleanTrailingSlash(url);
+      this._createSource();
+      return Promise.resolve();
+    }
+    return resolveServiceUrl(url, this._portalOptions()).then(resolved => {
+      // If the service was removed while the id resolved, don't re-add an orphan source.
+      if (this._removed) return;
+      this.esriServiceOptions.url = resolved;
+      this._createSource();
+    });
+  }
+
+  private _portalOptions(): ResolveServiceUrlOptions {
+    const o = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+      portal?: string;
+    };
+    return { token: o.token, apiKey: o.apiKey, authentication: o.authentication, portal: o.portal };
   }
 
   get options(): Required<VectorTileServiceExtendedOptions> {
@@ -173,6 +209,7 @@ export class VectorTileService {
   }
 
   remove(): void {
+    this._removed = true;
     removeMapSource(this._map, this._sourceId);
   }
 }

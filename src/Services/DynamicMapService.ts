@@ -7,6 +7,11 @@ import {
   updateAttribution,
 } from '@/utils';
 import { esriRequest, esriRawRequest, resolveAuthentication } from '@/request';
+import {
+  isPortalItemId,
+  resolveServiceUrl,
+  type ResolveServiceUrlOptions,
+} from '@/Portal/resolveServiceUrl';
 import { getLayer, getAllLayersAndTables, queryFeatures } from '@esri/arcgis-rest-feature-service';
 import type {
   Map,
@@ -55,15 +60,24 @@ export class DynamicMapService {
   private _map: Map;
   private _defaultEsriOptions: Omit<
     Required<EsriServiceOptions>,
-    'url' | 'time' | 'token' | 'apiKey' | 'authentication'
+    'url' | 'portal' | 'time' | 'token' | 'apiKey' | 'authentication'
   >;
   private _serviceMetadata: ServiceMetadata | null = null;
   private _pendingUpdate: number | null = null;
   private _lastUpdateTime = 0;
   private _updateDelay = 50; // ms debounce to avoid rapid successive aborts
+  private _removed = false;
 
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: DynamicMapServiceOptions;
+
+  /**
+   * Resolves once the map source has been created. For a plain service `url`
+   * this is already settled synchronously by the time the constructor returns;
+   * when `url` is a portal item id it resolves after the id has been turned into
+   * a service url and the source added.
+   */
+  public sourceReady: Promise<void>;
 
   constructor(
     sourceId: string,
@@ -74,8 +88,6 @@ export class DynamicMapService {
     if (!esriServiceOptions.url) {
       throw new Error('A url must be supplied as part of the esriServiceOptions object.');
     }
-
-    esriServiceOptions.url = cleanTrailingSlash(esriServiceOptions.url);
 
     this._sourceId = sourceId;
     this._map = map;
@@ -92,13 +104,47 @@ export class DynamicMapService {
 
     this.rasterSrcOptions = rasterSrcOptions;
     this.esriServiceOptions = esriServiceOptions;
-    this._createSource();
+    this.sourceReady = this._initSource();
+  }
 
+  /**
+   * Resolve `url` (a service url or a portal item id) and add the source. The
+   * non-id path runs synchronously so existing callers see the source
+   * immediately after construction.
+   */
+  private _initSource(): Promise<void> {
+    const url = this.esriServiceOptions.url;
+    if (!isPortalItemId(url)) {
+      this.esriServiceOptions.url = cleanTrailingSlash(url);
+      this._afterUrlResolved();
+      return Promise.resolve();
+    }
+    return resolveServiceUrl(url, this._portalOptions()).then(resolved => {
+      this.esriServiceOptions.url = resolved;
+      this._afterUrlResolved();
+    });
+  }
+
+  private _afterUrlResolved(): void {
+    // The id path is async: if the service was removed while the id resolved,
+    // don't re-add an orphan source.
+    if (this._removed) return;
+    this._createSource();
     if (this.options.getAttributionFromService) {
       this.setAttributionFromService().catch(() => {
         // Silently handle attribution fetch errors to prevent unhandled rejections
       });
     }
+  }
+
+  private _portalOptions(): ResolveServiceUrlOptions {
+    const o = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: import('@/request').EsriAuthentication;
+      portal?: string;
+    };
+    return { token: o.token, apiKey: o.apiKey, authentication: o.authentication, portal: o.portal };
   }
 
   get options(): Required<DynamicMapServiceOptions> {
@@ -897,6 +943,7 @@ export class DynamicMapService {
   }
 
   remove(): void {
+    this._removed = true;
     removeMapSource(this._map, this._sourceId);
   }
 }

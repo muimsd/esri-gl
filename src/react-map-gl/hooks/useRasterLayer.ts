@@ -3,7 +3,11 @@ import type { Map } from '@/types';
 import type { ReactMapGLMapRef } from '../utils/useReactMapGL';
 import { useMapLoaded } from './useMapLoaded';
 
-type RasterService = { remove: () => void };
+type RasterService = {
+  remove: () => void;
+  /** Resolves once the service's source exists (deferred for portal item id urls). */
+  sourceReady?: Promise<void>;
+};
 
 type MapLayerApi = {
   getStyle?: () => unknown;
@@ -60,12 +64,16 @@ export function useRasterLayer<TService extends RasterService>(
 
     const svc = createServiceRef.current(mapInstance as unknown as Map, sourceId);
     setService(svc);
+    let cancelled = false;
 
-    // Add the raster layer once its source exists.
-    const sourceReady =
-      typeof mapInstance.getSource !== 'function' || Boolean(mapInstance.getSource(sourceId));
+    // Add the raster layer once its source exists. When `url` is a portal item
+    // id the source is created asynchronously, so wait for `sourceReady`.
+    const addRasterLayer = () => {
+      if (cancelled) return;
+      const sourceReady =
+        typeof mapInstance.getSource !== 'function' || Boolean(mapInstance.getSource(sourceId));
+      if (mapInstance.getLayer?.(layerId) || !sourceReady) return;
 
-    if (!mapInstance.getLayer?.(layerId) && sourceReady) {
       const layerConfig = {
         id: layerId,
         type: 'raster' as const,
@@ -85,9 +93,22 @@ export function useRasterLayer<TService extends RasterService>(
           console.warn(`useRasterLayer: skipped adding layer "${layerId}"`, err);
         }
       }
+    };
+
+    if (svc.sourceReady && typeof svc.sourceReady.then === 'function') {
+      svc.sourceReady.then(addRasterLayer).catch(err => {
+        // A rejected sourceReady (e.g. a portal item id that failed to resolve)
+        // means the layer never appears — surface it rather than failing silently.
+        if (process.env?.NODE_ENV !== 'test') {
+          console.warn(`useRasterLayer: source for "${layerId}" was not created`, err);
+        }
+      });
+    } else {
+      addRasterLayer();
     }
 
     return () => {
+      cancelled = true;
       // Remove the layer first, then the service (which removes its source), so
       // a subsequent rebuild gets a clean slate for the same sourceId.
       try {

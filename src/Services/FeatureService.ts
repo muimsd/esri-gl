@@ -33,6 +33,7 @@ import {
   resolveAuthentication,
   type EsriAuthentication,
 } from '@/request';
+import { isPortalItemId, resolveServiceUrl, urlHasLayerIndex } from '@/Portal/resolveServiceUrl';
 import type {
   Map,
   FeatureServiceOptions,
@@ -123,6 +124,8 @@ export class FeatureService {
   > &
     Omit<FeatureServiceExtendedOptions, 'url'>;
   private _fallbackProjectionEndpoint: string;
+  /** Whether the caller supplied an explicit projectionEndpoint (vs. the derived default). */
+  private _userProvidedProjectionEndpoint: boolean;
   private _serviceMetadata: ExtendedServiceMetadata | null = null;
   private _maxExtent: [number, number, number, number];
   private _boundEvent: (() => void) | null = null;
@@ -187,6 +190,7 @@ export class FeatureService {
       url: cleanedUrl,
     };
 
+    this._userProvidedProjectionEndpoint = arcgisOptions.projectionEndpoint !== undefined;
     this._fallbackProjectionEndpoint =
       'https://tasks.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer/project';
     this._maxExtent = [-Infinity, -Infinity, Infinity, Infinity];
@@ -210,8 +214,38 @@ export class FeatureService {
     this._initialize();
   }
 
+  /**
+   * Resolve `url` when it is a portal item id: fetch the item's service url,
+   * append the sublayer index (default 0) when missing, and re-derive the
+   * projection endpoint if it was the auto-generated default.
+   */
+  private async _resolveUrl(): Promise<void> {
+    const raw = this._esriServiceOptions.url;
+    if (!isPortalItemId(raw)) return;
+
+    const opts = this._authOptions() as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+      portal?: string;
+    };
+    opts.portal = (this._esriServiceOptions as { portal?: string }).portal;
+
+    let url = await resolveServiceUrl(raw, opts);
+    if (!urlHasLayerIndex(url)) {
+      const layerId = (this._esriServiceOptions as { layerId?: number }).layerId ?? 0;
+      url = `${url}/${layerId}`;
+    }
+    this._esriServiceOptions.url = url;
+
+    if (!this._userProvidedProjectionEndpoint) {
+      this._esriServiceOptions.projectionEndpoint = `${url.split('rest/services')[0]}rest/services/Geometry/GeometryServer/project`;
+    }
+  }
+
   private async _initialize(): Promise<void> {
     try {
+      await this._resolveUrl();
       await this._getServiceMetadata();
 
       if (!this.supportsPbf) {
@@ -381,6 +415,12 @@ export class FeatureService {
 
   /** Get style, fetching metadata if needed */
   async getStyle(): Promise<StyleData> {
+    if (this._serviceMetadata) {
+      return this.defaultStyle;
+    }
+    // Wait for a portal item id `url` to resolve (and metadata to load) before
+    // falling back to a direct fetch off a possibly-unresolved url.
+    await this.sourceReady.catch(() => undefined);
     if (this._serviceMetadata) {
       return this.defaultStyle;
     }

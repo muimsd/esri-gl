@@ -22,8 +22,11 @@ entry points:
   `new ServiceClass(sourceId, map, esriOptions, sourceOptions?)`.
 - `src/Tasks/` — `Task` (base), `Query`, `Find`, `IdentifyFeatures`, `IdentifyImage`. Chainable,
   Esri-Leaflet-style operations.
-- `src/Portal/` — `serviceFromPortalItem()` / `servicesFromWebMap()` resolve a portal item id or
-  Web Map to services.
+- `src/Portal/` — `serviceFromPortalItem()` (deprecated) / `servicesFromWebMap()` resolve a
+  portal item id or Web Map to services. `resolveServiceUrl()` (in `resolveServiceUrl.ts`) is the
+  one place a service `url` that is a **portal item id** (a 32-char hex string, see
+  `isPortalItemId()`) is turned into a service URL — every service accepts an item id wherever it
+  accepts a `url`, so route id resolution through this helper, not ad-hoc `getItem` calls.
 - `src/request.ts` — the request + auth layer (see below).
 - `src/esri-rest.ts` — curated re-exports of `@esri/arcgis-rest-*` types (geometry, feature,
   query/edit/layer, basemap-session) so consumers get them from `esri-gl`. Add new

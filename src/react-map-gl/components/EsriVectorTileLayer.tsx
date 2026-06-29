@@ -50,15 +50,16 @@ export function EsriVectorTileLayer(props: EsriVectorTileLayerProps) {
     const service = new VectorTileService(sourceId, mapInstance as unknown as Map, options);
     serviceRef.current = service;
 
-    service
-      .getStyle()
+    Promise.resolve(service.sourceReady)
+      .then(() => service.getStyle())
       .then(() => {
         if (cancelled) return undefined;
 
         // Fetch the full style document through the shared request layer so
-        // auth (token / apiKey / authentication) is handled consistently.
+        // auth (token / apiKey / authentication) is handled consistently. Use
+        // the service's resolved url so a portal item id `url` works too.
         return esriRequest<{ layers?: VectorStyleLayer[] }>(
-          `${props.url}/resources/styles/root.json`,
+          `${service.esriServiceOptions.url}/resources/styles/root.json`,
           {
             httpMethod: 'GET',
             token: props.token,

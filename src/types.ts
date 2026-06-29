@@ -24,7 +24,14 @@ export interface ServiceMetadata {
 }
 
 export interface EsriServiceOptions {
+  /**
+   * The ArcGIS service URL, or an ArcGIS **portal item id** (a 32-character hex
+   * string). An item id is resolved to the item's service url before the source
+   * is created; see {@link isPortalItemId}.
+   */
   url: string;
+  /** Portal sharing REST URL used to resolve an item id `url`. Defaults to ArcGIS Online. */
+  portal?: string;
   layers?: number[] | number | false;
   layerDefs?: Record<string, string> | false;
   // ArcGIS Dynamic Layer configuration (MapServer export parameter)
@@ -86,7 +93,16 @@ export interface ImageServiceOptions extends EsriServiceOptions {
 
 // Feature Service query options (subset of ArcGIS REST parameters)
 export interface FeatureServiceOptions {
-  url: string; // Layer endpoint e.g., .../FeatureServer/0
+  /**
+   * The Feature Service layer endpoint (e.g. `.../FeatureServer/0`), or an
+   * ArcGIS portal item id. When an item id resolves to a service without a
+   * sublayer index, `layerId` (default 0) is appended.
+   */
+  url: string;
+  /** Portal sharing REST URL used to resolve an item id `url`. Defaults to ArcGIS Online. */
+  portal?: string;
+  /** Sublayer index appended when an item id resolves to a multi-layer service (default 0). */
+  layerId?: number;
   where?: string;
   outFields?: string | string[];
   f?: 'json' | 'geojson' | string;
@@ -114,7 +130,10 @@ export interface FeatureServiceOptions {
 }
 
 export interface VectorTileServiceOptions {
+  /** The Vector Tile Service URL, or an ArcGIS portal item id (32-char hex). */
   url: string;
+  /** Portal sharing REST URL used to resolve an item id `url`. Defaults to ArcGIS Online. */
+  portal?: string;
   getAttributionFromService?: boolean;
   token?: string;
   apiKey?: string;

@@ -1,15 +1,60 @@
 # Portal Items & Web Maps
 
-esri-gl can resolve an ArcGIS **portal item id** directly into a ready-to-render service,
-so you don't have to know the underlying service URL. This is powered by
-[`@esri/arcgis-rest-portal`](https://github.com/Esri/arcgis-rest-js) and supports two
-shapes: a single-layer item, and a full Web Map.
+esri-gl can load layers from an ArcGIS **portal item id** as well as a service URL, so you
+don't have to know the underlying service URL. This is powered by
+[`@esri/arcgis-rest-portal`](https://github.com/Esri/arcgis-rest-js).
 
-Both helpers accept the standard [authentication options](./authentication) (`token`,
-`apiKey`, or `authentication`) plus an optional `portal` (sharing REST URL, defaults to
-ArcGIS Online).
+## Pass an item id as the service `url`
 
-## Resolve a single item
+Every service accepts a portal **item id** (a 32-character hex string) anywhere it accepts a
+service `url`. When the `url` is an item id, esri-gl fetches the item, resolves it to the
+underlying service URL, and then creates the source — no separate code path required. This
+works for the service classes, their [React hooks](../react/hooks), and the
+[react-map-gl components](../react/react-map-gl).
+
+```typescript
+import { DynamicMapService } from 'esri-gl';
+
+// `url` is a portal item id instead of a full MapServer URL
+const service = new DynamicMapService('my-source', map, {
+  url: 'd5e02a0c1f2b4ec399823fdd3c2fdebd',
+  apiKey: 'AAPK…',
+});
+
+// The source is added once the id resolves:
+await service.sourceReady;
+map.addLayer({ id: 'my-layer', type: 'raster', source: 'my-source' });
+```
+
+Because you choose the service class (or hook / component), the **service type is explicit**.
+Notes:
+
+- `sourceReady` resolves once the source has been added — synchronously for a plain `url`, or
+  after the id is resolved for an item id. (`FeatureService` always exposed this; it now exists
+  on the raster and vector-tile services too.)
+- Auth is the standard [authentication options](./authentication) (`token`, `apiKey`,
+  `authentication`). Pass an optional `portal` (sharing REST URL, defaults to ArcGIS Online) for
+  items on ArcGIS Enterprise.
+- For a `FeatureService`, when the resolved item URL points at the service root, esri-gl targets
+  sublayer `0` by default — pass `layerId` to choose another:
+  `new FeatureService('src', map, { url: itemId, layerId: 2 })`.
+
+You can call the resolver directly if you only need the URL:
+
+```typescript
+import { resolveServiceUrl, isPortalItemId } from 'esri-gl';
+
+isPortalItemId('d5e02a0c1f2b4ec399823fdd3c2fdebd'); // → true
+const url = await resolveServiceUrl('d5e02a0c1f2b4ec399823fdd3c2fdebd', { apiKey });
+```
+
+## Resolve a single item (auto-detect the type)
+
+:::caution Deprecated
+`serviceFromPortalItem` is deprecated. Prefer passing the item id as a service `url` (above)
+when you know the service type. Reach for this helper only when the type must be **auto-detected**
+from the item metadata.
+:::
 
 `serviceFromPortalItem(sourceId, map, itemId, options?)` fetches the item with `getItem`,
 maps its `type` to the matching esri-gl service, constructs it, and adds its source to the map.

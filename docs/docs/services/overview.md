@@ -35,8 +35,18 @@ See the [Authentication guide](../guides/authentication) for auth managers and t
 
 ### From a Portal item
 
-Don't have the service URL? Resolve a portal item id or Web Map to services with
-[`serviceFromPortalItem` / `servicesFromWebMap`](../guides/portal-items).
+Don't have the service URL? Pass an ArcGIS **portal item id** (a 32-character hex string)
+anywhere a service `url` is expected — esri-gl resolves it to the underlying service URL before
+creating the source. Await `service.sourceReady` before adding the layer:
+
+```typescript
+const service = new DynamicMapService('source', map, { url: 'd5e02a0c1f2b4ec399823fdd3c2fdebd' });
+await service.sourceReady;
+map.addLayer({ id: 'layer-id', type: 'raster', source: 'source' });
+```
+
+To resolve a Web Map, or to auto-detect the service type from an item, see
+[Portal Items & Web Maps](../guides/portal-items).
 
 ## Service Comparison
 
