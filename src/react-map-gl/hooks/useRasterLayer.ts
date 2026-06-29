@@ -96,7 +96,13 @@ export function useRasterLayer<TService extends RasterService>(
     };
 
     if (svc.sourceReady && typeof svc.sourceReady.then === 'function') {
-      svc.sourceReady.then(addRasterLayer).catch(() => undefined);
+      svc.sourceReady.then(addRasterLayer).catch(err => {
+        // A rejected sourceReady (e.g. a portal item id that failed to resolve)
+        // means the layer never appears — surface it rather than failing silently.
+        if (process.env?.NODE_ENV !== 'test') {
+          console.warn(`useRasterLayer: source for "${layerId}" was not created`, err);
+        }
+      });
     } else {
       addRasterLayer();
     }

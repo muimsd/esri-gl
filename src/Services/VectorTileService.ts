@@ -31,6 +31,7 @@ export class VectorTileService {
   private _defaultEsriOptions: { useDefaultStyle: boolean };
   private _serviceMetadata: ServiceMetadata | null = null;
   private _defaultStyleData: StyleData | null = null;
+  private _removed = false;
 
   public vectorSrcOptions?: VectorSourceOptions;
   public esriServiceOptions: VectorTileServiceExtendedOptions;
@@ -73,6 +74,8 @@ export class VectorTileService {
       return Promise.resolve();
     }
     return resolveServiceUrl(url, this._portalOptions()).then(resolved => {
+      // If the service was removed while the id resolved, don't re-add an orphan source.
+      if (this._removed) return;
       this.esriServiceOptions.url = resolved;
       this._createSource();
     });
@@ -206,6 +209,7 @@ export class VectorTileService {
   }
 
   remove(): void {
+    this._removed = true;
     removeMapSource(this._map, this._sourceId);
   }
 }

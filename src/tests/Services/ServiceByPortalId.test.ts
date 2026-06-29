@@ -74,6 +74,22 @@ describe('Services accept a portal item id as their url', () => {
       expect(source.tiles[0]).toContain(`${MAP_SERVICE_URL}/export`);
     });
 
+    it('does not add an orphan source when removed before the id resolves', async () => {
+      mockGetItem.mockResolvedValue({ id: ITEM_ID, url: MAP_SERVICE_URL } as never);
+      const map = createMockMap();
+
+      const service = new DynamicMapService('src', map as Map, {
+        url: ITEM_ID,
+        getAttributionFromService: false,
+      });
+
+      // Remove before the deferred resolution completes.
+      service.remove();
+      await service.sourceReady;
+
+      expect(map.addSource).not.toHaveBeenCalled();
+    });
+
     it('still creates the source synchronously for a plain url', () => {
       const map = createMockMap();
 

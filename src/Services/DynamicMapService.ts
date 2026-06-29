@@ -66,6 +66,7 @@ export class DynamicMapService {
   private _pendingUpdate: number | null = null;
   private _lastUpdateTime = 0;
   private _updateDelay = 50; // ms debounce to avoid rapid successive aborts
+  private _removed = false;
 
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: DynamicMapServiceOptions;
@@ -125,6 +126,9 @@ export class DynamicMapService {
   }
 
   private _afterUrlResolved(): void {
+    // The id path is async: if the service was removed while the id resolved,
+    // don't re-add an orphan source.
+    if (this._removed) return;
     this._createSource();
     if (this.options.getAttributionFromService) {
       this.setAttributionFromService().catch(() => {
@@ -939,6 +943,7 @@ export class DynamicMapService {
   }
 
   remove(): void {
+    this._removed = true;
     removeMapSource(this._map, this._sourceId);
   }
 }

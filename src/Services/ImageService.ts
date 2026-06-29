@@ -37,6 +37,7 @@ export class ImageService {
     | 'portal'
   >;
   private _serviceMetadata: ServiceMetadata | null = null;
+  private _removed = false;
 
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: ImageServiceExtendedOptions;
@@ -91,6 +92,9 @@ export class ImageService {
   }
 
   private _afterUrlResolved(): void {
+    // The id path is async: if the service was removed while the id resolved,
+    // don't re-add an orphan source.
+    if (this._removed) return;
     this._createSource();
     if (this.options.getAttributionFromService) {
       this.setAttributionFromService().catch(() => {
@@ -287,6 +291,7 @@ export class ImageService {
   }
 
   remove(): void {
+    this._removed = true;
     removeMapSource(this._map, this._sourceId);
   }
 }
