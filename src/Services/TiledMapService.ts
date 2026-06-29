@@ -1,5 +1,10 @@
 import { cleanTrailingSlash, getServiceDetails, removeMapSource, updateAttribution } from '@/utils';
 import type { EsriAuthentication } from '@/request';
+import {
+  isPortalItemId,
+  resolveServiceUrl,
+  type ResolveServiceUrlOptions,
+} from '@/Portal/resolveServiceUrl';
 import type { Map, EsriServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface TiledMapServiceOptions extends EsriServiceOptions {
@@ -24,6 +29,12 @@ export class TiledMapService {
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: TiledMapServiceOptions;
 
+  /**
+   * Resolves once the source has been created — synchronously for a plain `url`,
+   * or after a portal item id `url` has been resolved to a service url.
+   */
+  public sourceReady: Promise<void>;
+
   constructor(
     sourceId: string,
     map: Map,
@@ -34,20 +45,45 @@ export class TiledMapService {
       throw new Error('A url must be supplied as part of the esriServiceOptions object.');
     }
 
-    esriServiceOptions.url = cleanTrailingSlash(esriServiceOptions.url);
-
     this._sourceId = sourceId;
     this._map = map;
 
     this.rasterSrcOptions = rasterSrcOptions;
     this.esriServiceOptions = esriServiceOptions;
-    this._createSource();
+    this.sourceReady = this._initSource();
+  }
 
-    if (esriServiceOptions.getAttributionFromService) {
+  /** Resolve `url` (service url or portal item id) and add the source. */
+  private _initSource(): Promise<void> {
+    const url = this.esriServiceOptions.url;
+    if (!isPortalItemId(url)) {
+      this.esriServiceOptions.url = cleanTrailingSlash(url);
+      this._afterUrlResolved();
+      return Promise.resolve();
+    }
+    return resolveServiceUrl(url, this._portalOptions()).then(resolved => {
+      this.esriServiceOptions.url = resolved;
+      this._afterUrlResolved();
+    });
+  }
+
+  private _afterUrlResolved(): void {
+    this._createSource();
+    if (this.esriServiceOptions.getAttributionFromService) {
       this.setAttributionFromService().catch(() => {
         // Silently handle attribution fetch errors to prevent unhandled rejections
       });
     }
+  }
+
+  private _portalOptions(): ResolveServiceUrlOptions {
+    const o = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+      portal?: string;
+    };
+    return { token: o.token, apiKey: o.apiKey, authentication: o.authentication, portal: o.portal };
   }
 
   get _source(): RasterSource {

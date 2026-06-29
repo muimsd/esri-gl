@@ -7,6 +7,10 @@ import type { UsePortalItemOptions, UsePortalItemResult } from '../types';
  * Resolve an ArcGIS portal item id to an esri-gl service (adding its source to
  * the map) via {@link serviceFromPortalItem}. Re-resolves when `itemId` / `map`
  * change and cleans up the previous service.
+ *
+ * @deprecated When you know the service type, pass the item id straight to the
+ * matching service hook as its `url` (e.g. `useDynamicMapService({ url: itemId })`).
+ * Use this hook only when the type must be auto-detected from the item.
  */
 export function usePortalItem({
   sourceId,

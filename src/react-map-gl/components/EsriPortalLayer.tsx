@@ -18,6 +18,10 @@ type MapLayerApi = {
 /**
  * React Map GL component that resolves an ArcGIS portal item id to the matching
  * esri-gl service and adds a renderer-appropriate layer for it.
+ *
+ * @deprecated When you know the service type, pass the item id as the `url` of
+ * the matching layer component (e.g. `<EsriDynamicLayer url={itemId} />`). Use
+ * this component only when the type must be auto-detected from the item.
  */
 export function EsriPortalLayer(props: EsriPortalLayerProps) {
   const { current: map } = useReactMapGL();

@@ -6,6 +6,11 @@ import {
   updateAttribution,
 } from '@/utils';
 import { esriRequest, type EsriAuthentication } from '@/request';
+import {
+  isPortalItemId,
+  resolveServiceUrl,
+  type ResolveServiceUrlOptions,
+} from '@/Portal/resolveServiceUrl';
 import type { Map, ImageServiceOptions, RasterSourceOptions, ServiceMetadata } from '@/types';
 
 interface ImageServiceExtendedOptions extends ImageServiceOptions {
@@ -29,11 +34,18 @@ export class ImageService {
     | 'token'
     | 'apiKey'
     | 'authentication'
+    | 'portal'
   >;
   private _serviceMetadata: ServiceMetadata | null = null;
 
   public rasterSrcOptions?: RasterSourceOptions;
   public esriServiceOptions: ImageServiceExtendedOptions;
+
+  /**
+   * Resolves once the source has been created — synchronously for a plain `url`,
+   * or after a portal item id `url` has been resolved to a service url.
+   */
+  public sourceReady: Promise<void>;
 
   constructor(
     sourceId: string,
@@ -44,8 +56,6 @@ export class ImageService {
     if (!esriServiceOptions.url) {
       throw new Error('A url must be supplied as part of the esriServiceOptions object.');
     }
-
-    esriServiceOptions.url = cleanTrailingSlash(esriServiceOptions.url);
 
     this._sourceId = sourceId;
     this._map = map;
@@ -63,13 +73,40 @@ export class ImageService {
 
     this.rasterSrcOptions = rasterSrcOptions;
     this.esriServiceOptions = esriServiceOptions;
-    this._createSource();
+    this.sourceReady = this._initSource();
+  }
 
+  /** Resolve `url` (service url or portal item id) and add the source. */
+  private _initSource(): Promise<void> {
+    const url = this.esriServiceOptions.url;
+    if (!isPortalItemId(url)) {
+      this.esriServiceOptions.url = cleanTrailingSlash(url);
+      this._afterUrlResolved();
+      return Promise.resolve();
+    }
+    return resolveServiceUrl(url, this._portalOptions()).then(resolved => {
+      this.esriServiceOptions.url = resolved;
+      this._afterUrlResolved();
+    });
+  }
+
+  private _afterUrlResolved(): void {
+    this._createSource();
     if (this.options.getAttributionFromService) {
       this.setAttributionFromService().catch(() => {
         // Silently handle attribution fetch errors to prevent unhandled rejections
       });
     }
+  }
+
+  private _portalOptions(): ResolveServiceUrlOptions {
+    const o = this.esriServiceOptions as {
+      token?: string;
+      apiKey?: string;
+      authentication?: EsriAuthentication;
+      portal?: string;
+    };
+    return { token: o.token, apiKey: o.apiKey, authentication: o.authentication, portal: o.portal };
   }
 
   get options(): Required<ImageServiceExtendedOptions> {
