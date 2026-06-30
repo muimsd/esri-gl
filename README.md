@@ -35,7 +35,8 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
   (`-request`, `-feature-service`, `-portal`, `-basemap-sessions`)
 - **Flexible auth** — `token`, `apiKey`, or any `IAuthenticationManager`
   (`ApiKeyManager`, `ArcGISIdentityManager`, …) on every service and task
-- **Portal item resolution** — turn a portal item id or Web Map into ready-to-render services
+- **Portal items** — pass an ArcGIS portal item id as a service `url` (every service, hook, and
+  component accepts one), or resolve a whole Web Map into ready-to-render services
 
 ## Installation
 
@@ -165,22 +166,33 @@ migration notes.
 
 ## Portal Items & Web Maps
 
-Resolve an ArcGIS portal item id — or a whole Web Map — straight to esri-gl services
-(powered by `@esri/arcgis-rest-portal`):
+Don't have the service URL? Pass an ArcGIS **portal item id** (a 32-character hex string)
+anywhere a service `url` is expected — esri-gl resolves it to the underlying service URL before
+creating the source (powered by `@esri/arcgis-rest-portal`). Await `service.sourceReady` before
+adding the layer:
 
 ```typescript
-import { serviceFromPortalItem, servicesFromWebMap } from 'esri-gl';
+import { DynamicMapService } from 'esri-gl';
 
-// Single item → the matching service (Feature/Map/Image/Vector Tile)
-const { service, kind } = await serviceFromPortalItem('my-source', map, itemId, { apiKey });
+// `url` is a portal item id instead of a full MapServer URL
+const service = new DynamicMapService('my-source', map, { url: itemId, apiKey });
+await service.sourceReady;
 map.addLayer({ id: 'my-layer', type: 'raster', source: 'my-source' });
+```
 
-// Web Map → a service per operational layer
+This works for the service classes, their React hooks, and the react-map-gl components. To resolve
+a whole Web Map into a service per operational layer, use `servicesFromWebMap`:
+
+```typescript
+import { servicesFromWebMap } from 'esri-gl';
+
 const layers = await servicesFromWebMap(map, webMapItemId, { token });
 ```
 
 See the [Portal Items guide](https://esri-gl.pages.dev/docs/guides/portal-items) for the
-item-type/layer-type mappings and options.
+item-type/layer-type mappings and options. (`serviceFromPortalItem` still exists for
+auto-detecting the service type from an item, but is deprecated in favour of passing the id as a
+`url`.)
 
 ## React Integration
 
