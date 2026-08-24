@@ -1,6 +1,8 @@
-# Advanced Feature Types
+# Types
 
-This page documents all the TypeScript interfaces and types for the advanced DynamicMapService features.
+TypeScript interfaces and types exported from `esri-gl` — the authentication and portal types, the
+ArcGIS REST JS types re-exported through the package, and the advanced `DynamicMapService` feature
+types.
 
 See the [Authentication guide](../guides/authentication) and the [Portal Items guide](../guides/portal-items) for how the authentication and portal types below are used in practice.
 
@@ -287,19 +289,22 @@ interface StatisticResult {
 
 ### FeatureSet
 
-Result from feature queries:
+Result from feature queries. An alias of `IFeatureSet` (`@esri/arcgis-rest-request`) plus the
+pagination flag — note the geometry is an **Esri** geometry, not GeoJSON:
 
 ```typescript
-interface FeatureSet {
-  features: Array<{
-    attributes: Record<string, unknown>;       // Feature attributes
-    geometry?: GeoJSON.Geometry;               // Feature geometry (if requested)
-  }>;
-  fields?: FieldInfo[];                        // Field definitions
-  spatialReference?: {                         // Coordinate system
-    wkid?: number;
-    latestWkid?: number;
-  };
+type FeatureSet = IFeatureSet & {
+  exceededTransferLimit?: boolean;             // True if more results are available
+};
+
+// IFeatureSet, abridged
+interface IFeatureSet {
+  features: IFeature[];                        // { attributes, geometry? }
+  objectIdFieldName?: string;
+  globalIdFieldName?: string;
+  geometryType?: GeometryType;
+  fields?: IField[];                           // Field definitions
+  spatialReference?: ISpatialReference;        // Coordinate system
 }
 ```
 
@@ -337,8 +342,8 @@ interface LegendInfo {
   layerId: number;                            // Layer ID
   layerName: string;                          // Layer name
   layerType: string;                          // Layer type
-  minScale: number;                           // Minimum scale
-  maxScale: number;                           // Maximum scale
+  minScale?: number;                          // Minimum scale
+  maxScale?: number;                          // Maximum scale
   legend: Array<{
     label: string;                            // Symbol label
     url: string;                              // Symbol image URL
@@ -346,69 +351,73 @@ interface LegendInfo {
     contentType: string;                      // Image content type
     height: number;                           // Symbol height
     width: number;                            // Symbol width
+    values?: string[];                        // Values the symbol represents
   }>;
 }
 ```
 
 ### LayerMetadata
 
-Comprehensive layer metadata:
+Comprehensive layer metadata. Extends [`LayerInfo`](#layerinfo) with the service capability flags:
 
 ```typescript
-interface LayerMetadata {
-  id: number;                                 // Layer ID
-  name: string;                               // Layer name
-  type: string;                               // Layer type
-  description?: string;                       // Layer description
-  geometryType?: string;                      // Geometry type
-  minScale: number;                           // Minimum scale
-  maxScale: number;                           // Maximum scale
-  defaultVisibility: boolean;                 // Default visibility
-  extent?: Extent;                            // Layer extent
-  fields?: FieldInfo[];                       // Field definitions
-  drawingInfo?: EsriDrawingInfo;              // Default drawing info
-  capabilities?: string;                      // Layer capabilities
-  [key: string]: unknown;                     // Additional properties
+interface LayerMetadata extends LayerInfo {
+  capabilities?: string;                      // e.g. 'Query,Create,Update,Delete'
+  maxRecordCount?: number;                    // Server page size
+  standardMaxRecordCount?: number;
+  tileMaxRecordCount?: number;
+  hasAttachments?: boolean;
+  supportsApplyEditsWithGlobalIds?: boolean;
+  supportsPagination?: boolean;
+  supportsAttachments?: boolean;
+  htmlPopupType?: string;
+  relationships?: Array<{
+    id: number;
+    name: string;
+    relatedTableId: number;
+    cardinality:
+      | 'esriRelCardinalityOneToOne'
+      | 'esriRelCardinalityOneToMany'
+      | 'esriRelCardinalityManyToMany';
+  }>;
 }
 ```
 
 ### FieldInfo
 
-Field definition information:
+Field definition information. An alias of `IField` (`@esri/arcgis-rest-request`) with a few optional
+extras:
 
 ```typescript
-interface FieldInfo {
-  name: string;                               // Field name
-  type: string;                               // Field type
-  alias: string;                              // Field alias
+type FieldInfo = IField & {
   length?: number;                            // Field length
   nullable?: boolean;                         // Nullable field
+  defaultValue?: unknown;                     // Default value
+};
+
+// IField, abridged
+interface IField {
+  name: string;                               // Field name
+  type: FieldType;                            // e.g. 'esriFieldTypeString'
+  alias?: string;                             // Field alias
   editable?: boolean;                         // Editable field
-  domain?: {                                  // Field domain
-    type: string;
-    name: string;
-    codedValues?: Array<{
-      name: string;
-      code: string | number;
-    }>;
-  };
+  domain?: IDomain | null;                    // Coded-value or range domain
 }
 ```
 
 ### Extent
 
-Spatial extent information:
+Spatial extent information. An alias of `IExtent` (`@esri/arcgis-rest-request`):
 
 ```typescript
-interface Extent {
+type Extent = IExtent;
+
+interface IExtent {
   xmin: number;                               // Minimum X coordinate
   ymin: number;                               // Minimum Y coordinate
   xmax: number;                               // Maximum X coordinate
   ymax: number;                               // Maximum Y coordinate
-  spatialReference: {                         // Coordinate system
-    wkid?: number;
-    latestWkid?: number;
-  };
+  spatialReference?: ISpatialReference;       // Coordinate system (wkid / latestWkid / wkt)
 }
 ```
 
@@ -421,11 +430,24 @@ interface LayerInfo {
   id: number;                                 // Layer ID
   name: string;                               // Layer name
   type: string;                               // Layer type
-  parentLayerId?: number;                     // Parent layer ID
-  defaultVisibility: boolean;                 // Default visibility
-  subLayerIds?: number[];                     // Sub-layer IDs
-  minScale: number;                           // Minimum scale
-  maxScale: number;                           // Maximum scale
+  description?: string;                       // Layer description
+  geometryType?:                              // Geometry type
+    | 'esriGeometryPoint'
+    | 'esriGeometryMultipoint'
+    | 'esriGeometryPolyline'
+    | 'esriGeometryPolygon'
+    | 'esriGeometryEnvelope';
+  minScale?: number;                          // Minimum scale
+  maxScale?: number;                          // Maximum scale
+  defaultVisibility?: boolean;                // Default visibility
+  fields?: FieldInfo[];                       // Field definitions
+  drawingInfo?: EsriDrawingInfo;              // Default drawing info
+  extent?: Extent;                            // Layer extent
+  timeInfo?: {                                // Time configuration
+    timeExtent?: [number, number];
+    timeField?: string;
+    timeFieldFormat?: string;
+  };
 }
 ```
 
@@ -513,7 +535,9 @@ All types are exported from the main esri-gl module and can be imported for use 
 
 ### AGOLServiceError
 
-Error object returned by ArcGIS Online services:
+Shape of an ArcGIS Online service error body. Errors thrown by esri-gl are
+`ArcGISRequestError` instances (see the [Authentication guide](../guides/authentication)) — this
+interface describes the error payload they wrap:
 
 ```typescript
 interface AGOLServiceError {
@@ -525,41 +549,57 @@ interface AGOLServiceError {
 
 ### EditResult
 
-Result from a feature editing operation:
+Result from a feature editing operation. An alias of `IEditFeatureResult`
+(`@esri/arcgis-rest-feature-service`):
 
 ```typescript
-interface EditResult {
+type EditResult = IEditFeatureResult;
+
+interface IEditFeatureResult {
   objectId: number;       // Object ID of the affected feature
   globalId?: string;      // Global ID if available
   success: boolean;       // Whether the operation succeeded
-  error?: AGOLServiceError; // Error details if operation failed
+  error?: {               // Only present when success is false
+    code: number;
+    description: string;
+  };
 }
 ```
 
 ### ApplyEditsResult
 
-Result from a batch apply edits operation:
+Result from a batch apply edits operation. An alias of `IApplyEditsResult`:
 
 ```typescript
-interface ApplyEditsResult {
-  addResults?: EditResult[];    // Results for added features
-  updateResults?: EditResult[]; // Results for updated features
-  deleteResults?: EditResult[]; // Results for deleted features
+type ApplyEditsResult = IApplyEditsResult;
+
+interface IApplyEditsResult {
+  addResults: IEditFeatureResult[];    // Results for added features
+  updateResults: IEditFeatureResult[]; // Results for updated features
+  deleteResults: IEditFeatureResult[]; // Results for deleted features
+  attachments?: {                      // Attachment edits, when included
+    addResults?: IEditFeatureResult[];
+    updateResults?: IEditFeatureResult[];
+    deleteResults?: IEditFeatureResult[];
+  };
 }
 ```
 
 ### AttachmentInfo
 
-Metadata for a feature attachment:
+Metadata for a feature attachment. An alias of `IAttachmentInfo` plus optional extras:
 
 ```typescript
-interface AttachmentInfo {
-  id: number;             // Attachment ID
+type AttachmentInfo = IAttachmentInfo & {
   globalId?: string;      // Global ID if available
+  keywords?: string;      // Keywords/tags
+};
+
+interface IAttachmentInfo {
+  id: number;             // Attachment ID
   name: string;           // File name
   contentType: string;    // MIME type
   size: number;           // File size in bytes
-  keywords?: string;      // Keywords/tags
 }
 ```
 

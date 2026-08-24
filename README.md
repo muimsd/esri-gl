@@ -15,7 +15,7 @@ A TypeScript library that bridges Esri ArcGIS REST services with MapLibre GL JS 
 - **DynamicMapService** — Server-rendered raster tiles with dynamic styling, filtering, labeling, and identify
 - **TiledMapService** — Pre-cached tiles for fast basemaps
 - **ImageService** — Analytical raster data with rendering rules and temporal support
-- **FeatureService** — Vector data with smart vector tile detection, GeoJSON fallback, editing, and attachments
+- **FeatureService** — Viewport-loaded vector data (PBF query format with GeoJSON fallback), editing, and attachments
 - **VectorTileService** — Client-rendered vector tiles
 - **VectorBasemapStyle** — Esri's professional basemap styles
 
@@ -125,6 +125,10 @@ VectorBasemapStyle.applyStyle(map, 'arcgis/streets', { apiKey: 'YOUR_KEY' });
 
 ## Tasks
 
+Every configuration method returns the task — the request is only sent by an execution method
+(`run()`, `runAll()`, `count()`, `ids()`, `bounds()`), and Identify/Query/Find resolve to a GeoJSON
+`FeatureCollection`:
+
 ```typescript
 import { IdentifyFeatures, query } from 'esri-gl';
 
@@ -221,7 +225,6 @@ import { EsriDynamicLayer, EsriFeatureLayer } from 'esri-gl/react-map-gl';
     id="census"
     url="https://.../Census/MapServer"
     layers={[0, 1]}
-    opacity={0.8}
     token="YOUR_TOKEN"
   />
   <EsriFeatureLayer
@@ -243,6 +246,8 @@ Working examples in [`examples/`](examples/):
 | [maplibre-esm](examples/maplibre-esm/) | All services and tasks with vanilla MapLibre |
 | [maplibre-react-hooks](examples/maplibre-react-hooks/) | React hooks with MapLibre |
 | [maplibre-react-map-gl](examples/maplibre-react-map-gl/) | react-map-gl components |
+| [maplibre-react-dynamic](examples/maplibre-react-dynamic/) | DynamicMapService styling, filtering, and labels |
+| [react-integration](examples/react-integration/) | Minimal React integration |
 
 ```bash
 cd examples/maplibre-esm && npm install && npm run dev
@@ -253,7 +258,7 @@ cd examples/maplibre-esm && npm install && npm run dev
 ```bash
 npm run dev          # Start demo dev server
 npm run build        # Build library (ESM + UMD)
-npm run test         # Run tests (733 tests, 31 suites)
+npm run test         # Run the jest suite
 npm run type-check   # TypeScript check
 npm run lint         # ESLint
 npm run build:docs   # Build documentation site

@@ -9,7 +9,7 @@ All components share these common props:
 | Prop | Type | Description |
 |------|------|-------------|
 | id | `string` | **Required** Unique layer ID |
-| sourceId | `string` | Custom source ID (defaults to `id`) |
+| sourceId | `string` | Custom source ID (defaults to `esri-<kind>-<id>`, e.g. `esri-dynamic-census`) |
 | beforeId | `string` | Insert layer before this layer ID |
 | visible | `boolean` | Layer visibility |
 | token | `string` | ArcGIS token (sent as the `token` request parameter) |
@@ -33,7 +33,10 @@ Use `token` (or `apiKey`) on any layer component to access secured services:
 />
 ```
 
-`EsriVectorBasemapLayer` still takes a required `token` prop (see below).
+`EsriVectorBasemapLayer` needs a `token` **or** an `apiKey` (see below).
+
+Every layer component also accepts an ArcGIS **portal item id** in place of its `url` — see the
+[Portal Items guide](../guides/portal-items).
 :::
 
 ### EsriDynamicLayer
@@ -112,6 +115,7 @@ Renders an Esri Feature Service as a GeoJSON vector layer.
 | url | `string` | | **Required** Feature layer URL |
 | where | `string` | | SQL WHERE filter |
 | outFields | `string \| string[]` | | Fields to include |
+| type | `'fill' \| 'circle' \| 'line' \| 'symbol' \| 'heatmap'` | `'fill'` | Layer type added for the source |
 | paint | `Record<string, unknown>` | | MapLibre paint properties |
 | layout | `Record<string, unknown>` | | MapLibre layout properties |
 
@@ -150,12 +154,17 @@ import { EsriVectorTileLayer } from 'esri-gl/react-map-gl';
 
 ### EsriVectorBasemapLayer
 
-Applies an Esri Vector Basemap Style to the map. Note: this replaces the entire map style rather than adding a layer.
+Applies an Esri Vector Basemap Style to the map by calling `setStyle` on it. Note: this replaces the
+**entire** map style rather than adding a layer, so any layers other components added are dropped
+when it mounts.
 
 | Prop | Type | Description |
 |------|------|-------------|
 | basemapEnum | `string` | **Required** Basemap style (e.g., `'arcgis/streets'`, `'arcgis/navigation'`) |
-| token | `string` | **Required** Authentication token |
+| token | `string` | OAuth / user token (v2 host). Provide `token` **or** `apiKey`. |
+| apiKey | `string` | ArcGIS Location Platform API key (v1 host). Provide `token` **or** `apiKey`. |
+| language | `string` | Locale for the basemap labels |
+| worldview | `string` | Worldview to render disputed boundaries for |
 
 ```tsx
 import { EsriVectorBasemapLayer } from 'esri-gl/react-map-gl';
@@ -170,6 +179,12 @@ import { EsriVectorBasemapLayer } from 'esri-gl/react-map-gl';
 ```
 
 ### EsriPortalLayer
+
+:::caution Deprecated
+When you know the service type, pass the item id as the `url` of the matching layer component
+(e.g. `<EsriDynamicLayer url={itemId} />`). Use `EsriPortalLayer` only when the type must be
+auto-detected from the item.
+:::
 
 Resolves an ArcGIS **portal item id** to the matching service and adds a
 renderer-appropriate layer for it — raster for Dynamic/Tiled/Image services, the
@@ -210,7 +225,7 @@ Hook for using Esri services with **MapLibre GL** via react-map-gl.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| map | `Map \| null` | The MapLibre GL map instance |
+| map | `Map \| undefined` | The MapLibre GL map instance (`undefined` until the map ref is set) |
 | useDynamicMapService | `function` | Pre-configured hook |
 | useTiledMapService | `function` | Pre-configured hook |
 | useImageService | `function` | Pre-configured hook |
@@ -239,7 +254,7 @@ Hook for using Esri services with **Mapbox GL** via react-map-gl. Same API as `u
 
 | Property | Type | Description |
 |----------|------|-------------|
-| map | `Map \| null` | The Mapbox GL map instance |
+| map | `Map \| undefined` | The Mapbox GL map instance (`undefined` until the map ref is set) |
 | useDynamicMapService | `function` | Pre-configured hook |
 | useTiledMapService | `function` | Pre-configured hook |
 | useImageService | `function` | Pre-configured hook |

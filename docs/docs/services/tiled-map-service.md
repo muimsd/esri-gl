@@ -51,7 +51,8 @@ new TiledMapService(id, map, esriServiceOptions, rasterSourceOptions?)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `url` | `string` | *required* | ArcGIS MapServer URL |
+| `url` | `string` | *required* | ArcGIS MapServer URL (a cached/tiled service), or an ArcGIS [portal item id](../guides/portal-items) |
+| `portal` | `string` | — | Portal sharing REST URL used to resolve an item id `url` (defaults to ArcGIS Online) |
 | `fetchOptions` | `object` | — | Deprecated — no longer forwarded to requests; use `authentication` instead. |
 | `token` | `string` | — | ArcGIS authentication token |
 | `apiKey` | `string` | — | ArcGIS Location Platform API key (sent as the `token` parameter) |
@@ -64,8 +65,17 @@ new TiledMapService(id, map, esriServiceOptions, rasterSourceOptions?)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `getMetadata()` | `Promise<ServiceMetadata>` | Fetches service metadata (tile info, extent, attribution) |
-| `setToken(token)` | `void` | Updates the authentication token |
+| `getMetadata()` | `Promise<ServiceMetadata>` | Fetches (and caches) service metadata (tile info, extent, attribution) |
+| `setAttributionFromService()` | `Promise<void>` | Sets map attribution from the service `copyrightText` |
+| `setToken(token)` | `void` | Updates the authentication token and re-points the tile URLs |
+| `update()` | `void` | No-op — tiled sources use static tile URLs and cannot be hot-updated |
+| `remove()` | `void` | Removes the service source and its layers from the map |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `sourceReady` | `Promise<void>` | Resolves once the source has been added to the map (deferred when `url` is a portal item id) |
 
 ## Examples
 
@@ -82,7 +92,7 @@ map.setLayoutProperty('topo-layer', 'visibility', 'visible'); // Show
 
 ### Service Information
 ```typescript
-const info = await service.getServiceInfo();
+const info = await service.getMetadata();
 console.log(info.tileInfo);      // Tile scheme information
 console.log(info.fullExtent);    // Service extent
 console.log(info.copyrightText); // Attribution text

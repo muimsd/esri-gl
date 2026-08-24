@@ -1,9 +1,9 @@
 import { Task } from './Task';
+import type { TaskOptions } from './Task';
 import { Service } from '@/Services/Service';
 
-export interface FindOptions {
+export interface FindOptions extends Pick<TaskOptions, 'token' | 'apiKey' | 'authentication'> {
   url: string;
-  token?: string;
   searchText?: string;
   contains?: boolean;
   searchFields?: string | string[];
@@ -97,6 +97,10 @@ export class Find extends Task {
       if (findOptions.layerDefs !== undefined) this.params.layerDefs = findOptions.layerDefs;
       if (findOptions.token !== undefined) this.params.token = findOptions.token;
     }
+
+    // Subclass fields (including `setters`) initialize after super() runs, so
+    // the generated chainable setters have to be bound here.
+    this.initSetters();
   }
 
   /**
@@ -132,6 +136,75 @@ export class Find extends Task {
     } else {
       this.params.layers = layers;
     }
+    return this;
+  }
+
+  /**
+   * Include or exclude geometry in the results
+   */
+  returnGeometry(returnGeometry: boolean): Find {
+    this.params.returnGeometry = returnGeometry;
+    return this;
+  }
+
+  /**
+   * Set the spatial reference (WKID) of the returned geometry
+   */
+  spatialReference(sr: string | number): Find {
+    this.params.sr = sr;
+    return this;
+  }
+
+  /** Alias of {@link Find.spatialReference}. */
+  sr(sr: string | number): Find {
+    return this.spatialReference(sr);
+  }
+
+  /**
+   * Set the maximum allowable offset used to generalize returned geometry
+   */
+  maxAllowableOffset(offset: number): Find {
+    this.params.maxAllowableOffset = offset;
+    return this;
+  }
+
+  /**
+   * Set the number of decimal places returned for geometry (`geometryPrecision`)
+   */
+  precision(precision: number): Find {
+    this.params.geometryPrecision = precision;
+    return this;
+  }
+
+  /**
+   * Search against a dynamic layer definition instead of the published layers
+   */
+  dynamicLayers(dynamicLayers: unknown[]): Find {
+    this.params.dynamicLayers = dynamicLayers;
+    return this;
+  }
+
+  /**
+   * Include or exclude Z values in the returned geometry
+   */
+  returnZ(returnZ: boolean): Find {
+    this.params.returnZ = returnZ;
+    return this;
+  }
+
+  /**
+   * Include or exclude M values in the returned geometry
+   */
+  returnM(returnM: boolean): Find {
+    this.params.returnM = returnM;
+    return this;
+  }
+
+  /**
+   * Query a specific geodatabase version
+   */
+  gdbVersion(gdbVersion: string): Find {
+    this.params.gdbVersion = gdbVersion;
     return this;
   }
 

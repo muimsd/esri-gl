@@ -183,7 +183,7 @@ function App() {
 
 ```tsx
 import React from 'react';
-import { Map } from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox'; // or 'react-map-gl/maplibre'
 import { EsriDynamicLayer } from 'esri-gl/react-map-gl';
 
 function MapWithEsriLayer() {
@@ -229,7 +229,10 @@ import { EsriFeatureLayer } from 'esri-gl/react-map-gl';
 
 ### Authenticated Services
 
-Every react-map-gl layer component accepts `token`, `apiKey`, `proxy`, `getAttributionFromService`, `requestParams`, and `fetchOptions`. Defined values are forwarded to the underlying service, so you can access secured ArcGIS endpoints directly from the declarative API:
+Every react-map-gl layer component accepts `token`, `apiKey`, `authentication`,
+`getAttributionFromService`, and `requestParams` (plus the deprecated, no-longer-applied `proxy` and
+`fetchOptions`). Defined values are forwarded to the underlying service, so you can access secured
+ArcGIS endpoints directly from the declarative API:
 
 ```tsx
 <EsriDynamicLayer
@@ -248,15 +251,18 @@ Every react-map-gl layer component accepts `token`, `apiKey`, `proxy`, `getAttri
 ## Available Hooks
 
 ### Service Hooks
+- `useEsriService` - Base hook the others build on; manages any service's lifecycle
 - `useDynamicMapService` - ArcGIS Dynamic Map Services
-- `useTiledMapService` - ArcGIS Tiled Map Services  
+- `useTiledMapService` - ArcGIS Tiled Map Services
 - `useImageService` - ArcGIS Image Services
 - `useVectorTileService` - ArcGIS Vector Tile Services
-- `useVectorBasemapStyle` - Esri Vector Basemap Styles
+- `useVectorBasemapStyle` - Esri Vector Basemap Styles (takes only `{ options }` — no map)
 - `useFeatureService` - ArcGIS Feature Services
+- `usePortalItem` - Resolve a portal item id to a service (deprecated — pass the id as a `url` instead)
 
 ### Task Hooks
 - `useIdentifyFeatures` - Identify features at a point
+- `useIdentifyImage` - Identify pixel values in an image service
 - `useQuery` - Query features from a service (includes `queryAll` for pagination)
 - `useFind` - Find features by text
 - `useFeatureEditing` - Edit features (add, update, delete, applyEdits)
@@ -265,6 +271,7 @@ Every react-map-gl layer component accepts `token`, `apiKey`, `proxy`, `getAttri
 
 ### React Components
 - `EsriServiceProvider` - Context provider for sharing map instance
+- `useEsriMap` - Read the map instance out of `EsriServiceProvider`
 - `EsriLayer` - Generic layer component
 
 ### React Map GL Components
@@ -272,20 +279,26 @@ Every react-map-gl layer component accepts `token`, `apiKey`, `proxy`, `getAttri
 - `EsriTiledLayer` - Tiled Map Service layer
 - `EsriImageLayer` - Image Service layer
 - `EsriVectorTileLayer` - Vector Tile Service layer
-- `EsriVectorBasemapLayer` - Vector Basemap Style layer
+- `EsriVectorBasemapLayer` - Vector Basemap Style (replaces the whole map style)
 - `EsriFeatureLayer` - Feature Service layer
+- `EsriPortalLayer` - Portal item layer (deprecated — pass the item id as a `url` instead)
+
+### React Map GL Hooks
+- `useEsriMaplibreLayer` / `useEsriMapboxLayer` - The map instance plus map-bound service hooks
 
 ## TypeScript Support
 
 All hooks and components are fully typed with TypeScript. Import types as needed:
 
 ```tsx
-import type { 
-  UseDynamicMapServiceOptions, 
-  EsriDynamicLayerProps 
+import type {
+  UseDynamicMapServiceOptions,
+  UseEsriServiceResult,
+  EsriLayerProps
 } from 'esri-gl/react';
 
-import type { 
-  ReactMapGLEsriDynamicLayerProps 
+// react-map-gl layer prop types are exported with a ReactMapGL prefix
+import type {
+  ReactMapGLEsriDynamicLayerProps
 } from 'esri-gl/react-map-gl';
 ```

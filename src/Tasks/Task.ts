@@ -10,9 +10,13 @@ export interface TaskOptions {
   proxy?: string | boolean;
   useCors?: boolean;
   requestParams?: Record<string, unknown>;
+  /** A static, pre-generated ArcGIS token. */
   token?: string;
+  /** An ArcGIS Location Platform API key (sent as the `token` parameter). */
+  apiKey?: string;
+  /** @deprecated Lower-case alias of {@link TaskOptions.apiKey}. */
   apikey?: string;
-  /** An ArcGIS REST JS authentication manager (takes precedence over token/apikey). */
+  /** An ArcGIS REST JS authentication manager (takes precedence over apiKey/token). */
   authentication?: EsriAuthentication;
 }
 
@@ -46,12 +50,24 @@ export class Task {
       this.params = {};
     }
 
-    // Generate setter methods based on the setters object
-    if (this.setters) {
-      for (const setter in this.setters) {
-        const param = this.setters[setter];
-        (this as Record<string, unknown>)[setter] = this.generateSetter(param, this);
-      }
+    this.initSetters();
+  }
+
+  /**
+   * Bind a chainable setter method for every `methodName: paramName` pair in
+   * `setters`.
+   *
+   * Subclass field initializers (including `setters` itself) only run *after*
+   * `super()` returns, so subclasses must call this at the end of their own
+   * constructor for their setters to exist. Names that are already implemented
+   * as real methods are left alone, so hand-written setters win over the
+   * generated ones.
+   */
+  protected initSetters(): void {
+    if (!this.setters) return;
+    for (const [method, param] of Object.entries(this.setters)) {
+      if (typeof (this as unknown as Record<string, unknown>)[method] === 'function') continue;
+      (this as unknown as Record<string, unknown>)[method] = this.generateSetter(param, this);
     }
   }
 
@@ -159,7 +175,7 @@ export class Task {
       params: restParams,
       httpMethod: method === 'GET' ? 'GET' : 'POST',
       token: (token as string | undefined) ?? this.options.token,
-      apiKey: (apiKey as string | undefined) ?? this.options.apikey,
+      apiKey: (apiKey as string | undefined) ?? this.options.apiKey ?? this.options.apikey,
       authentication: this.options.authentication,
     })
       .then(data => callback(undefined, data))

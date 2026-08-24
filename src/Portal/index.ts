@@ -320,11 +320,11 @@ export async function searchPortalItems(
   search: string | SearchQueryBuilder | ISearchOptions,
   options?: PortalRequestOptions
 ): Promise<ISearchResult<IItem>> {
+  const { authentication, portal } = requestOptions(options);
+
   if (typeof search === 'string' || search instanceof SearchQueryBuilder) {
-    const { authentication } = requestOptions(options);
-    return searchItems({ q: search, authentication });
+    return searchItems({ q: search, authentication, portal });
   }
   // Full ISearchOptions: merge in resolved auth/portal unless already provided.
-  const { authentication } = requestOptions(options);
-  return searchItems({ authentication, ...search });
+  return searchItems({ authentication, portal, ...search });
 }

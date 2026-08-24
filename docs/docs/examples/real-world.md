@@ -41,12 +41,10 @@ class EmergencyResponseDashboard {
       zoom: 6
     });
 
-    // Load emergency-appropriate basemap
+    // Load emergency-appropriate basemap. VectorBasemapStyle produces a whole
+    // map style, so it is applied with setStyle rather than added as a source.
     this.map.on('load', () => {
-      const basemap = new VectorBasemapStyle('emergency-basemap', this.map, {
-        style: 'arcgis/navigation-night', // High contrast for emergency use
-        apiKey
-      });
+      VectorBasemapStyle.applyStyle(this.map, 'arcgis/streets-night', { apiKey });
     });
   }
 
@@ -54,11 +52,8 @@ class EmergencyResponseDashboard {
     // Active incidents (real-time)
     const incidentService = new FeatureService('incidents', this.map, {
       url: 'https://services.arcgis.com/.../EmergencyIncidents/FeatureServer/0',
-      useVectorTiles: false, // GeoJSON for real-time updates
-      useBoundingBox: true,
       where: this.buildIncidentWhereClause(),
-      outFields: '*',
-      orderByFields: 'INCIDENT_DATE DESC'
+      outFields: '*'
     });
 
     this.services.set('incidents', incidentService);
@@ -66,7 +61,6 @@ class EmergencyResponseDashboard {
     // Emergency facilities
     const facilitiesService = new FeatureService('facilities', this.map, {
       url: 'https://services.arcgis.com/.../EmergencyFacilities/FeatureServer/0',
-      useVectorTiles: true,
       where: "STATUS = 'Operational'",
       outFields: ['NAME', 'TYPE', 'CAPACITY', 'CONTACT', 'ADDRESS']
     });
@@ -289,19 +283,21 @@ class EmergencyResponseDashboard {
   private async performAreaAnalysis(lngLat: any) {
     const buffer = this.createBuffer([lngLat.lng, lngLat.lat], 5000); // 5km radius
 
-    // Query incidents in area
+    // Query incidents in area — `run()` sends the request and resolves to GeoJSON
     const incidents = await query({
       url: 'https://services.arcgis.com/.../EmergencyIncidents/FeatureServer/0'
     })
     .intersects(buffer)
-    .where(this.buildIncidentWhereClause());
+    .where(this.buildIncidentWhereClause())
+    .run();
 
     // Query facilities in area
     const facilities = await query({
       url: 'https://services.arcgis.com/.../EmergencyFacilities/FeatureServer/0'
     })
     .intersects(buffer)
-    .where("STATUS = 'Operational'");
+    .where("STATUS = 'Operational'")
+    .run();
 
     // Show analysis results
     const analysisHtml = `
@@ -441,9 +437,7 @@ class EmergencyResponseDashboard {
   private async refreshIncidents() {
     const incidentService = this.services.get('incidents');
     if (incidentService) {
-      incidentService.updateQuery({
-        where: this.buildIncidentWhereClause()
-      });
+      incidentService.setWhere(this.buildIncidentWhereClause());
     }
   }
 
@@ -452,7 +446,8 @@ class EmergencyResponseDashboard {
       const stats = await query({
         url: 'https://services.arcgis.com/.../EmergencyIncidents/FeatureServer/0'
       })
-      .where(this.buildIncidentWhereClause());
+      .where(this.buildIncidentWhereClause())
+      .run();
 
       const severityCounts = this.countBySeverity(stats.features);
       
@@ -512,9 +507,7 @@ class EmergencyResponseDashboard {
   private updateFilters() {
     const incidentService = this.services.get('incidents');
     if (incidentService) {
-      incidentService.updateQuery({
-        where: this.buildIncidentWhereClause()
-      });
+      incidentService.setWhere(this.buildIncidentWhereClause());
     }
   }
 
@@ -544,7 +537,9 @@ class EmergencyResponseDashboard {
     })
     .where(this.buildIncidentWhereClause())
     .fields(['*'])
-    .orderBy('SEVERITY DESC, INCIDENT_DATE DESC');
+    .orderBy('SEVERITY', 'DESC')
+    .orderBy('INCIDENT_DATE', 'DESC')
+    .run();
 
     const report = this.generateCSVReport(incidents.features);
     this.downloadCSV(report, `emergency_report_${new Date().toISOString().split('T')[0]}.csv`);
@@ -786,18 +781,15 @@ class UrbanPlanningDashboard {
   }
 
   private async loadPlanningData() {
-    // Zoning data with vector tile optimization
+    // Zoning data, restricted to the fields the styling needs
     const zoningService = new FeatureService('zoning', this.map, {
       url: 'https://services.arcgis.com/.../Zoning/FeatureServer/0',
-      useVectorTiles: true,
-      useBoundingBox: true,
       outFields: ['ZONE_TYPE', 'ZONE_DESC', 'MAX_HEIGHT', 'FAR', 'DENSITY']
     });
 
     // Demographics (census data)
     const demographicsService = new FeatureService('demographics', this.map, {
       url: 'https://services.arcgis.com/.../Demographics/FeatureServer/0',
-      useVectorTiles: true,
       where: '1=1',
       outFields: ['POPULATION', 'MEDIAN_INCOME', 'AGE_MEDIAN', 'DENSITY_POP']
     });
@@ -805,7 +797,6 @@ class UrbanPlanningDashboard {
     // Development projects
     const developmentService = new FeatureService('development', this.map, {
       url: 'https://services.arcgis.com/.../Development/FeatureServer/0',
-      useVectorTiles: false,
       where: "STATUS IN ('Proposed', 'Under Review', 'Approved', 'Under Construction')",
       outFields: '*'
     });

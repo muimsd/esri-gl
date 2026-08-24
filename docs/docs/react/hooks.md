@@ -14,6 +14,7 @@ Base hook for managing any Esri service lifecycle. Used internally by all other 
 |-----------|------|-------------|
 | createService | `(map: Map) => T` | Factory function to create a service instance |
 | map | `Map \| null` | MapLibre GL or Mapbox GL map instance |
+| deps | `ReadonlyArray<unknown>` | Optional. Values that rebuild the service (and its source) when they change — the hook otherwise only rebuilds when `map` changes |
 
 **Returns:** `UseEsriServiceResult<T>`
 
@@ -27,7 +28,8 @@ Base hook for managing any Esri service lifecycle. Used internally by all other 
 ```tsx
 const { service, loading, error } = useEsriService(
   (map) => new DynamicMapService('my-source', map, { url: serviceUrl }),
-  map
+  map,
+  [serviceUrl] // rebuild when the url changes
 );
 ```
 
@@ -75,7 +77,9 @@ const { service } = useTiledMapService({
 
 ### useImageService
 
-Hook for [ImageService](/docs/services/image-service).
+Hook for [ImageService](/docs/services/image-service). A changed `url` or `format` rebuilds the
+service (and its source); `renderingRule` / `mosaicRule` changes are applied in place. Pass a
+memoized `options` object.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -141,7 +145,9 @@ const { service } = useVectorTileService({
 
 ### useVectorBasemapStyle
 
-Hook for [VectorBasemapStyle](/docs/services/vector-basemap-style). Uses a different constructor signature — no `sourceId` or `map` required.
+Hook for [VectorBasemapStyle](/docs/services/vector-basemap-style). Takes only `{ options }` — no
+`sourceId` or `map`, because a basemap style is applied with `map.setStyle(service.styleUrl)` rather
+than added as a source. Returns `service: null` until a `token` or `apiKey` is supplied.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -157,9 +163,19 @@ Hook for [VectorBasemapStyle](/docs/services/vector-basemap-style). Uses a diffe
 const { service } = useVectorBasemapStyle({
   options: { basemapEnum: 'arcgis/navigation', token: 'YOUR_TOKEN' },
 });
+
+useEffect(() => {
+  if (map && service) map.setStyle(service.styleUrl);
+}, [map, service]);
 ```
 
 ### usePortalItem
+
+:::caution Deprecated
+When you know the service type, pass the item id straight to the matching service hook as its
+`url` — e.g. `useDynamicMapService({ options: { url: itemId } })`. Use `usePortalItem` only when
+the type has to be auto-detected from the item.
+:::
 
 Resolves an ArcGIS **portal item id** to the matching esri-gl service via
 [`serviceFromPortalItem`](../guides/portal-items) and adds its source to the map.
@@ -213,7 +229,7 @@ Hook for running [IdentifyFeatures](/docs/tasks/identify-features) tasks.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| identify | `(point, additionalOptions?) => Promise<IdentifyResult>` | Run identify at a point |
+| identify | `(point, additionalOptions?) => Promise<GeoJSON.FeatureCollection>` | Run identify at a point |
 | loading | `boolean` | Whether a request is in progress |
 | error | `Error \| null` | Any error from the last request |
 
@@ -243,7 +259,7 @@ Hook for running [IdentifyImage](/docs/tasks/identify-image) tasks on image serv
 
 | Property | Type | Description |
 |----------|------|-------------|
-| identifyImage | `(point, additionalOptions?) => Promise<IdentifyImageResult>` | Run identify at a point |
+| identifyImage | `(point, additionalOptions?) => Promise<IdentifyImageResponse>` | Run identify at a point (the `{ results, location }` response) |
 | loading | `boolean` | Whether a request is in progress |
 | error | `Error \| null` | Any error from the last request |
 
@@ -270,8 +286,8 @@ Hook for running [Query](/docs/tasks/query) tasks with pagination support.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| query | `(additionalOptions?) => Promise<QueryResult>` | Run a single-page query |
-| queryAll | `(additionalOptions?) => Promise<QueryResult>` | Run a paginated query (supports `maxPages`) |
+| query | `(additionalOptions?) => Promise<GeoJSON.FeatureCollection>` | Run a single-page query |
+| queryAll | `(additionalOptions?) => Promise<GeoJSON.FeatureCollection>` | Run a paginated query (supports `maxPages`) |
 | loading | `boolean` | Whether a request is in progress |
 | error | `Error \| null` | Any error from the last request |
 
@@ -302,7 +318,7 @@ Hook for running [Find](/docs/tasks/find) tasks to search across multiple layers
 
 | Property | Type | Description |
 |----------|------|-------------|
-| find | `(additionalOptions?) => Promise<FindResult>` | Run the find operation |
+| find | `(additionalOptions?) => Promise<GeoJSON.FeatureCollection>` | Run the find operation |
 | loading | `boolean` | Whether a request is in progress |
 | error | `Error \| null` | Any error from the last request |
 

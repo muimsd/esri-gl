@@ -41,27 +41,46 @@ VectorBasemapStyle.applyStyle(map, styleName, auth)
 ## Constructor
 
 ```typescript
-new VectorBasemapStyle(styleId, auth)
+new VectorBasemapStyle(styleName?, auth?)
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `styleId` | `EsriBasemapStyleName` | Style identifier |
-| `auth` | `VectorBasemapStyleAuthOptions` | Authentication options |
+| `styleName` | `EsriBasemapStyleName` | Style identifier (defaults to `'arcgis/streets'`) |
+| `auth` | `VectorBasemapStyleAuthOptions \| string` | Authentication options, or a bare API key string |
+
+An `apiKey` or `token` is **required** — the constructor throws
+`An Esri API Key must be supplied to consume vector basemap styles` if neither is given.
+
+### Auth options (`VectorBasemapStyleAuthOptions`)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | `string` | — | API key, used against the v1 host (`basemaps-api.arcgis.com`) |
+| `token` | `string` | — | OAuth / user token, used against the v2 host (`basemapstyles-api.arcgis.com`) |
+| `version` | `'v1' \| 'v2'` | inferred | Force the API version (inferred as `v2` when a `token` is supplied, otherwise `v1`) |
+| `host` | `string` | per version | Override the host (enterprise deployments) |
+| `format` | `'json' \| 'style'` | `'style'` | Value sent as `f` on v2 requests |
+| `language` | `string` | — | Locale for basemap labels |
+| `worldview` | `string` | — | Worldview to render disputed boundaries for |
+| `itemId` | `string` | — | Load a custom style from a portal item instead of a named style |
+| `useSession` | `boolean` | `false` | Back style requests with a [basemap style session](#session-support) |
+| `sessionDuration` | `number` | — | Session duration in seconds |
 
 ## Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `styleUrl` | `string` | Fully constructed style URL for MapLibre |
-| `styleId` | `string` | Current style identifier |
-| `auth` | `object` | Current auth configuration |
+| `styleName` | `string` | The style identifier as supplied (see `setStyle`) |
+| `sessionToken` | `string \| undefined` | Token of the active session, once `startSession()` has run |
 
 ## Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `setStyle(styleId)` | `void` | Updates the style identifier and regenerates `styleUrl` |
+| `setStyle(styleName)` | `void` | Updates the style identifier so `styleUrl` regenerates. Apply it with `map.setStyle(basemap.styleUrl)` — this does not touch the map itself. |
+| `update()` / `remove()` | `void` | No-ops; present so `VectorBasemapStyle` satisfies the common service interface |
 
 ## Available Styles
 
@@ -123,14 +142,10 @@ Sessions let the Basemap Styles Service meter usage per map session rather than 
 request. Authentication runs on ArcGIS REST JS just like the rest of esri-gl — see the
 [Authentication guide](../guides/authentication).
 
-Sessions are **opt-in**. Enable them with two extra fields on `VectorBasemapStyleAuthOptions`:
+Sessions are **opt-in**, enabled with the `useSession` / `sessionDuration`
+[auth options](#auth-options-vectorbasemapstyleauthoptions).
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `useSession` | `boolean` | Opt in to backing style requests with a basemap style session (default `false`). |
-| `sessionDuration` | `number` | Optional session duration in **seconds** (matches the sessions API unit). |
-
-### Methods
+### Session methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -138,9 +153,8 @@ Sessions are **opt-in**. Enable them with two extra fields on `VectorBasemapStyl
 | `getStyleUrl()` | `Promise<string>` | Returns a session-backed v2 style URL when `useSession` is set; otherwise resolves to the normal `styleUrl`. |
 | `VectorBasemapStyle.applyStyleWithSession(map, styleName, auth)` | `Promise<void>` | Static helper that awaits a session-backed URL and calls `map.setStyle(url)`. Mirrors `applyStyle` but starts a session first. |
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `sessionToken` | `string \| undefined` | The token from the active session, or `undefined` until `startSession()` runs. Useful for inspection / debugging. |
+The active session's token is readable from the `sessionToken` property (see
+[Properties](#properties)).
 
 ### Example
 

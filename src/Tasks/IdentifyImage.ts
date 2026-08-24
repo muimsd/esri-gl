@@ -1,8 +1,11 @@
 import { Task } from '@/Tasks/Task';
+import type { TaskOptions } from '@/Tasks/Task';
 
-export interface IdentifyImageOptions {
+export interface IdentifyImageOptions extends Pick<
+  TaskOptions,
+  'token' | 'apiKey' | 'authentication'
+> {
   url: string;
-  token?: string;
   geometry?: unknown;
   geometryType?: string;
   sr?: string | number;
@@ -75,6 +78,10 @@ export class IdentifyImage extends Task {
       if (imageOptions.token !== undefined) this.params.token = imageOptions.token;
       if (imageOptions.f !== undefined) this.params.f = imageOptions.f;
     }
+
+    // Subclass fields (including `setters`) initialize after super() runs, so
+    // the generated chainable setters have to be bound here.
+    this.initSetters();
   }
 
   /**

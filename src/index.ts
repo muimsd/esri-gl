@@ -1,4 +1,4 @@
-// Main esri-gl exports (same as main.ts)
+// Main esri-gl exports — the `esri-gl` package entry point.
 // Services
 export { Service } from '@/Services/Service';
 export { DynamicMapService } from '@/Services/DynamicMapService';

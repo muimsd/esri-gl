@@ -1,9 +1,9 @@
 import { Task } from './Task';
+import type { TaskOptions } from './Task';
 import { Service } from '@/Services/Service';
 
-export interface QueryOptions {
+export interface QueryOptions extends Pick<TaskOptions, 'token' | 'apiKey' | 'authentication'> {
   url: string;
-  token?: string;
   where?: string;
   outFields?: string | string[];
   returnGeometry?: boolean;
@@ -80,6 +80,9 @@ export class Query extends Task {
     f: 'json',
   };
 
+  /** Set by `distinct()`; survives the `_cleanParams()` reset between runs. */
+  private _distinct = false;
+
   constructor(options: string | QueryOptions | Service) {
     super(options);
     this.path = 'query';
@@ -136,6 +139,10 @@ export class Query extends Task {
       if (queryOptions.returnM !== undefined) this.params.returnM = queryOptions.returnM;
       if (queryOptions.token !== undefined) this.params.token = queryOptions.token;
     }
+
+    // Subclass fields (including `setters`) initialize after super() runs, so
+    // the generated chainable setters have to be bound here.
+    this.initSetters();
   }
 
   // Spatial relationship methods
@@ -261,6 +268,70 @@ export class Query extends Task {
   }
 
   /**
+   * Set the fields to return (`outFields`). `['*']` or `'*'` returns them all.
+   */
+  fields(fields: string | string[]): Query {
+    this.params.outFields = Array.isArray(fields) ? fields.join(',') : fields;
+    return this;
+  }
+
+  /**
+   * Set the starting record index (`resultOffset`) for pagination
+   */
+  offset(offset: number): Query {
+    this.params.resultOffset = offset;
+    return this;
+  }
+
+  /**
+   * Set the page size (`resultRecordCount`)
+   */
+  limit(limit: number): Query {
+    this.params.resultRecordCount = limit;
+    return this;
+  }
+
+  /**
+   * Set the number of decimal places returned for geometry (`geometryPrecision`)
+   */
+  precision(precision: number): Query {
+    this.params.geometryPrecision = precision;
+    return this;
+  }
+
+  /**
+   * Restrict the query to specific feature ids (`objectIds`)
+   */
+  featureIds(ids: Array<number | string> | string): Query {
+    this.params.objectIds = Array.isArray(ids) ? ids.join(',') : ids;
+    return this;
+  }
+
+  /**
+   * Include or exclude geometry in the results
+   */
+  returnGeometry(returnGeometry: boolean): Query {
+    this.params.returnGeometry = returnGeometry;
+    return this;
+  }
+
+  /**
+   * Include or exclude M values in the returned geometry
+   */
+  returnM(returnM: boolean): Query {
+    this.params.returnM = returnM;
+    return this;
+  }
+
+  /**
+   * Set the datum transformation applied to the query geometry
+   */
+  transform(datumTransformation: number | Record<string, unknown>): Query {
+    this.params.datumTransformation = datumTransformation;
+    return this;
+  }
+
+  /**
    * Set specific layer to query (for Map Services)
    */
   layer(layerId: number): Query {
@@ -272,6 +343,7 @@ export class Query extends Task {
    * Return only distinct values
    */
   distinct(): Query {
+    this._distinct = true;
     this.params.returnGeometry = false;
     this.params.returnDistinctValues = true;
     return this;
@@ -459,11 +531,17 @@ export class Query extends Task {
     };
   }
 
+  /**
+   * Drop the mutually exclusive `return*Only` flags left behind by a previous
+   * `count()` / `ids()` / `bounds()` call on a reused task. `distinct()` is
+   * re-applied afterwards because it is a query option, not an execution mode.
+   */
   private _cleanParams(): void {
     delete this.params.returnIdsOnly;
     delete this.params.returnExtentOnly;
     delete this.params.returnCountOnly;
     delete this.params.returnDistinctValues;
+    if (this._distinct) this.params.returnDistinctValues = true;
   }
 
   private _convertToGeoJSON(response: {

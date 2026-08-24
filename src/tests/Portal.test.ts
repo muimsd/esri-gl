@@ -299,6 +299,19 @@ describe('Portal', () => {
       expect(mockSearchItems).toHaveBeenCalledWith({
         q: 'type:"Feature Service"',
         authentication: expect.objectContaining({ key: 'abc' }),
+        portal: undefined,
+      });
+    });
+
+    it('forwards an enterprise portal url', async () => {
+      mockSearchItems.mockResolvedValue(searchResult);
+
+      await searchPortalItems('wildfire', { portal: 'https://gis.example.com/sharing/rest' });
+
+      expect(mockSearchItems).toHaveBeenCalledWith({
+        q: 'wildfire',
+        authentication: undefined,
+        portal: 'https://gis.example.com/sharing/rest',
       });
     });
 
@@ -308,7 +321,11 @@ describe('Portal', () => {
 
       await searchPortalItems(query);
 
-      expect(mockSearchItems).toHaveBeenCalledWith({ q: query, authentication: undefined });
+      expect(mockSearchItems).toHaveBeenCalledWith({
+        q: query,
+        authentication: undefined,
+        portal: undefined,
+      });
     });
 
     it('merges resolved auth into full ISearchOptions without clobbering explicit auth', async () => {
@@ -324,6 +341,7 @@ describe('Portal', () => {
         q: 'wildfire',
         num: 20,
         authentication: explicitAuth,
+        portal: undefined,
       });
     });
   });
