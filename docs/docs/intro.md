@@ -58,15 +58,22 @@ See the [Authentication guide](./guides/authentication) for details.
 
 ### Resolve from a Portal item
 
-You can also resolve an ArcGIS portal item id — or a whole Web Map — directly to services:
+Don't have the service URL? Pass an ArcGIS **portal item id** (a 32-character hex string) anywhere a
+service `url` is expected, and await `sourceReady` before adding the layer:
 
 ```typescript
-import { serviceFromPortalItem } from 'esri-gl';
+import { DynamicMapService } from 'esri-gl';
 
-await serviceFromPortalItem('usa-source', map, 'PORTAL_ITEM_ID', { apiKey: 'AAPK…' });
+const service = new DynamicMapService('usa-source', map, {
+  url: 'd5e02a0c1f2b4ec399823fdd3c2fdebd', // portal item id
+  apiKey: 'AAPK…',
+});
+
+await service.sourceReady;
 map.addLayer({ id: 'usa-layer', type: 'raster', source: 'usa-source' });
 ```
 
+A whole Web Map can be resolved into one service per operational layer with `servicesFromWebMap`.
 See the [Portal Items guide](./guides/portal-items).
 
 ### CDN Usage

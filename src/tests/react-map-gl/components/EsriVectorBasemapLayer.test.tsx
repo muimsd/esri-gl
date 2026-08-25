@@ -75,6 +75,14 @@ describe('EsriVectorBasemapLayer', () => {
     });
   });
 
+  it('should apply the style url to the underlying map', () => {
+    render(<EsriVectorBasemapLayer {...defaultProps} />);
+
+    expect(mockMapInstance.setStyle).toHaveBeenCalledWith(
+      'https://basemaps-api.arcgis.com/arcgis/rest/services/styles/v1/styles/arcgis/streets'
+    );
+  });
+
   it('should create service and handle cleanup', () => {
     const { unmount } = render(<EsriVectorBasemapLayer {...defaultProps} />);
 

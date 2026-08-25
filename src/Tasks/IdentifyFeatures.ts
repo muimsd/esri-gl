@@ -7,7 +7,10 @@ export interface LayerScaleRange {
   maxScale?: number;
 }
 
-export interface IdentifyFeaturesOptions {
+export interface IdentifyFeaturesOptions extends Pick<
+  TaskOptions,
+  'token' | 'apiKey' | 'authentication'
+> {
   url: string;
   layers?: number[] | number | string;
   layerDefs?: Record<string, string>;
@@ -89,13 +92,9 @@ export class IdentifyFeatures extends Task {
     super(taskOptions);
     this.path = '/identify';
 
-    // Ensure dynamic setters are available even though subclass fields
-    // are initialized after super() runs. This rebinds setter methods.
-    if (this.setters) {
-      for (const [method, param] of Object.entries(this.setters)) {
-        (this as unknown as Record<string, unknown>)[method] = this.generateSetter(param, this);
-      }
-    }
+    // Subclass fields (including `setters`) initialize after super() runs, so
+    // the generated chainable setters have to be bound here.
+    this.initSetters();
   }
 
   /**

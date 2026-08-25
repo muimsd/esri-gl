@@ -277,23 +277,13 @@
                 
                 // Create FeatureService
                 currentService = new esrigl.FeatureService(sourceId, map, {
-                    url: config.url,
-                    maxRecordCount: 1000
+                    url: config.url
                 });
                 
                 currentLayerId = layerId;
                 
-                // Wait for source to be ready before adding layer
-                await new Promise((resolve) => {
-                    const checkSource = () => {
-                        if (map.getSource(sourceId)) {
-                            resolve();
-                        } else {
-                            setTimeout(checkSource, 100);
-                        }
-                    };
-                    checkSource();
-                });
+                // Wait for the source to be ready before adding the layer
+                await currentService.sourceReady;
                 
                 // Add layer with appropriate styling
                 map.addLayer({

@@ -4,7 +4,7 @@ Optimize esri-gl applications for large datasets, complex visualizations, and re
 
 ## Large Dataset Optimization
 
-### Efficient FeatureService with Bounding Box Filtering
+### Zoom-Aware FeatureService
 
 ```typescript
 import { Map } from 'maplibre-gl';
@@ -22,11 +22,13 @@ class OptimizedFeatureViewer {
   }
 
   private initializeService(serviceUrl: string) {
+    // FeatureService always loads by viewport tile and negotiates PBF/GeoJSON
+    // from the layer itself — the tuning knobs are the query options below.
     this.service = new FeatureService('optimized-source', this.map, {
       url: serviceUrl,
-      useVectorTiles: true, // Smart vector tile detection
-      useBoundingBox: true, // Viewport-based loading
-      maxRecordCount: this.getRecordCountForZoom(this.map.getZoom()),
+      minZoom: 6,
+      simplifyFactor: 0.5,
+      precision: 6,
       outFields: this.getFieldsForZoom(this.map.getZoom()),
       where: '1=1'
     });
@@ -53,23 +55,11 @@ class OptimizedFeatureViewer {
   }
 
   private optimizeForZoom(zoom: number) {
-    const recordCount = this.getRecordCountForZoom(zoom);
-    const fields = this.getFieldsForZoom(zoom);
-
-    this.service.updateQuery({
-      maxRecordCount: recordCount,
-      outFields: fields
-    });
+    // Narrower field lists mean smaller tile responses
+    this.service.setOutFields(this.getFieldsForZoom(zoom));
 
     // Update layer visibility based on zoom
     this.updateLayerVisibility(zoom);
-  }
-
-  private getRecordCountForZoom(zoom: number): number {
-    if (zoom < 10) return 500;   // Low zoom - fewer features
-    if (zoom < 13) return 1500;  // Medium zoom
-    if (zoom < 16) return 3000;  // High zoom
-    return 5000;                 // Very high zoom - maximum detail
   }
 
   private getFieldsForZoom(zoom: number): string[] {
@@ -148,11 +138,10 @@ class ClusteredFeatureService {
   }
 
   private initializeClusteredService(serviceUrl: string) {
+    // The source is always GeoJSON, so MapLibre's clustering options apply
+    // directly — they go in the fourth (source options) argument.
     this.service = new FeatureService('clustered-source', this.map, {
-      url: serviceUrl,
-      useVectorTiles: false, // Use GeoJSON for clustering
-      useBoundingBox: true,
-      maxRecordCount: 10000
+      url: serviceUrl
     }, {
       // Enable clustering in GeoJSON source
       cluster: true,
@@ -272,9 +261,6 @@ class LiveDataManager {
     // Create service with optimizations for live data
     const service = new FeatureService(sourceId, this.map, {
       url: serviceUrl,
-      useVectorTiles: false, // GeoJSON better for frequent updates
-      useBoundingBox: true,
-      maxRecordCount: 1000,
       ...options
     });
 
@@ -298,11 +284,10 @@ class LiveDataManager {
     if (!service) return;
 
     try {
-      // Add timestamp to prevent caching
+      // Re-filter to the last 5 minutes; setWhere() clears the tile cache and
+      // re-requests the current viewport.
       const timestamp = Date.now();
-      service.updateQuery({
-        where: `LAST_UPDATE >= ${timestamp - 300000}` // Last 5 minutes
-      });
+      service.setWhere(`LAST_UPDATE >= ${timestamp - 300000}`);
 
       console.log(`Updated live service ${sourceId} at ${new Date().toISOString()}`);
     } catch (error) {
@@ -390,8 +375,7 @@ const vehicleService = liveManager.addLiveService(
   10000, // Update every 10 seconds
   {
     where: "STATUS = 'Active'",
-    outFields: ['VEHICLE_ID', 'SPEED', 'HEADING', 'LAST_UPDATE'],
-    orderByFields: 'LAST_UPDATE DESC'
+    outFields: ['VEHICLE_ID', 'SPEED', 'HEADING', 'LAST_UPDATE']
   }
 );
 ```
@@ -424,13 +408,11 @@ class MultiServiceManager {
       try {
         const service = new FeatureService(config.id, this.map, {
           url: config.url,
-          useVectorTiles: true,
-          useBoundingBox: true,
           ...config.options
         });
 
-        // Wait for service to load
-        await this.waitForService(config.id);
+        // Wait for the source to be added and the layer metadata to load
+        await service.sourceReady;
 
         // Add styled layer
         this.map.addLayer({
@@ -453,20 +435,6 @@ class MultiServiceManager {
     return this.services;
   }
 
-  private waitForService(sourceId: string): Promise<void> {
-    return new Promise((resolve) => {
-      const checkLoaded = () => {
-        const source = this.map.getSource(sourceId);
-        if (source) {
-          resolve();
-        } else {
-          setTimeout(checkLoaded, 100);
-        }
-      };
-      checkLoaded();
-    });
-  }
-
   async queryAcrossServices(
     point: [number, number],
     tolerance: number = 10
@@ -477,7 +445,7 @@ class MultiServiceManager {
     // Query all services simultaneously
     const queryPromises = this.services.map(async ({ id, service }) => {
       try {
-        const features = await service.query({
+        const features = await service.queryFeatures({
           geometry: buffer,
           geometryType: 'esriGeometryPolygon',
           spatialRel: 'esriSpatialRelIntersects',
@@ -678,8 +646,12 @@ class SmartCache {
 class CachedFeatureService extends FeatureService {
   private static cache = new SmartCache();
 
-  async query(options: any = {}) {
-    const map = this._map;
+  constructor(sourceId: string, private cachedMap: Map, options: any, sourceOptions?: any) {
+    super(sourceId, cachedMap, options, sourceOptions);
+  }
+
+  async queryFeatures(options: any = {}) {
+    const map = this.cachedMap;
     const bbox = map.getBounds().toArray().flat();
     const zoom = map.getZoom();
     
@@ -699,7 +671,7 @@ class CachedFeatureService extends FeatureService {
 
     // Fetch from service
     console.log('Cache miss, fetching from service');
-    const data = await super.query(options);
+    const data = await super.queryFeatures(options);
     
     // Cache the result
     CachedFeatureService.cache.set(cacheKey, data, bbox, zoom);
@@ -803,11 +775,11 @@ class PerformanceMonitor {
 const monitor = new PerformanceMonitor();
 
 class MonitoredFeatureService extends FeatureService {
-  async query(options: any = {}) {
+  async queryFeatures(options: any = {}) {
     const endTimer = monitor.startTimer('feature_service_query');
-    
+
     try {
-      const result = await super.query(options);
+      const result = await super.queryFeatures(options);
       monitor.recordMetric('features_loaded', result.features.length);
       return result;
     } finally {

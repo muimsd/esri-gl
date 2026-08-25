@@ -30,12 +30,13 @@ const service = new VectorTileService('parcels-source', map, {
 const style = await service.getStyle();
 map.addLayer({
   id: 'parcels-layer',
-  type: style.type,
-  source: 'parcels-source',
-  'source-layer': style['source-layer'],
-  paint: style.paint
+  ...style // { type, source, 'source-layer', layout, paint }
 });
 ```
+
+`getStyle()` returns the **first** layer of the service's style document, with `source` already set
+to this service's source id. For full fidelity, fetch the style document yourself and add every
+layer it defines.
 
 ## Constructor
 
@@ -54,7 +55,9 @@ new VectorTileService(id, map, esriServiceOptions, vectorSourceOptions?)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `url` | `string` | *required* | ArcGIS VectorTileServer URL |
+| `url` | `string` | *required* | ArcGIS VectorTileServer URL, or an ArcGIS [portal item id](../guides/portal-items) |
+| `portal` | `string` | — | Portal sharing REST URL used to resolve an item id `url` (defaults to ArcGIS Online) |
+| `getAttributionFromService` | `boolean` | `true` | Fetch copyright text from service metadata |
 | `token` | `string` | — | ArcGIS authentication token |
 | `apiKey` | `string` | — | ArcGIS Location Platform API key (sent as the `token` parameter) |
 | `authentication` | `IAuthenticationManager \| string` | — | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
@@ -68,7 +71,25 @@ new VectorTileService(id, map, esriServiceOptions, vectorSourceOptions?)
 |--------|------|---------|-------------|
 | `minzoom` | `number` | `0` | Minimum zoom level |
 | `maxzoom` | `number` | `22` | Maximum zoom level |
+| `bounds` | `[number, number, number, number]` | — | Extent the source covers |
+| `scheme` | `'xyz' \| 'tms'` | `'xyz'` | Tile addressing scheme |
 | `attribution` | `string` | — | Custom attribution text |
+
+## Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getStyle()` | `Promise<StyleData>` | The first layer of the service's style document, re-pointed at this source |
+| `getMetadata()` | `Promise<ServiceMetadata>` | Fetches (and caches) the service metadata document |
+| `update()` | `void` | No-op — vector tile sources don't need dynamic updates |
+| `remove()` | `void` | Removes the service source and its layers from the map |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `sourceReady` | `Promise<void>` | Resolves once the source has been added to the map (deferred when `url` is a portal item id) |
+| `defaultStyle` | `StyleData` | The mapped style layer — only valid after `getStyle()` resolves |
 
 ## Examples
 

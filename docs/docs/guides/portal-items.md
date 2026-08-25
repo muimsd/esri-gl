@@ -154,3 +154,36 @@ Each entry is a `PortalServiceResult` (without `item`). Source ids are generated
 |--------|------|-------------|
 | `includeBasemap` | `boolean` | Also instantiate the Web Map's basemap layers (default `false`). |
 | `sourceIdPrefix` | `string` | Prefix for generated source ids (default the Web Map item id). |
+
+## Search for items
+
+`searchPortalItems(search, options?)` is a thin wrapper over `searchItems` from
+`@esri/arcgis-rest-portal`, useful for discovering the item ids to load. It accepts a query string,
+a `SearchQueryBuilder`, or a full `ISearchOptions` object, and resolves to `ISearchResult<IItem>`.
+
+```typescript
+import { searchPortalItems, SearchQueryBuilder } from 'esri-gl';
+
+// Plain query string
+const { results } = await searchPortalItems('type:"Feature Service" AND owner:esri');
+
+// Query builder
+const query = new SearchQueryBuilder()
+  .match('wildfire')
+  .in('title')
+  .and()
+  .match('Feature Service')
+  .in('type');
+
+const { results: wildfires } = await searchPortalItems(query, { apiKey: 'AAPK…' });
+
+// Full ISearchOptions (paging, sorting, …)
+const page = await searchPortalItems({ q: 'wildfire', num: 20, start: 1 }, { token });
+
+// Feed an id straight into a service
+new FeatureService('src', map, { url: results[0].id });
+```
+
+`options` takes the standard [auth options](./authentication) plus `portal` for ArcGIS Enterprise.
+When you pass a full `ISearchOptions` object, any `authentication` it already carries wins over the
+one resolved from `options`.

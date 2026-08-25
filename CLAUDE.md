@@ -21,7 +21,13 @@ entry points:
   MapLibre/Mapbox GL source and manage its lifecycle. Universal constructor:
   `new ServiceClass(sourceId, map, esriOptions, sourceOptions?)`.
 - `src/Tasks/` — `Task` (base), `Query`, `Find`, `IdentifyFeatures`, `IdentifyImage`. Chainable,
-  Esri-Leaflet-style operations.
+  Esri-Leaflet-style operations. A task's `setters` map (`methodName: paramName`) is only turned
+  into methods by `Task.initSetters()`, which every subclass **must call at the end of its own
+  constructor** — subclass field initializers (`setters` included) run after `super()`, so the base
+  constructor sees an empty map. `initSetters()` skips names already implemented as methods, so a
+  hand-written typed setter always wins; prefer one when the setter needs typing or argument
+  massaging. A chainable setter on `Task` itself must return `this` (not `Task`) so it can be
+  chained between a subclass's own setters.
 - `src/Portal/` — `serviceFromPortalItem()` (deprecated) / `servicesFromWebMap()` resolve a
   portal item id or Web Map to services. `resolveServiceUrl()` (in `resolveServiceUrl.ts`) is the
   one place a service `url` that is a **portal item id** (a 32-char hex string, see

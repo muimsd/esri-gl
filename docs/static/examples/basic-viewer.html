@@ -190,9 +190,7 @@
 
                     case 'feature':
                         currentService = new esrigl.FeatureService(sourceId, map, {
-                            url: serviceUrl,
-                            useVectorTiles: true,
-                            useBoundingBox: true
+                            url: serviceUrl
                         });
                         
                         // Add vector layers after service is ready
@@ -358,8 +356,8 @@
                 
                 if (serviceType === 'dynamic' && currentService.identify) {
                     // Use service identify method
-                    const results = await currentService.identify(e.lngLat);
-                    showIdentifyResults(e.lngLat, results);
+                    const response = await currentService.identify(e.lngLat);
+                    showIdentifyResults(e.lngLat, response);
                     
                 } else if (serviceType === 'feature') {
                     // Query features at click point
@@ -383,20 +381,20 @@
             }
         }
 
-        // Show identify results
-        function showIdentifyResults(lngLat, results) {
+        // Show identify results — DynamicMapService.identify() resolves to the raw
+        // ArcGIS response, so results live on `response.results`, not `features`.
+        function showIdentifyResults(lngLat, response) {
             if (currentPopup) {
                 currentPopup.remove();
             }
 
-            if (!results || !results.features || results.features.length === 0) {
+            if (!response || !response.results || response.results.length === 0) {
                 showNoResults(lngLat);
                 return;
             }
 
-            const feature = results.features[0];
-            const props = feature.properties || {};
-            
+            const props = response.results[0].attributes || {};
+
             let content = '<div class="info-popup"><h3>Feature Information</h3>';
             
             Object.keys(props).slice(0, 5).forEach(key => {

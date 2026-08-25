@@ -48,15 +48,17 @@ map.addLayer({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| url | `string` | | **Required** URL of the MapService (does not end in a number) |
+| url | `string` | | **Required** URL of the MapService (does not end in a number), or an ArcGIS [portal item id](../guides/portal-items) |
+| portal | `string` | | Portal sharing REST URL used to resolve an item id `url` (defaults to ArcGIS Online) |
 | fetchOptions | `object` | | Deprecated — no longer forwarded to requests; use `authentication` instead. |
-| layers | `Array<string>` | | Array of layer IDs to restrict which layers to show (e.g., `[1, 2, 3]`) |
-| dynamicLayers | `Array<DynamicLayer>` | | Server-side layer styling and filtering configuration |
+| layers | `Array<number> \| number \| false` | | Layer IDs to restrict which layers to show (e.g., `[1, 2, 3]`) |
+| dynamicLayers | `Array<DynamicLayer> \| false` | | Server-side layer styling and filtering configuration |
 | format | `string` | `'png24'` | Output format of the image |
+| dpi | `number` | `96` | Resolution of the exported image |
 | transparent | `boolean` | `true` | Allow the server to produce transparent images |
-| layerDefs | `object` | | SQL filters for features (e.g., `{ 3: "STATE_NAME='Kansas'" }`) |
-| from | `Date` | | Start date for time-enabled layers |
-| to | `Date` | | End date for time-enabled layers |
+| layerDefs | `object \| false` | | SQL filters for features (e.g., `{ 3: "STATE_NAME='Kansas'" }`) |
+| from | `Date \| number` | | Start date for time-enabled layers (applied together with `to`) |
+| to | `Date \| number` | | End date for time-enabled layers |
 | token | `string` | | Authentication token for secured services |
 | apiKey | `string` | | ArcGIS Location Platform API key (sent as the `token` parameter) |
 | authentication | `IAuthenticationManager \| string` | | ArcGIS REST JS auth manager (preferred for OAuth/user sign-in) |
@@ -100,17 +102,26 @@ type LayerFilter =
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `identify(lngLat, returnGeometry?)` | `Promise<IdentifyResponse>` | Identify features at a point |
+| `identify(lngLat, returnGeometry?)` | `Promise<unknown>` | Identify features at a point. Resolves to the raw ArcGIS `/identify` response — `{ results: [...] }`, not GeoJSON. For a GeoJSON `FeatureCollection`, use the [IdentifyFeatures task](../tasks/identify-features). |
 | `setLayers(layers)` | `void` | Update which layers are visible |
 | `setLayerDefs(layerDefs)` | `void` | Update layer definition filters |
+| `setDate(from, to)` | `void` | Set the time extent for time-enabled layers |
 | `update()` | `void` | Refresh tiles with current parameters |
 | `remove()` | `void` | Remove the service source and layers from the map |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `sourceReady` | `Promise<void>` | Resolves once the source has been added to the map — already settled for a plain `url`, resolved after resolution for a [portal item id](../guides/portal-items) `url` |
+| `esriServiceOptions` | `object` | The options the service was constructed with (with `url` resolved) |
 
 ### Dynamic Layer Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `setDynamicLayers(layers)` | `void` | Set complete dynamic layers configuration (pass `false` to reset) |
+| `setLayerDrawingInfo(layerId, drawingInfo)` | `void` | Merge `drawingInfo` (renderer, transparency, labels) into a layer |
 | `setLayerRenderer(layerId, renderer)` | `void` | Apply custom renderer/styling to a layer |
 | `setLayerVisibility(layerId, visible)` | `void` | Show/hide a specific layer |
 | `setLayerDefinition(layerId, expression)` | `void` | Apply SQL filter to a layer |
@@ -216,13 +227,27 @@ service.setLayerFilter(2, {
 
 ### Identify Features
 
+`identify()` resolves to the raw ArcGIS response, so results are on `results.results`:
+
 ```typescript
 map.on('click', async (e) => {
-  const results = await service.identify(e.lngLat, true);
-  results.features.forEach(feature => {
-    console.log(`Layer ${feature.layerId}:`, feature.attributes);
+  const response = await service.identify(e.lngLat, true);
+  response.results.forEach(result => {
+    console.log(`Layer ${result.layerId} (${result.layerName}):`, result.attributes);
   });
 });
+```
+
+Prefer the [IdentifyFeatures task](../tasks/identify-features) when you want GeoJSON back:
+
+```typescript
+import { IdentifyFeatures } from 'esri-gl';
+
+const featureCollection = await new IdentifyFeatures(service.esriServiceOptions.url)
+  .at(e.lngLat)
+  .on(map)
+  .layers('visible:0,1,2')
+  .run();
 ```
 
 ### Dynamic Layer Configuration

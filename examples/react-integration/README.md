@@ -160,14 +160,15 @@ VITE_MAPBOX_TOKEN=your_mapbox_token_here
 The project uses Vite with React plugin and TypeScript support. Path aliases are configured for clean imports:
 
 ```typescript
-// vite.config.ts
+// vite.config.ts — the example resolves esri-gl to the repo's built output,
+// so run `npm run build` at the repo root before starting it.
 resolve: {
   alias: {
-    '@': path.resolve(__dirname, '../../src'),
-    'esri-gl': path.resolve(__dirname, '../../src/main.ts'),
-    'esri-gl/react': path.resolve(__dirname, '../../src/react.ts'),
-    'esri-gl/react-map-gl': path.resolve(__dirname, '../../src/react-map-gl.ts')
-  }
+    'esri-gl/react': path.resolve(__dirname, '../../dist/react.js'),
+    'esri-gl/react-map-gl': path.resolve(__dirname, '../../dist/react-map-gl.js'),
+    'esri-gl': path.resolve(__dirname, '../../dist/index.js'),
+  },
+  preserveSymlinks: true
 }
 ```
 

@@ -17,13 +17,17 @@ Every service and task accepts these options (precedence: `authentication` → `
 | `authentication` | `IAuthenticationManager \| string` | An ArcGIS REST JS authentication manager (preferred for OAuth / user sign-in). |
 
 ```typescript
-import { DynamicMapService } from 'esri-gl';
+import { DynamicMapService, Query } from 'esri-gl';
 
 // API key
 new DynamicMapService('source', map, { url, apiKey: 'AAPK…' });
 
 // Static token
 new DynamicMapService('source', map, { url, token: 'eyJ…' });
+
+// Tasks take the same options, and also expose a chainable `.token()`
+new Query({ url, apiKey: 'AAPK…' });
+new Query({ url }).token('eyJ…');
 ```
 
 A bare `token`/`apiKey` string is wrapped internally in an `ApiKeyManager`, so it is sent as
@@ -55,13 +59,15 @@ Any object implementing ArcGIS REST JS's `IAuthenticationManager` works here, in
 
 ## The `authenticationrequired` event
 
-`Service`-based classes still emit an `authenticationrequired` event when ArcGIS returns a
-498/499 token error (ArcGIS Online returns these as HTTP 200 with a JSON error body, which
-ArcGIS REST JS surfaces as an `ArcGISRequestError` with a numeric `code`):
+`Service`-based classes and `FeatureService` emit an `authenticationrequired` event when ArcGIS
+returns a 498/499 token error (ArcGIS Online returns these as HTTP 200 with a JSON error body, which
+ArcGIS REST JS surfaces as an `ArcGISRequestError` with a numeric `code`). The handler receives an
+`authenticate` callback:
 
 ```typescript
 service.on('authenticationrequired', ({ authenticate }) => {
-  authenticate(freshToken); // re-runs queued requests with the new token
+  authenticate(freshToken); // Service: re-runs queued requests with the new token
+                            // FeatureService: equivalent to setToken(freshToken)
 });
 ```
 

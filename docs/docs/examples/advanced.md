@@ -127,9 +127,10 @@ class MapDashboard {
         
         for (const [id, service] of this.services) {
             try {
+                // DynamicMapService / ImageService resolve to the raw ArcGIS response
                 if (service.identify) {
-                    const result = await service.identify(point, true)
-                    results.push({ serviceId: id, ...result })
+                    const response = await service.identify(point, true)
+                    results.push({ serviceId: id, results: response.results ?? [] })
                 }
             } catch (error) {
                 console.warn(`Identify failed for service ${id}:`, error)
@@ -183,7 +184,7 @@ class TemporalMapService {
     
     private updateService() {
         // Update service time parameters
-        this.service.setTimeExtent(this.currentTime, this.currentTime)
+        this.service.setDate(this.currentTime, this.currentTime)
     }
     
     animate(duration: number = 5000) {
@@ -223,12 +224,25 @@ const timeService = new TemporalMapService('hurricane-source', map, {
 timeService.animate(10000) // 10 second loop
 ```
 
+`DynamicMapService` also ships a built-in animator, which is enough for most cases:
+
+```typescript
+await service.animateTime({
+    from: new Date('2020-01-01'),
+    to: new Date('2020-12-31'),
+    intervalMs: 100,
+    loop: false,
+    onFrame: (currentTime, progress) => console.log(currentTime, progress),
+    onComplete: () => console.log('done'),
+})
+```
+
 ## Dynamic Layer Styling
 
 ### Data-Driven Styling
 
 ```typescript
-import { FeatureService } from 'esri-gl'
+import { FeatureService, query } from 'esri-gl'
 
 class StyledFeatureService {
     private service: FeatureService
@@ -240,20 +254,22 @@ class StyledFeatureService {
     }
     
     async applyClassBreaksStyle(field: string, breaks: number[], colors: string[]) {
-        // Get field statistics to determine breaks
-        const features = await this.service.query({
-            where: '1=1',
-            returnStatistics: true,
-            statisticFields: [{
-                statisticType: 'min',
-                onStatisticField: field,
-                outStatisticFieldName: 'min_val'
-            }, {
-                statisticType: 'max', 
-                onStatisticField: field,
-                outStatisticFieldName: 'max_val'
-            }]
+        // Get field statistics to determine breaks. Use the Query task rather than
+        // FeatureService.queryFeatures(): queryFeatures() always asks for
+        // f=geojson, which services reject for statistics queries, while Query
+        // falls back to f=json and converts the response for you.
+        const stats = await query({
+            url: this.service.esriServiceOptions.url,
+            returnGeometry: false,
+            outStatistics: [
+                { statisticType: 'min', onStatisticField: field, outStatisticFieldName: 'min_val' },
+                { statisticType: 'max', onStatisticField: field, outStatisticFieldName: 'max_val' }
+            ]
         })
+            .where('1=1')
+            .run()
+
+        console.log(stats.features[0]?.properties) // { min_val, max_val }
         
         // Create MapLibre GL expression for class breaks
         const expression = [
@@ -537,16 +553,17 @@ class SpatialAnalysis {
         // Query features that intersect the buffer
         const featureService = new FeatureService('temp-source', this.map, {
             url: serviceUrl,
+        })
+
+        const results = await featureService.queryFeatures({
             geometry: buffer.geometry,
             geometryType: 'esriGeometryPolygon',
             spatialRel: 'esriSpatialRelIntersects'
         })
-        
-        const results = await featureService.query()
-        
-        // Clean up temporary source
-        this.map.removeSource('temp-source')
-        
+
+        // Clean up the temporary service (and its source)
+        featureService.remove()
+
         return results
     }
     
@@ -559,17 +576,19 @@ class SpatialAnalysis {
             const task = new IdentifyFeatures({ url })
                 .tolerance(10)
                 .returnGeometry(true)
-            
-            return task.at({ lng: point[0], lat: point[1] }, this.map)
+
+            // `.at()` and `.on()` only configure the task — `.run()` sends it
+            return task.at({ lng: point[0], lat: point[1] }).on(this.map).run()
         })
-        
+
         const results = await Promise.all(identifyPromises)
-        
+
         // Calculate distances and filter
         const nearbyFeatures = []
-        
-        results.forEach(result => {
-            result.results.forEach(feature => {
+
+        // `run()` resolves to a GeoJSON FeatureCollection
+        results.forEach(featureCollection => {
+            featureCollection.features.forEach(feature => {
                 if (feature.geometry) {
                     const featurePoint = turf.centroid(feature.geometry)
                     const distance = turf.distance(
@@ -718,7 +737,7 @@ const service = servicePool.getService(
 const results = await servicePool.cachedQuery(
     service,
     'all-features',
-    () => service.query({ where: '1=1' })
+    () => service.queryFeatures({ where: '1=1' })
 )
 ```
 

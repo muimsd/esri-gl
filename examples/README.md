@@ -18,6 +18,27 @@ This directory contains example applications demonstrating how to use the `esri-
 - Build Tool: Vite
 - Features: React hooks, components, and integration patterns for esri-gl
 
+### MapLibre + ESM (no framework)
+📁 **[maplibre-esm](./maplibre-esm/)**
+- Framework: none — plain TypeScript modules
+- Mapping Library: MapLibre GL JS
+- Build Tool: Vite
+- Features: Every service and task driven directly from ESM imports
+
+### MapLibre + React Hooks
+📁 **[maplibre-react-hooks](./maplibre-react-hooks/)**
+- Framework: React with TypeScript
+- Mapping Library: MapLibre GL JS
+- Build Tool: Vite
+- Features: The `esri-gl/react` hooks for each service and task
+
+### MapLibre + react-map-gl
+📁 **[maplibre-react-map-gl](./maplibre-react-map-gl/)**
+- Framework: React with TypeScript
+- Mapping Library: MapLibre GL JS via react-map-gl
+- Build Tool: Vite
+- Features: The declarative `esri-gl/react-map-gl` layer components
+
 ## Running Examples
 
 Each example is a standalone project with its own dependencies:

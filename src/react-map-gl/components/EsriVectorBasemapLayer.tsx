@@ -23,9 +23,16 @@ export function EsriVectorBasemapLayer(props: EsriVectorBasemapLayerProps) {
   useEffect(() => {
     if (!map || !service) return;
 
-    // Vector basemap styles replace the entire map style
-    // This is typically handled differently in react-map-gl
-    // For now, we'll just ensure cleanup
+    // A vector basemap style replaces the entire map style rather than adding a
+    // single layer, so applying it means calling setStyle on the underlying map.
+    const mapInstance = map.getMap?.() as { setStyle?: (style: string) => void } | undefined;
+    if (typeof mapInstance?.setStyle === 'function') {
+      try {
+        mapInstance.setStyle(service.styleUrl);
+      } catch (error) {
+        console.warn('EsriVectorBasemapLayer: failed to apply basemap style', error);
+      }
+    }
 
     // Cleanup function
     return () => {

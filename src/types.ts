@@ -118,10 +118,19 @@ export interface FeatureServiceOptions {
   having?: string;
   resultOffset?: number;
   resultRecordCount?: number;
+  /** @deprecated Not applied. The server's own `maxRecordCount` governs tile queries. */
   maxRecordCount?: number;
   getAttributionFromService?: boolean;
-  useBoundingBox?: boolean; // Enable screen bounding box filtering for better performance
-  useVectorTiles?: boolean; // Use vector tiles instead of GeoJSON
+  /**
+   * @deprecated Not applied. `FeatureService` always loads by viewport tile;
+   * use `disableRequests()` / `enableRequests()` to control that.
+   */
+  useBoundingBox?: boolean;
+  /**
+   * @deprecated Not applied. The query format is negotiated from the layer's
+   * `supportedQueryFormats` (PBF when available, otherwise GeoJSON).
+   */
+  useVectorTiles?: boolean;
   token?: string;
   apiKey?: string; // ArcGIS Location Platform API key
   authentication?: EsriAuthentication; // ArcGIS REST JS authentication manager

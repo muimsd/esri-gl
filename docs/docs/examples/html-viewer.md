@@ -189,6 +189,9 @@ A complete HTML page using esri-gl with MapLibre GL JS:
             zoom: 4
         });
 
+        // The UMD bundle exposes everything under the global `esrigl`
+        const { DynamicMapService, FeatureService, TiledMapService, VectorTileService } = esrigl;
+
         // Global variables
         let currentService = null;
         let identifyEnabled = false;
@@ -233,9 +236,7 @@ A complete HTML page using esri-gl with MapLibre GL JS:
 
                     case 'feature':
                         currentService = new FeatureService(sourceId, map, {
-                            url: serviceUrl,
-                            useVectorTiles: true,
-                            useBoundingBox: true
+                            url: serviceUrl
                         });
                         
                         // Add vector layers after service is ready
@@ -400,9 +401,9 @@ A complete HTML page using esri-gl with MapLibre GL JS:
                 const serviceType = document.getElementById('serviceType').value;
                 
                 if (serviceType === 'dynamic' && currentService.identify) {
-                    // Use service identify method
-                    const results = await currentService.identify(e.lngLat);
-                    showIdentifyResults(e.lngLat, results);
+                    // Use service identify method (raw ArcGIS response)
+                    const response = await currentService.identify(e.lngLat);
+                    showIdentifyResults(e.lngLat, response);
                     
                 } else if (serviceType === 'feature') {
                     // Query features at click point
@@ -426,20 +427,20 @@ A complete HTML page using esri-gl with MapLibre GL JS:
             }
         }
 
-        // Show identify results
-        function showIdentifyResults(lngLat, results) {
+        // Show identify results — DynamicMapService.identify() resolves to the raw
+        // ArcGIS response, so results live on `response.results`, not `features`.
+        function showIdentifyResults(lngLat, response) {
             if (currentPopup) {
                 currentPopup.remove();
             }
 
-            if (!results || !results.features || results.features.length === 0) {
+            if (!response || !response.results || response.results.length === 0) {
                 showNoResults(lngLat);
                 return;
             }
 
-            const feature = results.features[0];
-            const props = feature.properties || {};
-            
+            const props = response.results[0].attributes || {};
+
             let content = '<div class="info-popup"><h3>Feature Information</h3>';
             
             Object.keys(props).slice(0, 5).forEach(key => {
@@ -602,6 +603,9 @@ A complete HTML page using esri-gl with Mapbox GL JS:
         // Add navigation control
         map.addControl(new mapboxgl.NavigationControl());
 
+        // The UMD bundle exposes everything under the global `esrigl`
+        const { DynamicMapService, FeatureService } = esrigl;
+
         map.on('load', () => {
             // Add Dynamic Map Service
             const dynamicService = new DynamicMapService('usa-service', map, {
@@ -617,8 +621,7 @@ A complete HTML page using esri-gl with Mapbox GL JS:
 
             // Add Feature Service
             const featureService = new FeatureService('cities-service', map, {
-                url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0',
-                useVectorTiles: false
+                url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0'
             });
 
             // Add feature layers
@@ -675,8 +678,8 @@ A minimal HTML example for quick testing:
         });
 
         map.on('load', () => {
-            // Add ArcGIS Dynamic Map Service
-            new DynamicMapService('esri-service', map, {
+            // Add ArcGIS Dynamic Map Service (UMD global is `esrigl`)
+            new esrigl.DynamicMapService('esri-service', map, {
                 url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer'
             });
 
@@ -860,6 +863,9 @@ A more advanced dashboard-style HTML example:
         map.addControl(new maplibregl.NavigationControl());
         map.addControl(new maplibregl.ScaleControl());
 
+        // The UMD bundle exposes everything under the global `esrigl`
+        const { DynamicMapService, FeatureService, TiledMapService, VectorTileService } = esrigl;
+
         let services = new Map();
         let layerCounter = 0;
         let identifyEnabled = false;
@@ -906,8 +912,7 @@ A more advanced dashboard-style HTML example:
 
                     case 'feature':
                         service = new FeatureService(serviceId, map, {
-                            url,
-                            useVectorTiles: true
+                            url
                         });
                         
                         setTimeout(() => {

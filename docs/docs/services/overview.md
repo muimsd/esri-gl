@@ -15,11 +15,15 @@ map.addLayer({ id: 'layer-id', type: 'raster', source: 'source-id' })
 
 ### Universal Constructor
 
-All services follow this signature:
+Every source-creating service follows this signature:
 
 ```typescript
 new ServiceClass(sourceId: string, map: Map, esriOptions: Options, sourceOptions?: SourceOptions)
 ```
+
+[VectorBasemapStyle](./vector-basemap-style) is the exception: it produces a whole map *style*
+rather than a source, so it takes `new VectorBasemapStyle(styleName, auth)` and is applied with
+`map.setStyle(...)`.
 
 ### Authentication
 
@@ -80,11 +84,12 @@ service.remove();
 Services support identify and query operations:
 
 ```typescript
-// Identify at a click location
-const results = await dynamicService.identify(e.lngLat, true);
+// Identify at a click location — resolves to the raw ArcGIS response
+const response = await dynamicService.identify(e.lngLat, true);
+response.results.forEach(result => console.log(result.layerName, result.attributes));
 
-// Standalone task with chaining
-const results = await new IdentifyFeatures({ url: '...' })
+// Standalone task with chaining — resolves to a GeoJSON FeatureCollection
+const featureCollection = await new IdentifyFeatures({ url: '...' })
   .at({ lng: -95, lat: 37 })
   .on(map)
   .layers('visible:0,1,2')
