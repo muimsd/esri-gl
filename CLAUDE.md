@@ -26,7 +26,8 @@ entry points:
   constructor** — subclass field initializers (`setters` included) run after `super()`, so the base
   constructor sees an empty map. `initSetters()` skips names already implemented as methods, so a
   hand-written typed setter always wins; prefer one when the setter needs typing or argument
-  massaging.
+  massaging. A chainable setter on `Task` itself must return `this` (not `Task`) so it can be
+  chained between a subclass's own setters.
 - `src/Portal/` — `serviceFromPortalItem()` (deprecated) / `servicesFromWebMap()` resolve a
   portal item id or Web Map to services. `resolveServiceUrl()` (in `resolveServiceUrl.ts`) is the
   one place a service `url` that is a **portal item id** (a 32-char hex string, see
