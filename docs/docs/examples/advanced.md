@@ -242,7 +242,7 @@ await service.animateTime({
 ### Data-Driven Styling
 
 ```typescript
-import { FeatureService } from 'esri-gl'
+import { FeatureService, query } from 'esri-gl'
 
 class StyledFeatureService {
     private service: FeatureService
@@ -254,20 +254,21 @@ class StyledFeatureService {
     }
     
     async applyClassBreaksStyle(field: string, breaks: number[], colors: string[]) {
-        // Get field statistics to determine breaks
-        const stats = await this.service.queryFeatures({
-            where: '1=1',
+        // Get field statistics to determine breaks. Use the Query task rather than
+        // FeatureService.queryFeatures(): queryFeatures() always asks for
+        // f=geojson, which services reject for statistics queries, while Query
+        // falls back to f=json and converts the response for you.
+        const stats = await query({
+            url: this.service.esriServiceOptions.url,
             returnGeometry: false,
-            outStatistics: [{
-                statisticType: 'min',
-                onStatisticField: field,
-                outStatisticFieldName: 'min_val'
-            }, {
-                statisticType: 'max',
-                onStatisticField: field,
-                outStatisticFieldName: 'max_val'
-            }]
+            outStatistics: [
+                { statisticType: 'min', onStatisticField: field, outStatisticFieldName: 'min_val' },
+                { statisticType: 'max', onStatisticField: field, outStatisticFieldName: 'max_val' }
+            ]
         })
+            .where('1=1')
+            .run()
+
         console.log(stats.features[0]?.properties) // { min_val, max_val }
         
         // Create MapLibre GL expression for class breaks

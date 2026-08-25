@@ -82,9 +82,12 @@ export class Task {
   }
 
   /**
-   * Set authentication token
+   * Set authentication token.
+   *
+   * Returns the polymorphic `this` type so it can be chained between a
+   * subclass's own setters without widening to `Task`.
    */
-  token(token: string): Task {
+  token(token: string): this {
     if (this._service) {
       this._service.authenticate(token);
     } else {
@@ -96,14 +99,14 @@ export class Task {
   /**
    * Set API key (alias for token)
    */
-  apikey(apikey: string): Task {
+  apikey(apikey: string): this {
     return this.token(apikey);
   }
 
   /**
    * Set whether to return formatted or unformatted values (ArcGIS Server 10.5+)
    */
-  format(formatted: boolean): Task {
+  format(formatted: boolean): this {
     this.params.returnUnformattedValues = !formatted;
     return this;
   }

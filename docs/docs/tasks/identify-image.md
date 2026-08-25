@@ -15,8 +15,8 @@ _Click anywhere on the map to query image pixel values. Use the service dropdown
 ## Constructor
 
 ```typescript
-new IdentifyImage(options)
-identifyImage(options) // Convenience function
+new IdentifyImage(urlOrOptions: string | IdentifyImageOptions)
+identifyImage(urlOrOptions: string | IdentifyImageOptions) // convenience factory
 ```
 
 ### Options

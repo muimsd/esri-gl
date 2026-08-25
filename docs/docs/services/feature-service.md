@@ -62,7 +62,7 @@ These options shape the tile requests the service makes as the map moves.
 | `from` | `Date \| number \| null` | `null` | Start of the time extent (applied together with `to`) |
 | `to` | `Date \| number \| null` | `null` | End of the time extent |
 | `minZoom` | `number` | `2` (`7` when `useStaticZoomLevel`) | Zoom below which no features are requested |
-| `useStaticZoomLevel` | `boolean` | `false` | Request tiles at a fixed zoom level instead of the map's |
+| `useStaticZoomLevel` | `boolean` | `false` | Always request tiles at `minZoom` instead of tracking the map's zoom |
 | `simplifyFactor` | `number` | `0.3` | Geometry simplification factor (0–1) |
 | `precision` | `number` | `8` | Decimal precision of returned coordinates |
 | `useServiceBounds` | `boolean` | `true` | Skip tiles outside the service extent |
@@ -90,7 +90,7 @@ governed by the server's own `maxRecordCount`.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `queryFeatures(options?)` | `Promise<GeoJSON.FeatureCollection>` | Run a one-off query with custom parameters (does not change the map source) |
+| `queryFeatures(options?)` | `Promise<GeoJSON.FeatureCollection>` | Run a one-off query with custom parameters (does not change the map source). Always requests `f=geojson`, so use the [Query task](../tasks/query) for `outStatistics` queries, which services only answer as `f=json`. |
 | `getFeaturesByLonLat(lngLat, radius?, returnGeometry?)` | `Promise<GeoJSON.FeatureCollection>` | Features within `radius` metres (default `20`) of a point |
 | `getFeaturesByObjectIds(objectIds, returnGeometry?)` | `Promise<GeoJSON.FeatureCollection>` | Features for a list of object ids |
 | `getStyle()` | `Promise<StyleData>` | A layer style matching the service geometry type |

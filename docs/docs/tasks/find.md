@@ -31,7 +31,8 @@ const results = await findTask
 ## Constructor
 
 ```typescript
-new Find(urlOrOptions: string | FindOptions)
+new Find(urlOrOptions: string | FindOptions | Service)
+find(urlOrOptions: string | FindOptions) // convenience factory
 ```
 
 ### Options

@@ -33,8 +33,12 @@ const results = await queryTask
 ## Constructor
 
 ```typescript
-new Query(urlOrOptions: string | QueryOptions)
+new Query(urlOrOptions: string | QueryOptions | Service)
+query(urlOrOptions: string | QueryOptions) // convenience factory
 ```
+
+A bare URL string, an options object, or a `Service` instance (whose `url` and authentication the
+task then shares) are all accepted.
 
 ### Options
 
@@ -98,6 +102,10 @@ Each of these sets the query geometry and its `spatialRel` in one call:
 | `.overlaps(geometry)` | `esriSpatialRelOverlaps` |
 | `.bboxIntersects(geometry)` | `esriSpatialRelEnvelopeIntersects` |
 | `.nearby(latlng, radiusMeters)` | `esriSpatialRelIntersects` with a distance (ArcGIS Server 10.3+) |
+
+`within` and `contains` map to the `spatialRel` that looks like their opposite, and that is
+correct: ArcGIS expresses `spatialRel` relative to the **search** geometry, so "return features
+within my search geometry" is `esriSpatialRelContains`. This matches Esri Leaflet.
 
 Geometry may be an Esri geometry object, a `{ lat, lng }` point, or a Leaflet-style
 `{ _southWest, _northEast }` bounds — the task converts it and sets `geometryType` for you.

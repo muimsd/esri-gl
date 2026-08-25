@@ -32,7 +32,7 @@ attributes plus `layerId`, `layerName`, `displayFieldName` and `value`.
 ## Constructor
 
 ```typescript
-new IdentifyFeatures(urlOrOptions: string | IdentifyFeaturesOptions)
+new IdentifyFeatures(urlOrOptions: string | IdentifyFeaturesOptions | Service)
 ```
 
 ### Options

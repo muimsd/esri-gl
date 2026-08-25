@@ -69,6 +69,20 @@ describe('Task chainable setters', () => {
       expect(query.token('abc')).toBe(query);
     });
 
+    it('lets Task-level setters chain into subclass setters', async () => {
+      const query = new Query('https://example.com/FeatureServer/0');
+
+      // Task.token()/format() return the polymorphic `this` type, so the chain
+      // stays a Query for the compiler as well as at runtime.
+      await query.token('abc').format(false).where('POP > 1').fields('NAME').limit(5).run();
+
+      const params = lastRequestParams();
+      expect(params.get('where')).toBe('POP > 1');
+      expect(params.get('outFields')).toBe('NAME');
+      expect(params.get('resultRecordCount')).toBe('5');
+      expect(params.get('returnUnformattedValues')).toBe('true');
+    });
+
     it('keeps returnDistinctValues when the query runs', async () => {
       const query = new Query('https://example.com/FeatureServer/0');
 
